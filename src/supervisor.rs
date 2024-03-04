@@ -26,7 +26,7 @@ impl<T> Supervisor<T> {
         Self::default()
     }
     /// Spawns a new task using a [`Builder`] object and registers it. The task name MUST be unique
-    /// and SHOULD be 16 characters or less to set a proper thread name
+    /// and SHOULD be 15 characters or less to set a proper thread name
     pub fn spawn<F, B>(&mut self, builder: B, f: F) -> Result<&Task<T>>
     where
         B: Into<Builder>,
@@ -39,7 +39,7 @@ impl<T> Supervisor<T> {
         Ok(entry.insert(task))
     }
     /// Spawns a new periodic task using a [`Builder`] object and registers it. The task name MUST
-    /// be unique and SHOULD be 16 characters or less to set a proper thread name
+    /// be unique and SHOULD be 15 characters or less to set a proper thread name
     pub fn spawn_periodic<F, B>(&mut self, builder: B, f: F, interval: Interval) -> Result<&Task<T>>
     where
         F: Fn() -> T + Send + 'static,

@@ -79,7 +79,7 @@ impl Builder {
     pub fn new() -> Self {
         Self::default()
     }
-    /// The task name SHOULD be 16 characters or less to set a proper thread name
+    /// The task name SHOULD be 15 characters or less to set a proper thread name
     pub fn name<N: fmt::Display>(mut self, name: N) -> Self {
         self.name = Some(name.to_string());
         self
