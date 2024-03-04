@@ -278,14 +278,15 @@ impl<T: MessageDeliveryPolicy + Clone> ClientOptions<T> {
 /// # Examples
 ///
 /// ```rust
+/// use roboplc::event_matches;
+///
 /// enum Message {
 ///     Temperature(f64),
 ///     Flush,
 ///     Other
 /// }
 ///
-/// let condition = move || { event_matches!(Message::Temperature(_)) ||
-///     event_matches!(Message::Flush) };
+/// let condition_fn = event_matches!(Message::Temperature(_) | (Message::Flush));
 /// ```
 #[macro_export]
 macro_rules! event_matches {
