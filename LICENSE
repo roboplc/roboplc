@@ -1,3 +1,13 @@
+RoboPLC is licensed under Apache License 2.0 with additional Common Clauses
+(1).
+
+Minor modules may contain the code, developed or included under different
+non-compatible Open Source licenses. In this case, specific module license may
+vary. Refer to the Module Info for more details.
+
+Copyright Bohemia Automation (www.bohemia-automation.com), Altertech Group
+(www.altertech.com) and other contributors.
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -199,3 +209,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+  Common Clause 1.
+  
+      Trademark usage conditions: https://info.bma.ai/en/actual/trademarks.html
