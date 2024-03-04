@@ -12,8 +12,8 @@ automation platform.
 ## DataBuffer
 
 [`buf::DataBuffer`] covers a typical data exchange pattern when data
-frames are collected (cached) by a single or multiple producers, then taken by
-a single consumer in bulk and submitted, e.g. into a local database or into
+frames are collected (cached) from a single or multiple producers, then taken
+by a single consumer in bulk and submitted, e.g. into a local database or into
 an external bus.
 
 <img
