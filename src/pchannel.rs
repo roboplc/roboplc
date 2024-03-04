@@ -143,7 +143,6 @@ impl<T> Sender<T>
 where
     T: MessageDeliveryPolicy,
 {
-    /// Returns true if the value has been really sent
     #[inline]
     pub fn send(&self, value: T) -> Result<()> {
         self.channel.0.send(value)

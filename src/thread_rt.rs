@@ -275,7 +275,7 @@ impl<T> From<Task<T>> for JoinHandle<T> {
     }
 }
 
-/// An extended task object, returned by [`Builder::spawn()`]
+/// An extended task object, returned by [`Builder::spawn_scoped()`]
 ///
 /// Can be convered into a standard [`ScopedJoinHandle`].
 #[derive(Serialize)]
@@ -359,7 +359,7 @@ impl RTParams {
         self.cpu_ids = ids.to_vec();
         self
     }
-    // Returns the current scheduling policy
+    /// Returns the current scheduling policy
     pub fn scheduling(&self) -> Scheduling {
         self.scheduling
     }
