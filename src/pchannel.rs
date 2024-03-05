@@ -1,20 +1,20 @@
 use std::sync::Arc;
 
-use crate::{pdeque::Deque, Error, MessageDeliveryPolicy, Result};
+use crate::{pdeque::Deque, Error, DataDeliveryPolicy, Result};
 use object_id::UniqueId;
 use parking_lot::{Condvar, Mutex};
 
-struct Channel<T: MessageDeliveryPolicy>(Arc<ChannelInner<T>>);
+struct Channel<T: DataDeliveryPolicy>(Arc<ChannelInner<T>>);
 
-impl<T: MessageDeliveryPolicy> Channel<T> {
+impl<T: DataDeliveryPolicy> Channel<T> {
     fn id(&self) -> usize {
         self.0.id.as_usize()
     }
 }
 
-impl<T: MessageDeliveryPolicy> Eq for Channel<T> {}
+impl<T: DataDeliveryPolicy> Eq for Channel<T> {}
 
-impl<T: MessageDeliveryPolicy> PartialEq for Channel<T> {
+impl<T: DataDeliveryPolicy> PartialEq for Channel<T> {
     fn eq(&self, other: &Self) -> bool {
         self.id() == other.id()
     }
@@ -22,20 +22,20 @@ impl<T: MessageDeliveryPolicy> PartialEq for Channel<T> {
 
 impl<T> Clone for Channel<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
 
-struct ChannelInner<T: MessageDeliveryPolicy> {
+struct ChannelInner<T: DataDeliveryPolicy> {
     id: UniqueId,
     pc: Mutex<PolicyChannel<T>>,
     available: Condvar,
 }
 
-impl<T: MessageDeliveryPolicy> ChannelInner<T> {
+impl<T: DataDeliveryPolicy> ChannelInner<T> {
     fn try_send(&self, value: T) -> Result<()> {
         let mut pc = self.pc.lock();
         if pc.receivers == 0 {
@@ -98,7 +98,7 @@ impl<T: MessageDeliveryPolicy> ChannelInner<T> {
     }
 }
 
-impl<T: MessageDeliveryPolicy> Channel<T> {
+impl<T: DataDeliveryPolicy> Channel<T> {
     fn new(capacity: usize, ordering: bool) -> Self {
         Self(
             ChannelInner {
@@ -111,7 +111,7 @@ impl<T: MessageDeliveryPolicy> Channel<T> {
     }
 }
 
-struct PolicyChannel<T: MessageDeliveryPolicy> {
+struct PolicyChannel<T: DataDeliveryPolicy> {
     queue: Deque<T>,
     senders: usize,
     receivers: usize,
@@ -119,7 +119,7 @@ struct PolicyChannel<T: MessageDeliveryPolicy> {
 
 impl<T> PolicyChannel<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     fn new(capacity: usize, ordering: bool) -> Self {
         assert!(capacity > 0, "channel capacity MUST be > 0");
@@ -134,14 +134,14 @@ where
 #[derive(Eq, PartialEq)]
 pub struct Sender<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     channel: Channel<T>,
 }
 
 impl<T> Sender<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     #[inline]
     pub fn send(&self, value: T) -> Result<()> {
@@ -171,7 +171,7 @@ where
 
 impl<T> Clone for Sender<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     fn clone(&self) -> Self {
         self.channel.0.pc.lock().senders += 1;
@@ -183,7 +183,7 @@ where
 
 impl<T> Drop for Sender<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     fn drop(&mut self) {
         self.channel.0.pc.lock().senders -= 1;
@@ -194,14 +194,14 @@ where
 #[derive(Eq, PartialEq)]
 pub struct Receiver<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     channel: Channel<T>,
 }
 
 impl<T> Receiver<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     #[inline]
     pub fn recv(&self) -> Result<T> {
@@ -231,7 +231,7 @@ where
 
 impl<T> Clone for Receiver<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     fn clone(&self) -> Self {
         self.channel.0.pc.lock().receivers += 1;
@@ -243,7 +243,7 @@ where
 
 impl<T> Drop for Receiver<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     fn drop(&mut self) {
         self.channel.0.pc.lock().receivers -= 1;
@@ -251,7 +251,7 @@ where
     }
 }
 
-fn make_channel<T: MessageDeliveryPolicy>(ch: Channel<T>) -> (Sender<T>, Receiver<T>) {
+fn make_channel<T: DataDeliveryPolicy>(ch: Channel<T>) -> (Sender<T>, Receiver<T>) {
     let tx = Sender {
         channel: ch.clone(),
     };
@@ -259,24 +259,24 @@ fn make_channel<T: MessageDeliveryPolicy>(ch: Channel<T>) -> (Sender<T>, Receive
     (tx, rx)
 }
 
-/// Creates a bounded channel which respects [`MessageDeliveryPolicy`] rules with no message
+/// Creates a bounded channel which respects [`DataDeliveryPolicy`] rules with no message
 /// priority ordering
 ///
 /// # Panics
 ///
 /// Will panic if the capacity is zero
-pub fn bounded<T: MessageDeliveryPolicy>(capacity: usize) -> (Sender<T>, Receiver<T>) {
+pub fn bounded<T: DataDeliveryPolicy>(capacity: usize) -> (Sender<T>, Receiver<T>) {
     let ch = Channel::new(capacity, false);
     make_channel(ch)
 }
 
-/// Creates a bounded channel which respects [`MessageDeliveryPolicy`] rules and has got message
+/// Creates a bounded channel which respects [`DataDeliveryPolicy`] rules and has got message
 /// priority ordering turned on
 ///
 /// # Panics
 ///
 /// Will panic if the capacity is zero
-pub fn ordered<T: MessageDeliveryPolicy>(capacity: usize) -> (Sender<T>, Receiver<T>) {
+pub fn ordered<T: DataDeliveryPolicy>(capacity: usize) -> (Sender<T>, Receiver<T>) {
     let ch = Channel::new(capacity, true);
     make_channel(ch)
 }
@@ -285,7 +285,7 @@ pub fn ordered<T: MessageDeliveryPolicy>(capacity: usize) -> (Sender<T>, Receive
 mod test {
     use std::{thread, time::Duration};
 
-    use crate::{DeliveryPolicy, MessageDeliveryPolicy};
+    use crate::{DeliveryPolicy, DataDeliveryPolicy};
 
     use super::bounded;
 
@@ -296,7 +296,7 @@ mod test {
         Spam,
     }
 
-    impl MessageDeliveryPolicy for Message {
+    impl DataDeliveryPolicy for Message {
         fn delivery_policy(&self) -> DeliveryPolicy {
             match self {
                 Message::Test(_) => DeliveryPolicy::Always,

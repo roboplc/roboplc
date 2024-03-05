@@ -92,7 +92,7 @@ pub enum DeliveryPolicy {
 }
 
 /// Implements delivery policies for own data types
-pub trait MessageDeliveryPolicy
+pub trait DataDeliveryPolicy
 where
     Self: Sized,
 {

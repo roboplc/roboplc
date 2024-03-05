@@ -1,12 +1,12 @@
 use std::collections::VecDeque;
 
-use crate::{DeliveryPolicy, MessageDeliveryPolicy};
+use crate::{DeliveryPolicy, DataDeliveryPolicy};
 
-/// A deque which stores values with respect of [`MessageDeliveryPolicy`]
+/// A deque which stores values with respect of [`DataDeliveryPolicy`]
 #[derive(Clone, Debug)]
 pub struct Deque<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     data: VecDeque<T>,
     capacity: usize,
@@ -23,7 +23,7 @@ pub struct TryPushOutput<T> {
 
 impl<T> Deque<T>
 where
-    T: MessageDeliveryPolicy,
+    T: DataDeliveryPolicy,
 {
     /// Creates a new bounded deque
     #[inline]
@@ -42,7 +42,7 @@ where
     }
     /// Tries to store the value
     ///
-    /// Returns the value back if there is no capacity even after all [`MessageDeliveryPolicy`]
+    /// Returns the value back if there is no capacity even after all [`DataDeliveryPolicy`]
     /// rules have been applied
     pub fn try_push(&mut self, value: T) -> TryPushOutput<T> {
         macro_rules! push {
@@ -126,7 +126,7 @@ where
     }
 }
 
-fn sort_by_priority<T: MessageDeliveryPolicy>(v: &mut VecDeque<T>) {
+fn sort_by_priority<T: DataDeliveryPolicy>(v: &mut VecDeque<T>) {
     v.rotate_right(v.as_slices().1.len());
     assert!(v.as_slices().1.is_empty());
     v.as_mut_slices()

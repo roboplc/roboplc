@@ -25,3 +25,57 @@ width="350" />
 * thread-safe out-of-the-box
 
 * frames may be forcibly pushed, overriding the previous ones, like in a ring-buffer.
+
+## Hub
+
+[`hub::Hub`] implements a data-hub (in process pub/sub) model, when multiple
+clients (usually thread workers) exchange data via a single virtual bus instead
+of using direct channels.
+
+This brings some additional overhead into data exchange, however makes the
+architecture significantly clearer, lowers code support costs and brings
+additional features.
+
+<img
+src="https://raw.githubusercontent.com/eva-ics/roboplc/main/schemas/hub.png"
+width="550" />
+
+* classic pub/sub patterns with no data serialization overhead
+
+* based on [`pchannel`] which allows to mix different kinds of data and apply
+  additional policies if required
+
+* a fully passive model with no "server" thread.
+
+## pdeque and pchannel
+
+A policy-based deque [`pdeque::Deque`] is a component to build policy-based
+channels.
+
+[`pchannel`] is a channel module, based on the policy-based deque.
+
+Data policies supported:
+
+* **Always** a frame is always delivered
+* **Optional** a frame can be skipped if no room
+* **Single** a frame must be delivered only once (the latest one)
+* **SingleOptional** a frame must be delivered only once (the latest one) and
+  is optional
+
+Additionally, components support ordering by data priority and automatically
+drop expired data if the data type has got an expiration marker method
+implemented.
+
+Without policies applied, speed is similar to other popular channel/storage
+implementations. With policies data transfer speed can be lower, latency can
+rise, however the overall effect is significantly better as the data is
+processed directly inside a channel or a storage buffer.
+
+## Real-time
+
+[`thread_rt::Builder`] provides a thread builder component, which extends the
+standard thread builder with real-time capabilities: scheduler policies and CPU
+affinity (Linux only).
+
+[`supervisor::Supervisor`] provides a lightweight task supervisor to manage
+launched threads.

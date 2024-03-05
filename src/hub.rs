@@ -3,7 +3,7 @@ use std::sync::Arc;
 use parking_lot::Mutex;
 
 use crate::pchannel::{self, Receiver};
-use crate::{pchannel::Sender, MessageDeliveryPolicy};
+use crate::{pchannel::Sender, DataDeliveryPolicy};
 use crate::{Error, Result};
 
 type ConditionFunction<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;
@@ -13,11 +13,11 @@ pub const DEFAULT_PRIORITY: usize = 100;
 pub const DEFAULT_CHANNEL_CAPACITY: usize = 1024;
 
 /// Data communcation hub to implement in-process pub/sub model for thread workers
-pub struct Hub<T: MessageDeliveryPolicy + Clone> {
+pub struct Hub<T: DataDeliveryPolicy + Clone> {
     inner: Arc<Mutex<HubInner<T>>>,
 }
 
-impl<T: MessageDeliveryPolicy + Clone> Clone for Hub<T> {
+impl<T: DataDeliveryPolicy + Clone> Clone for Hub<T> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -25,7 +25,7 @@ impl<T: MessageDeliveryPolicy + Clone> Clone for Hub<T> {
     }
 }
 
-impl<T: MessageDeliveryPolicy + Clone> Default for Hub<T> {
+impl<T: DataDeliveryPolicy + Clone> Default for Hub<T> {
     fn default() -> Self {
         Self {
             inner: <_>::default(),
@@ -33,7 +33,7 @@ impl<T: MessageDeliveryPolicy + Clone> Default for Hub<T> {
     }
 }
 
-impl<T: MessageDeliveryPolicy + Clone> Hub<T> {
+impl<T: DataDeliveryPolicy + Clone> Hub<T> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -173,14 +173,14 @@ impl<T: MessageDeliveryPolicy + Clone> Hub<T> {
     }
 }
 
-struct HubInner<T: MessageDeliveryPolicy + Clone> {
+struct HubInner<T: DataDeliveryPolicy + Clone> {
     default_channel_capacity: usize,
     subscriptions: Vec<Arc<Subscription<T>>>,
 }
 
 impl<T> Default for HubInner<T>
 where
-    T: MessageDeliveryPolicy + Clone,
+    T: DataDeliveryPolicy + Clone,
 {
     fn default() -> Self {
         Self {
@@ -190,13 +190,13 @@ where
     }
 }
 
-pub struct Client<T: MessageDeliveryPolicy + Clone> {
+pub struct Client<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
     hub: Hub<T>,
     rx: Receiver<T>,
 }
 
-impl<T: MessageDeliveryPolicy + Clone> Client<T> {
+impl<T: DataDeliveryPolicy + Clone> Client<T> {
     /// Sends a message to hub-subscribed clients, ignores send errors
     pub fn send(&self, message: T) {
         self.hub.send(message);
@@ -221,13 +221,13 @@ impl<T: MessageDeliveryPolicy + Clone> Client<T> {
     }
 }
 
-impl<T: MessageDeliveryPolicy + Clone> Drop for Client<T> {
+impl<T: DataDeliveryPolicy + Clone> Drop for Client<T> {
     fn drop(&mut self) {
         self.hub.unregister(&self.name);
     }
 }
 
-pub struct ClientOptions<T: MessageDeliveryPolicy + Clone> {
+pub struct ClientOptions<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
     priority: usize,
     capacity: Option<usize>,
@@ -235,7 +235,7 @@ pub struct ClientOptions<T: MessageDeliveryPolicy + Clone> {
     condition: ConditionFunction<T>,
 }
 
-impl<T: MessageDeliveryPolicy + Clone> ClientOptions<T> {
+impl<T: DataDeliveryPolicy + Clone> ClientOptions<T> {
     pub fn new<F>(name: &str, condition: F) -> Self
     where
         F: Fn(&T) -> bool + Send + Sync + 'static,
@@ -295,7 +295,7 @@ macro_rules! event_matches {
     };
 }
 
-struct Subscription<T: MessageDeliveryPolicy + Clone> {
+struct Subscription<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
     tx: Sender<T>,
     priority: usize,
@@ -304,7 +304,7 @@ struct Subscription<T: MessageDeliveryPolicy + Clone> {
 
 #[cfg(test)]
 mod test {
-    use crate::{event_matches, MessageDeliveryPolicy};
+    use crate::{event_matches, DataDeliveryPolicy};
 
     use super::Hub;
 
@@ -315,7 +315,7 @@ mod test {
         Test,
     }
 
-    impl MessageDeliveryPolicy for Message {}
+    impl DataDeliveryPolicy for Message {}
 
     #[test]
     fn test_hub() {
