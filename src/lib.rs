@@ -77,7 +77,7 @@ impl Error {
     }
 }
 
-/// Message delivery policies, used by [`hub::Hub`], [`pchannel::Receiver`] and [`pdeque::Deque`]
+/// Data delivery policies, used by [`hub::Hub`], [`pchannel::Receiver`] and [`pdeque::Deque`]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
 pub enum DeliveryPolicy {
     #[default]
@@ -85,7 +85,7 @@ pub enum DeliveryPolicy {
     Always,
     /// skip delivery if no room
     Optional,
-    /// always deliver the message but always in a single copy (latest)
+    /// always deliver the frame but always in a single copy (latest)
     Single,
     /// deliver a single latest copy, skip if no room
     SingleOptional,
@@ -110,7 +110,7 @@ where
     fn eq_kind(&self, other: &Self) -> bool {
         mem::discriminant(self) == mem::discriminant(other)
     }
-    /// If a message expires during storing/delivering, it is not delivered
+    /// If a frame expires during storing/delivering, it is not delivered
     fn is_expired(&self) -> bool {
         false
     }
