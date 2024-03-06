@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{pdeque::Deque, Error, DataDeliveryPolicy, Result};
+use crate::{pdeque::Deque, DataDeliveryPolicy, Error, Result};
 use object_id::UniqueId;
 use parking_lot::{Condvar, Mutex};
 
@@ -186,8 +186,11 @@ where
     T: DataDeliveryPolicy,
 {
     fn drop(&mut self) {
-        self.channel.0.pc.lock().senders -= 1;
-        self.channel.0.available.notify_all();
+        let mut pc = self.channel.0.pc.lock();
+        pc.senders -= 1;
+        if pc.senders == 0 {
+            self.channel.0.available.notify_all();
+        }
     }
 }
 
@@ -246,8 +249,11 @@ where
     T: DataDeliveryPolicy,
 {
     fn drop(&mut self) {
-        self.channel.0.pc.lock().receivers -= 1;
-        self.channel.0.available.notify_all();
+        let mut pc = self.channel.0.pc.lock();
+        pc.receivers -= 1;
+        if pc.receivers == 0 {
+            self.channel.0.available.notify_all();
+        }
     }
 }
 
@@ -285,7 +291,7 @@ pub fn ordered<T: DataDeliveryPolicy>(capacity: usize) -> (Sender<T>, Receiver<T
 mod test {
     use std::{thread, time::Duration};
 
-    use crate::{DeliveryPolicy, DataDeliveryPolicy};
+    use crate::{DataDeliveryPolicy, DeliveryPolicy};
 
     use super::bounded;
 
