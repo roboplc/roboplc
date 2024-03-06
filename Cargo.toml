@@ -20,3 +20,6 @@ parking_lot = "0.12.1"
 serde = { version = "1.0.197", features = ["derive", "rc"] }
 sysinfo = "0.30.6"
 thiserror = "1.0.57"
+
+[dev-dependencies]
+tokio = { version = "1.36.0", features = ["rt", "macros", "time"] }

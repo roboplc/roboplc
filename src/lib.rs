@@ -7,8 +7,10 @@ use thread_rt::{RTParams, Scheduling};
 pub mod buf;
 /// In-process data communication pub/sub hub
 pub mod hub;
-/// Policy-based channels
+/// Policy-based channels, synchronous edition
 pub mod pchannel;
+/// Policy-based channels, asynchronous edition
+pub mod pchannel_async;
 /// Policy-based data storages
 pub mod pdeque;
 /// Task supervisor to manage real-time threads
