@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{DeliveryPolicy, DataDeliveryPolicy};
+use crate::{DataDeliveryPolicy, DeliveryPolicy};
 
 /// A deque which stores values with respect of [`DataDeliveryPolicy`]
 #[derive(Clone, Debug)]
