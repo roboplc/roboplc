@@ -1,0 +1,5 @@
+---
+source: src/hub_async.rs
+expression: messages.len()
+---
+20

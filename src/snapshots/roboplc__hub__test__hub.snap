@@ -1,0 +1,5 @@
+---
+source: src/hub.rs
+expression: messages.len()
+---
+20

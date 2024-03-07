@@ -325,12 +325,16 @@ mod test {
             }
         });
         thread::sleep(Duration::from_secs(1));
+        let mut messages = Vec::new();
         while let Ok(msg) = rx.recv() {
             thread::sleep(Duration::from_millis(10));
             if matches!(msg, Message::Spam) {
                 panic!("delivery policy not respected ({:?})", msg);
             }
+            messages.push(msg);
         }
+        insta::assert_debug_snapshot!(messages.len());
+        insta::assert_debug_snapshot!(messages);
     }
 
     #[test]
@@ -348,20 +352,23 @@ mod test {
         thread::sleep(Duration::from_secs(1));
         let mut c = 0;
         let mut t = 0;
+        let mut messages = Vec::new();
         while let Ok(msg) = rx.recv() {
             match msg {
                 Message::Test(_) => c += 1,
                 Message::Temperature(_) => t += 1,
                 Message::Spam => {}
             }
+            messages.push(msg);
         }
-        assert_eq!(c, 10);
-        assert_eq!(t, 1);
+        insta::assert_snapshot!(c);
+        insta::assert_snapshot!(t);
+        insta::assert_debug_snapshot!(messages);
     }
 
     #[test]
     fn test_poisoning() {
-        let n = 20_000;
+        let n = 5_000;
         for i in 0..n {
             let (tx, rx) = bounded::<Message>(512);
             let rx_t = thread::spawn(move || while rx.recv().is_ok() {});

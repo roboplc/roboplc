@@ -306,7 +306,7 @@ mod test {
 
     use super::Hub;
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     enum Message {
         Temperature(f64),
         Humidity(f64),
@@ -319,9 +319,9 @@ mod test {
     async fn test_hub() {
         let hub = Hub::<Message>::new().set_default_channel_capacity(20);
         let sender = hub.sender();
-        let recv = hub
+        let client1 = hub
             .register(
-                "test_recv",
+                "test1",
                 event_matches!(Message::Temperature(_) | Message::Humidity(_)),
             )
             .unwrap();
@@ -330,13 +330,11 @@ mod test {
             sender.send(Message::Humidity(2.0)).await;
             sender.send(Message::Test).await;
         }
-        let mut c = 0;
-        while let Ok(msg) = recv.try_recv() {
-            match msg {
-                Message::Temperature(_) | Message::Humidity(_) => c += 1,
-                Message::Test => panic!(),
-            }
+        let mut messages = Vec::with_capacity(20);
+        while let Ok(msg) = client1.try_recv() {
+            messages.push(msg);
         }
-        assert_eq!(c, 20);
+        insta::assert_snapshot!(messages.len());
+        insta::assert_debug_snapshot!(messages);
     }
 }

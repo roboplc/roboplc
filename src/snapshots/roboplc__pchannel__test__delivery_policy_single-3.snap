@@ -1,0 +1,49 @@
+---
+source: src/pchannel.rs
+expression: messages
+---
+[
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Test(
+        123,
+    ),
+    Spam,
+    Temperature(
+        123.0,
+    ),
+]

@@ -1,0 +1,5 @@
+---
+source: src/pchannel.rs
+expression: c
+---
+10

@@ -307,7 +307,7 @@ mod test {
 
     use super::Hub;
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     enum Message {
         Temperature(f64),
         Humidity(f64),
@@ -331,13 +331,11 @@ mod test {
             sender.send(Message::Humidity(2.0));
             sender.send(Message::Test);
         }
-        let mut c = 0;
+        let mut messages = Vec::with_capacity(20);
         while let Ok(msg) = recv.try_recv() {
-            match msg {
-                Message::Temperature(_) | Message::Humidity(_) => c += 1,
-                Message::Test => panic!(),
-            }
+            messages.push(msg);
         }
-        assert_eq!(c, 20);
+        insta::assert_snapshot!(messages.len());
+        insta::assert_debug_snapshot!(messages);
     }
 }

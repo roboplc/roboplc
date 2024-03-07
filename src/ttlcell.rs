@@ -146,14 +146,14 @@ mod test {
         let ttl = Duration::from_millis(10);
         let mut opt = TtlCell::new_with_value(ttl, 25);
         thread::sleep(ttl / 2);
-        assert_eq!(opt.as_ref().copied(), Some(25));
+        insta::assert_debug_snapshot!(opt.as_ref().copied());
         thread::sleep(ttl);
-        assert_eq!(opt.as_ref().copied(), None);
+        insta::assert_debug_snapshot!(opt.as_ref().copied());
         opt.set(30);
         thread::sleep(ttl / 2);
-        assert_eq!(opt.as_ref().copied(), Some(30));
+        insta::assert_debug_snapshot!(opt.as_ref().copied());
         thread::sleep(ttl);
-        assert_eq!(opt.as_ref().copied(), None);
+        insta::assert_debug_snapshot!(opt.as_ref().copied());
     }
     #[test]
     fn test_take_replace() {
