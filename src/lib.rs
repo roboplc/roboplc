@@ -25,7 +25,7 @@ pub mod ttlcell;
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// The crate error type
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, PartialEq, Eq)]
 pub enum Error {
     /// the channel is full and the value can not be sent
     #[error("channel full")]
