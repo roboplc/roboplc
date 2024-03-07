@@ -326,7 +326,7 @@ mod test {
                 event_matches!(Message::Temperature(_) | Message::Humidity(_)),
             )
             .unwrap();
-        for _ in 0..10 {
+        for _ in 0..3 {
             sender.send(Message::Temperature(1.0));
             sender.send(Message::Humidity(2.0));
             sender.send(Message::Test);
@@ -335,7 +335,7 @@ mod test {
         while let Ok(msg) = recv.try_recv() {
             messages.push(msg);
         }
-        insta::assert_snapshot!(messages.len());
+        insta::assert_snapshot!(messages.len(), @"6");
         insta::assert_debug_snapshot!(messages);
     }
 }

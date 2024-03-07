@@ -21,46 +21,4 @@ expression: messages
     Humidity(
         2.0,
     ),
-    Temperature(
-        1.0,
-    ),
-    Humidity(
-        2.0,
-    ),
-    Temperature(
-        1.0,
-    ),
-    Humidity(
-        2.0,
-    ),
-    Temperature(
-        1.0,
-    ),
-    Humidity(
-        2.0,
-    ),
-    Temperature(
-        1.0,
-    ),
-    Humidity(
-        2.0,
-    ),
-    Temperature(
-        1.0,
-    ),
-    Humidity(
-        2.0,
-    ),
-    Temperature(
-        1.0,
-    ),
-    Humidity(
-        2.0,
-    ),
-    Temperature(
-        1.0,
-    ),
-    Humidity(
-        2.0,
-    ),
 ]

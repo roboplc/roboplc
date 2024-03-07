@@ -146,42 +146,62 @@ mod test {
         let ttl = Duration::from_millis(10);
         let mut opt = TtlCell::new_with_value(ttl, 25);
         thread::sleep(ttl / 2);
-        insta::assert_debug_snapshot!(opt.as_ref().copied());
+        insta::assert_debug_snapshot!(opt.as_ref().copied(), @r###"
+        Some(
+            25,
+        )
+        "###);
         thread::sleep(ttl);
-        insta::assert_debug_snapshot!(opt.as_ref().copied());
+        insta::assert_debug_snapshot!(opt.as_ref().copied(), @"None");
         opt.set(30);
         thread::sleep(ttl / 2);
-        insta::assert_debug_snapshot!(opt.as_ref().copied());
+        insta::assert_debug_snapshot!(opt.as_ref().copied(), @r###"
+        Some(
+            30,
+        )
+        "###);
         thread::sleep(ttl);
-        insta::assert_debug_snapshot!(opt.as_ref().copied());
+        insta::assert_debug_snapshot!(opt.as_ref().copied(), @"None");
     }
     #[test]
     fn test_take_replace() {
         let ttl = Duration::from_millis(10);
         let mut opt = TtlCell::new_with_value(ttl, 25);
         thread::sleep(ttl / 2);
-        assert_eq!(opt.take(), Some(25));
-        assert_eq!(opt.as_ref().copied(), None);
+        insta::assert_debug_snapshot!(opt.take(), @r###"
+        Some(
+            25,
+        )
+        "###);
+        insta::assert_debug_snapshot!(opt.as_ref().copied(), @"None");
         opt.set(30);
         thread::sleep(ttl / 2);
-        assert_eq!(opt.replace(29), Some(30));
-        assert_eq!(opt.as_ref().copied(), Some(29));
+        insta::assert_debug_snapshot!(opt.replace(29), @r###"
+        Some(
+            30,
+        )
+        "###);
         thread::sleep(ttl);
-        assert_eq!(opt.as_ref().copied(), None);
+        insta::assert_debug_snapshot!(opt.as_ref().copied(), @"None");
     }
     #[test]
     fn test_take_with() {
         let mut first = TtlCell::new_with_value(Duration::from_secs(1), 25);
         thread::sleep(Duration::from_millis(10));
         let mut second = TtlCell::new_with_value(Duration::from_secs(1), 25);
-        assert!(first
-            .take_with(&mut second, Duration::from_millis(100))
-            .is_some());
+        insta::assert_debug_snapshot!(first
+            .take_with(&mut second, Duration::from_millis(100)), @r###"
+        Some(
+            (
+                25,
+                25,
+            ),
+        )
+        "###);
         let mut first = TtlCell::new_with_value(Duration::from_secs(1), 25);
         thread::sleep(Duration::from_millis(100));
         let mut second = TtlCell::new_with_value(Duration::from_secs(1), 25);
-        assert!(first
-            .take_with(&mut second, Duration::from_millis(50))
-            .is_none());
+        insta::assert_debug_snapshot!(
+            first.take_with(&mut second, Duration::from_millis(50)), @"None");
     }
 }

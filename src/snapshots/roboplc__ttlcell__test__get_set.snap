@@ -1,7 +1,0 @@
----
-source: src/ttlcell.rs
-expression: opt.as_ref().copied()
----
-Some(
-    25,
-)

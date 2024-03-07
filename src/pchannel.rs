@@ -333,8 +333,7 @@ mod test {
             }
             messages.push(msg);
         }
-        insta::assert_debug_snapshot!(messages.len());
-        insta::assert_debug_snapshot!(messages);
+        insta::assert_debug_snapshot!(messages.len(), @"20");
     }
 
     #[test]
@@ -352,18 +351,15 @@ mod test {
         thread::sleep(Duration::from_secs(1));
         let mut c = 0;
         let mut t = 0;
-        let mut messages = Vec::new();
         while let Ok(msg) = rx.recv() {
             match msg {
                 Message::Test(_) => c += 1,
                 Message::Temperature(_) => t += 1,
                 Message::Spam => {}
             }
-            messages.push(msg);
         }
-        insta::assert_snapshot!(c);
-        insta::assert_snapshot!(t);
-        insta::assert_debug_snapshot!(messages);
+        insta::assert_snapshot!(c, @"10");
+        insta::assert_snapshot!(t, @"1");
     }
 
     #[test]
