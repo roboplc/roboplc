@@ -10,6 +10,7 @@ use std::{
 use crate::{pdeque::Deque, DataDeliveryPolicy, Error, Result};
 use object_id::UniqueId;
 use parking_lot::Mutex;
+use pin_project::{pin_project, pinned_drop};
 
 type ClientId = usize;
 
@@ -166,6 +167,7 @@ where
     }
 }
 
+#[pin_project(PinnedDrop)]
 struct Send<'a, T: DataDeliveryPolicy> {
     id: UniqueId,
     channel: &'a Channel<T>,
@@ -173,8 +175,10 @@ struct Send<'a, T: DataDeliveryPolicy> {
     value: Option<T>,
 }
 
-impl<'a, T: DataDeliveryPolicy> Drop for Send<'a, T> {
-    fn drop(&mut self) {
+#[pinned_drop]
+#[allow(clippy::needless_lifetimes)]
+impl<'a, T: DataDeliveryPolicy> PinnedDrop for Send<'a, T> {
+    fn drop(self: Pin<&mut Self>) {
         self.channel
             .0
             .pc
@@ -196,11 +200,10 @@ where
         if pc.receivers == 0 {
             return Poll::Ready(Err(Error::ChannelClosed));
         }
-        let this = unsafe { self.as_mut().get_unchecked_mut() };
-        if pc.send_fut_wakers.is_empty() || this.queued {
-            let push_result = pc.queue.try_push(this.value.take().unwrap());
+        if pc.send_fut_wakers.is_empty() || self.queued {
+            let push_result = pc.queue.try_push(self.value.take().unwrap());
             if let Some(val) = push_result.value {
-                this.value = Some(val);
+                self.value = Some(val);
             } else {
                 pc.notify_data_sent();
                 return Poll::Ready(if push_result.pushed {
@@ -210,7 +213,7 @@ where
                 });
             }
         }
-        this.queued = true;
+        self.queued = true;
         pc.append_send_fut_waker(cx.waker().clone(), self.id.as_usize());
         Poll::Pending
     }
