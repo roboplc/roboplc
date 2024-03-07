@@ -17,15 +17,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Cargo test
+      - name: cargo test
         run: cargo test --verbose --locked --all-features --all-targets
   fmt:
     runs-on: ubuntu-latest
     steps:
-      - name: Cargo fmt
+      - name: cargo fmt
         run: cargo fmt --check
   clippy:
     runs-on: ubuntu-latest
+    steps:
+      - name: cargo clippy
       - name: clippy
         run: |
           cargo clippy -- -W clippy::all -W clippy::pedantic \
