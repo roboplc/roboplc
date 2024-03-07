@@ -3,7 +3,10 @@ use std::{
     future::Future,
     mem,
     pin::Pin,
-    sync::Arc,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
     task::{Context, Poll, Waker},
 };
 
@@ -42,6 +45,7 @@ where
 struct ChannelInner<T: DataDeliveryPolicy> {
     id: UniqueId,
     pc: Mutex<PolicyChannel<T>>,
+    next_op_id: AtomicUsize,
 }
 
 impl<T: DataDeliveryPolicy> Channel<T> {
@@ -50,9 +54,13 @@ impl<T: DataDeliveryPolicy> Channel<T> {
             ChannelInner {
                 id: <_>::default(),
                 pc: Mutex::new(PolicyChannel::new(capacity, ordering)),
+                next_op_id: <_>::default(),
             }
             .into(),
         )
+    }
+    fn op_id(&self) -> usize {
+        self.0.next_op_id.fetch_add(1, Ordering::SeqCst)
     }
 }
 
@@ -169,7 +177,7 @@ where
 
 #[pin_project(PinnedDrop)]
 struct Send<'a, T: DataDeliveryPolicy> {
-    id: UniqueId,
+    id: usize,
     channel: &'a Channel<T>,
     queued: bool,
     value: Option<T>,
@@ -179,11 +187,9 @@ struct Send<'a, T: DataDeliveryPolicy> {
 #[allow(clippy::needless_lifetimes)]
 impl<'a, T: DataDeliveryPolicy> PinnedDrop for Send<'a, T> {
     fn drop(self: Pin<&mut Self>) {
-        self.channel
-            .0
-            .pc
-            .lock()
-            .notify_send_fut_drop(self.id.as_usize());
+        if self.queued {
+            self.channel.0.pc.lock().notify_send_fut_drop(self.id);
+        }
     }
 }
 
@@ -195,9 +201,10 @@ where
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut pc = self.channel.0.pc.lock();
         if self.queued {
-            pc.confirm_send_fut_waked(self.id.as_usize());
+            pc.confirm_send_fut_waked(self.id);
         }
         if pc.receivers == 0 {
+            self.queued = false;
             return Poll::Ready(Err(Error::ChannelClosed));
         }
         if pc.send_fut_wakers.is_empty() || self.queued {
@@ -205,6 +212,7 @@ where
             if let Some(val) = push_result.value {
                 self.value = Some(val);
             } else {
+                self.queued = false;
                 pc.notify_data_sent();
                 return Poll::Ready(if push_result.pushed {
                     Ok(())
@@ -214,7 +222,7 @@ where
             }
         }
         self.queued = true;
-        pc.append_send_fut_waker(cx.waker().clone(), self.id.as_usize());
+        pc.append_send_fut_waker(cx.waker().clone(), self.id);
         Poll::Pending
     }
 }
@@ -234,7 +242,7 @@ where
     #[inline]
     pub fn send(&self, value: T) -> impl Future<Output = Result<()>> + '_ {
         Send {
-            id: <_>::default(),
+            id: self.channel.op_id(),
             channel: &self.channel,
             queued: false,
             value: Some(value),
@@ -301,18 +309,16 @@ where
 }
 
 struct Recv<'a, T: DataDeliveryPolicy> {
-    id: UniqueId,
+    id: usize,
     channel: &'a Channel<T>,
     queued: bool,
 }
 
 impl<'a, T: DataDeliveryPolicy> Drop for Recv<'a, T> {
     fn drop(&mut self) {
-        self.channel
-            .0
-            .pc
-            .lock()
-            .notify_recv_fut_drop(self.id.as_usize());
+        if self.queued {
+            self.channel.0.pc.lock().notify_recv_fut_drop(self.id);
+        }
     }
 }
 
@@ -324,18 +330,20 @@ where
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut pc = self.channel.0.pc.lock();
         if self.queued {
-            pc.confirm_recv_fut_waked(self.id.as_usize());
+            pc.confirm_recv_fut_waked(self.id);
         }
         if pc.recv_fut_wakers.is_empty() || self.queued {
             if let Some(val) = pc.queue.get() {
                 pc.notify_data_received();
+                self.queued = false;
                 return Poll::Ready(Ok(val));
             } else if pc.senders == 0 {
+                self.queued = false;
                 return Poll::Ready(Err(Error::ChannelClosed));
             }
         }
         self.queued = true;
-        pc.append_recv_fut_waker(cx.waker().clone(), self.id.as_usize());
+        pc.append_recv_fut_waker(cx.waker().clone(), self.id);
         Poll::Pending
     }
 }
@@ -355,7 +363,7 @@ where
     #[inline]
     pub fn recv(&self) -> impl Future<Output = Result<T>> + '_ {
         Recv {
-            id: <_>::default(),
+            id: self.channel.op_id(),
             channel: &self.channel,
             queued: false,
         }
