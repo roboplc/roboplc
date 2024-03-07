@@ -79,3 +79,4 @@ affinity (Linux only).
 
 [`supervisor::Supervisor`] provides a lightweight task supervisor to manage
 launched threads.
+
