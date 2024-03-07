@@ -12,20 +12,20 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: cargo test
-        uses: actions/checkout@v3
         run: cargo test --verbose --locked --all-features --all-targets
   fmt:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: cargo fmt
-        uses: actions/checkout@v3
         run: cargo fmt --check
   clippy:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: cargo clippy
-        uses: actions/checkout@v3
         run: |
           cargo clippy -- -W clippy::all -W clippy::pedantic \
           -A clippy::used-underscore-binding \
