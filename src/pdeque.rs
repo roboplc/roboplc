@@ -44,6 +44,8 @@ where
     ///
     /// Returns the value back if there is no capacity even after all [`DataDeliveryPolicy`]
     /// rules have been applied
+    ///
+    /// Note: expired values are dropped and the operation returns: pushed=true
     pub fn try_push(&mut self, value: T) -> TryPushOutput<T> {
         macro_rules! push {
             () => {{
@@ -56,6 +58,12 @@ where
                     value: None,
                 }
             }};
+        }
+        if value.is_expired() {
+            return TryPushOutput {
+                pushed: true,
+                value: None,
+            };
         }
         if value.is_delivery_policy_single() {
             self.data.retain(|d| !d.eq_kind(&value) && !d.is_expired());
