@@ -1,25 +1,31 @@
-name: Rust
+name: Rust check
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Cargo test
-        run: cargo test --verbose
+        run: cargo test --verbose --locked --all-features --all-targets
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
       - name: Cargo fmt
         run: cargo fmt --check
-      - name: cargo machete
-        run: cargo machete
+  clippy:
+    runs-on: ubuntu-latest
       - name: clippy
         run: |
           cargo clippy -- -W clippy::all -W clippy::pedantic \
