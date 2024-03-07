@@ -1,8 +1,9 @@
+use std::future::Future;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
 
-use crate::pchannel::{self, Receiver, Sender};
+use crate::pchannel_async::{self, Receiver, Sender};
 use crate::{DataDeliveryPolicy, Error, Result};
 
 type ConditionFunction<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;
@@ -11,7 +12,7 @@ pub const DEFAULT_PRIORITY: usize = 100;
 
 pub const DEFAULT_CHANNEL_CAPACITY: usize = 1024;
 
-/// Sync data communcation hub to implement in-process pub/sub model for thread workers
+/// Async data communcation hub to implement in-process pub/sub model for thread workers
 pub struct Hub<T: DataDeliveryPolicy + Clone> {
     inner: Arc<Mutex<HubInner<T>>>,
 }
@@ -47,10 +48,10 @@ impl<T: DataDeliveryPolicy + Clone> Hub<T> {
     /// # Panics
     ///
     /// Should not panic
-    pub fn send(&self, message: T) {
+    pub async fn send(&self, message: T) {
         macro_rules! send {
             ($sub: expr, $msg: expr) => {
-                let _ = $sub.tx.send($msg);
+                let _ = $sub.tx.send($msg).await;
             };
         }
         // clones matching subscribers to keep the internal mutex unlocked and avoid deadlocks
@@ -83,13 +84,13 @@ impl<T: DataDeliveryPolicy + Clone> Hub<T> {
     /// # Panics
     ///
     /// Should not panic
-    pub fn send_checked<F>(&self, message: T, error_handler: F) -> Result<()>
+    pub async fn send_checked<F>(&self, message: T, error_handler: F) -> Result<()>
     where
         F: Fn(&str, &Error) -> bool,
     {
         macro_rules! send_checked {
             ($sub: expr, $msg: expr) => {
-                if let Err(e) = $sub.tx.send($msg) {
+                if let Err(e) = $sub.tx.send($msg).await {
                     if !error_handler(&$sub.name, &e) {
                         return Err(Error::HubSend(e.into()));
                     }
@@ -122,7 +123,7 @@ impl<T: DataDeliveryPolicy + Clone> Hub<T> {
     ///
     /// If attempting to receive a message from such client, [`Error::ChannelClosed`] is returned
     pub fn sender(&self) -> Client<T> {
-        let (_, rx) = pchannel::bounded(1);
+        let (_, rx) = pchannel_async::bounded(1);
         Client {
             name: "".into(),
             hub: self.clone(),
@@ -148,9 +149,9 @@ impl<T: DataDeliveryPolicy + Clone> Hub<T> {
             .capacity
             .unwrap_or(inner.default_channel_capacity);
         let (tx, rx) = if client_options.ordering {
-            pchannel::ordered(capacity)
+            pchannel_async::ordered(capacity)
         } else {
-            pchannel::bounded(capacity)
+            pchannel_async::bounded(capacity)
         };
         inner
             .subscriptions
@@ -197,21 +198,25 @@ pub struct Client<T: DataDeliveryPolicy + Clone> {
 
 impl<T: DataDeliveryPolicy + Clone> Client<T> {
     /// Sends a message to hub-subscribed clients, ignores send errors
-    pub fn send(&self, message: T) {
-        self.hub.send(message);
+    pub fn send(&self, message: T) -> impl Future<Output = ()> + '_ {
+        self.hub.send(message)
     }
     /// Sends a message to subscribed clients, calls an error handlers function in case of errors
     /// with some subsciber
     ///
     /// If the error function returns false, the whole operation is aborted
-    pub fn send_checked<F>(&self, message: T, error_handler: F) -> Result<()>
+    pub fn send_checked<'a, F>(
+        &'a self,
+        message: T,
+        error_handler: F,
+    ) -> impl Future<Output = Result<()>> + 'a
     where
-        F: Fn(&str, &Error) -> bool,
+        F: Fn(&str, &Error) -> bool + 'a,
     {
         self.hub.send_checked(message, error_handler)
     }
     /// Receives a message from the hub (blocking)
-    pub fn recv(&self) -> Result<T> {
+    pub fn recv(&self) -> impl Future<Output = Result<T>> + '_ {
         self.rx.recv()
     }
     /// Receives a message from the hub (non-blocking)
@@ -287,12 +292,6 @@ impl<T: DataDeliveryPolicy + Clone> ClientOptions<T> {
 ///
 /// let condition_fn = event_matches!(Message::Temperature(_) | (Message::Flush));
 /// ```
-#[macro_export]
-macro_rules! event_matches {
-    ($m: pat) => {
-        |msg| matches!(msg, $m)
-    };
-}
 
 struct Subscription<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
@@ -316,8 +315,8 @@ mod test {
 
     impl DataDeliveryPolicy for Message {}
 
-    #[test]
-    fn test_hub() {
+    #[tokio::test]
+    async fn test_hub() {
         let hub = Hub::<Message>::new().set_default_channel_capacity(20);
         let sender = hub.sender();
         let recv = hub
@@ -327,9 +326,9 @@ mod test {
             )
             .unwrap();
         for _ in 0..10 {
-            sender.send(Message::Temperature(1.0));
-            sender.send(Message::Humidity(2.0));
-            sender.send(Message::Test);
+            sender.send(Message::Temperature(1.0)).await;
+            sender.send(Message::Humidity(2.0)).await;
+            sender.send(Message::Test).await;
         }
         let mut c = 0;
         while let Ok(msg) = recv.try_recv() {

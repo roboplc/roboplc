@@ -5,8 +5,10 @@ use thread_rt::{RTParams, Scheduling};
 
 /// Event buffers
 pub mod buf;
-/// In-process data communication pub/sub hub
+/// In-process data communication pub/sub hub, synchronous edition
 pub mod hub;
+/// In-process data communication pub/sub hub, asynchronous edition
+pub mod hub_async;
 /// Policy-based channels, synchronous edition
 pub mod pchannel;
 /// Policy-based channels, asynchronous edition
