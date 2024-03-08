@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: cargo clippy
         run: |
-          cargo clippy -- -W clippy::all -W clippy::pedantic \
+          cargo clippy --all-targets -- -W clippy::all -W clippy::pedantic \
           -A clippy::used-underscore-binding \
           -A clippy::doc_markdown \
           -A clippy::needless_pass_by_value \
