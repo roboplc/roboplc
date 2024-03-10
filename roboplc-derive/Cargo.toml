@@ -1,0 +1,19 @@
+[package]
+name = "roboplc-derive"
+version = "0.1.0"
+edition = "2021"
+authors = ["Serhij S. <div@altertech.com>"]
+license = "Apache-2.0"
+description = "Derive macros for RoboPLC"
+repository = "https://github.com/eva-ics/roboplc"
+keywords = ["realtime", "robots", "plc", "industrial"]
+readme = "README.md"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+darling = "0.13.0"

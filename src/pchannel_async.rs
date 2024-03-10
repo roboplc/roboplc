@@ -484,7 +484,7 @@ mod test {
             for _ in 0..10 {
                 tx.send(Message::Test(123)).await.unwrap();
                 if let Err(e) = tx.send(Message::Spam).await {
-                    assert!(e.is_skipped(), "{}", e);
+                    assert!(e.is_data_skipped(), "{}", e);
                 }
                 tx.send(Message::Temperature(123.0)).await.unwrap();
             }
@@ -508,7 +508,7 @@ mod test {
             for _ in 0..10 {
                 tx.send(Message::Test(123)).await.unwrap();
                 if let Err(e) = tx.send(Message::Spam).await {
-                    assert!(e.is_skipped(), "{}", e);
+                    assert!(e.is_data_skipped(), "{}", e);
                 }
                 tx.send(Message::Temperature(123.0)).await.unwrap();
             }

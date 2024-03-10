@@ -5,7 +5,16 @@ use parking_lot::Mutex;
 use crate::pchannel::{self, Receiver, Sender};
 use crate::{DataDeliveryPolicy, Error, Result};
 
+use self::prelude::DataChannel;
+
 type ConditionFunction<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;
+
+pub mod prelude {
+    pub use super::Hub;
+    pub use crate::event_matches;
+    pub use crate::pchannel::DataChannel;
+    pub use crate::{DataDeliveryPolicy, DeliveryPolicy};
+}
 
 pub const DEFAULT_PRIORITY: usize = 100;
 
@@ -186,6 +195,44 @@ where
             default_channel_capacity: DEFAULT_CHANNEL_CAPACITY,
             subscriptions: <_>::default(),
         }
+    }
+}
+
+impl<T> DataChannel<T> for Hub<T>
+where
+    T: DataDeliveryPolicy + Clone,
+{
+    fn send(&self, message: T) -> Result<()> {
+        self.send(message);
+        Ok(())
+    }
+    fn recv(&self) -> Result<T> {
+        Err(Error::Unimplemented)
+    }
+    fn try_recv(&self) -> Result<T> {
+        Err(Error::Unimplemented)
+    }
+    fn try_send(&self, _message: T) -> Result<()> {
+        Err(Error::Unimplemented)
+    }
+}
+
+impl<T> DataChannel<T> for Client<T>
+where
+    T: DataDeliveryPolicy + Clone,
+{
+    fn send(&self, message: T) -> Result<()> {
+        self.send(message);
+        Ok(())
+    }
+    fn recv(&self) -> Result<T> {
+        self.recv()
+    }
+    fn try_recv(&self) -> Result<T> {
+        self.try_recv()
+    }
+    fn try_send(&self, _message: T) -> Result<()> {
+        Err(Error::Unimplemented)
     }
 }
 

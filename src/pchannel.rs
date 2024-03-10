@@ -4,6 +4,59 @@ use crate::{pdeque::Deque, DataDeliveryPolicy, Error, Result};
 use object_id::UniqueId;
 use parking_lot::{Condvar, Mutex};
 
+/// An abstract trait for data channels and hubs
+pub trait DataChannel<T: DataDeliveryPolicy> {
+    fn send(&self, value: T) -> Result<()>;
+    fn try_send(&self, value: T) -> Result<()>;
+    fn recv(&self) -> Result<T>;
+    fn try_recv(&self) -> Result<T>;
+    fn is_alive(&self) -> bool {
+        true
+    }
+}
+
+impl<T> DataChannel<T> for Sender<T>
+where
+    T: DataDeliveryPolicy,
+{
+    fn send(&self, value: T) -> Result<()> {
+        self.send(value)
+    }
+    fn try_send(&self, value: T) -> Result<()> {
+        self.try_send(value)
+    }
+    fn try_recv(&self) -> Result<T> {
+        Err(Error::Unimplemented)
+    }
+    fn recv(&self) -> Result<T> {
+        Err(Error::Unimplemented)
+    }
+    fn is_alive(&self) -> bool {
+        self.is_alive()
+    }
+}
+
+impl<T> DataChannel<T> for Receiver<T>
+where
+    T: DataDeliveryPolicy,
+{
+    fn send(&self, _value: T) -> Result<()> {
+        Err(Error::Unimplemented)
+    }
+    fn try_send(&self, _value: T) -> Result<()> {
+        Err(Error::Unimplemented)
+    }
+    fn try_recv(&self) -> Result<T> {
+        self.try_recv()
+    }
+    fn recv(&self) -> Result<T> {
+        self.recv()
+    }
+    fn is_alive(&self) -> bool {
+        self.is_alive()
+    }
+}
+
 struct Channel<T: DataDeliveryPolicy>(Arc<ChannelInner<T>>);
 
 impl<T: DataDeliveryPolicy> Channel<T> {
@@ -319,7 +372,7 @@ mod test {
             for _ in 0..10 {
                 tx.send(Message::Test(123)).unwrap();
                 if let Err(e) = tx.send(Message::Spam) {
-                    assert!(e.is_skipped(), "{}", e);
+                    assert!(e.is_data_skipped(), "{}", e);
                 }
                 tx.send(Message::Temperature(123.0)).unwrap();
             }
@@ -343,7 +396,7 @@ mod test {
             for _ in 0..10 {
                 tx.send(Message::Test(123)).unwrap();
                 if let Err(e) = tx.send(Message::Spam) {
-                    assert!(e.is_skipped(), "{}", e);
+                    assert!(e.is_data_skipped(), "{}", e);
                 }
                 tx.send(Message::Temperature(123.0)).unwrap();
             }

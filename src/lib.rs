@@ -1,14 +1,23 @@
 #![ doc = include_str!( concat!( env!( "CARGO_MANIFEST_DIR" ), "/", "README.md" ) ) ]
-use std::{mem, sync::Arc, time::Duration};
+use core::{fmt, num};
+use std::{mem, str::FromStr, sync::Arc, time::Duration};
 
 use thread_rt::{RTParams, Scheduling};
 
+pub use roboplc_derive::DataPolicy;
+
 /// Event buffers
 pub mod buf;
+/// Reliable TCP/Serial communications
+pub mod comm;
+/// Controller and workers
+pub mod controller;
 /// In-process data communication pub/sub hub, synchronous edition
 pub mod hub;
 /// In-process data communication pub/sub hub, asynchronous edition
 pub mod hub_async;
+/// I/O
+pub mod io;
 /// Policy-based channels, synchronous edition
 pub mod pchannel;
 /// Policy-based channels, asynchronous edition
@@ -60,6 +69,14 @@ pub enum Error {
     SupervisorDuplicateTask,
     #[error("Task not found")]
     SupervisorTaskNotFound,
+    #[error("Invalid data")]
+    InvalidData(String),
+    #[error("binrw {0}")]
+    BinRw(String),
+    #[error("not implemented")]
+    Unimplemented,
+    #[error("never happens")]
+    Infallible(#[from] std::convert::Infallible),
 }
 
 macro_rules! impl_error {
@@ -73,11 +90,18 @@ macro_rules! impl_error {
 }
 
 impl_error!(std::io::Error, IO);
+impl_error!(rmodbus::ErrorKind, IO);
 impl_error!(oneshot::RecvError, IO);
+impl_error!(num::ParseIntError, InvalidData);
+impl_error!(num::ParseFloatError, InvalidData);
+impl_error!(binrw::Error, BinRw);
 
 impl Error {
-    pub fn is_skipped(&self) -> bool {
+    pub fn is_data_skipped(&self) -> bool {
         matches!(self, Error::ChannelSkipped)
+    }
+    pub fn invalid_data<S: fmt::Display>(msg: S) -> Self {
+        Error::InvalidData(msg.to_string())
     }
 }
 
@@ -95,6 +119,35 @@ pub enum DeliveryPolicy {
     SingleOptional,
 }
 
+impl FromStr for DeliveryPolicy {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s.to_lowercase().as_str() {
+            "always" => Ok(DeliveryPolicy::Always),
+            "optional" => Ok(DeliveryPolicy::Optional),
+            "single" => Ok(DeliveryPolicy::Single),
+            "single-optional" => Ok(DeliveryPolicy::SingleOptional),
+            _ => Err(Error::invalid_data(s)),
+        }
+    }
+}
+
+impl fmt::Display for DeliveryPolicy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                DeliveryPolicy::Always => "always",
+                DeliveryPolicy::Optional => "optional",
+                DeliveryPolicy::Single => "single",
+                DeliveryPolicy::SingleOptional => "single-optional",
+            }
+        )
+    }
+}
+
 /// Implements delivery policies for own data types
 pub trait DataDeliveryPolicy
 where
@@ -106,7 +159,7 @@ where
     }
     /// Priority, for ordered
     fn priority(&self) -> usize {
-        0
+        100
     }
     /// Has equal kind with other
     ///
@@ -151,4 +204,17 @@ pub fn suicide(delay: Duration, warn: bool) {
             thread_rt::suicide_myself(delay, warn);
         });
     };
+}
+
+pub mod prelude {
+    pub use super::suicide;
+    pub use crate::controller::*;
+    pub use crate::hub::prelude::*;
+    pub use crate::io::prelude::*;
+    pub use crate::supervisor::prelude::*;
+    pub use crate::time::DurationRT;
+    pub use crate::ttlcell::TtlCell;
+    pub use bma_ts::{Monotonic, Timestamp};
+    pub use roboplc_derive::DataPolicy;
+    pub use std::time::Duration;
 }

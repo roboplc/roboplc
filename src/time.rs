@@ -21,12 +21,24 @@ impl DurationRT for Duration {
     }
 }
 
+pub fn interval(period: Duration) -> Interval {
+    Interval::new(period)
+}
+
 /// A synchronous interval helper, similar to
 /// <https://docs.rs/tokio/latest/tokio/time/struct.Interval.html>
 pub struct Interval {
     next_tick: Option<Monotonic>,
     period: Duration,
     missing_tick_behavior: MissedTickBehavior,
+}
+
+impl Iterator for Interval {
+    type Item = bool;
+
+    fn next(&mut self) -> Option<bool> {
+        Some(self.tick())
+    }
 }
 
 impl Interval {

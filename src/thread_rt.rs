@@ -96,20 +96,28 @@ impl Builder {
         self.rt_params = rt_params;
         self
     }
-    fn into_thread_builder_name_and_params(self) -> (thread::Builder, String, RTParams, bool) {
+    fn try_into_thread_builder_name_and_params(
+        self,
+    ) -> Result<(thread::Builder, String, RTParams, bool)> {
         let mut builder = thread::Builder::new();
         if let Some(ref name) = self.name {
+            if name.len() > 15 {
+                return Err(Error::invalid_data(format!(
+                    "Thread name '{}' is too long (max 15 characters)",
+                    name
+                )));
+            }
             builder = builder.name(name.to_owned());
         }
         if let Some(stack_size) = self.stack_size {
             builder = builder.stack_size(stack_size);
         }
-        (
+        Ok((
             builder,
             self.name.unwrap_or_default(),
             self.rt_params,
             self.park_on_errors,
-        )
+        ))
     }
     /// Spawns a task
     ///
@@ -122,7 +130,8 @@ impl Builder {
         F: FnOnce() -> T + Send + 'static,
         T: Send + 'static,
     {
-        let (builder, name, rt_params, park_on_errors) = self.into_thread_builder_name_and_params();
+        let (builder, name, rt_params, park_on_errors) =
+            self.try_into_thread_builder_name_and_params()?;
         let (tx, rx) = oneshot::channel();
         let handle = builder.spawn(move || {
             thread_init_internal(tx, park_on_errors);
@@ -171,7 +180,8 @@ impl Builder {
         F: FnOnce() -> T + Send + 'scope,
         T: Send + 'scope,
     {
-        let (builder, name, rt_params, park_on_errors) = self.into_thread_builder_name_and_params();
+        let (builder, name, rt_params, park_on_errors) =
+            self.try_into_thread_builder_name_and_params()?;
         let (tx, rx) = oneshot::channel();
         let handle = builder.spawn_scoped(scope, move || {
             thread_init_internal(tx, park_on_errors);
@@ -347,6 +357,12 @@ impl RTParams {
     /// Sets thread scheduling policy (can be used as build pattern)
     pub fn set_scheduling(mut self, scheduling: Scheduling) -> Self {
         self.scheduling = scheduling;
+        if scheduling == Scheduling::FIFO
+            || scheduling == Scheduling::RoundRobin
+            || scheduling == Scheduling::DeadLine && self.priority.is_none()
+        {
+            self.priority = Some(1);
+        }
         self
     }
     /// Sets thread priority (can be used as build pattern)

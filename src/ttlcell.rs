@@ -1,11 +1,48 @@
 use bma_ts::Monotonic;
+use core::fmt;
 use std::{ops::Deref, time::Duration};
 
-/// A memory cell with an expiring value with API similar to the standard [`Option`]
+/// A memory ce;ll with an expiring value with API similar to the standard [`Option`]
 pub struct TtlCell<T> {
     value: Option<T>,
     ttl: Duration,
     set_at: Monotonic,
+}
+
+impl<T> fmt::Debug for TtlCell<T>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.as_ref() {
+            Some(v) => write!(f, "Some({:?})", v),
+            None => write!(f, "None"),
+        }
+    }
+}
+
+impl<T> PartialEq for TtlCell<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.as_ref() == other.as_ref()
+    }
+}
+
+impl<T> Eq for TtlCell<T> where T: Eq {}
+
+impl<T> Clone for TtlCell<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            value: self.value.clone(),
+            ttl: self.ttl,
+            set_at: self.set_at,
+        }
+    }
 }
 
 impl<T> TtlCell<T> {
