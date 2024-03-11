@@ -80,3 +80,20 @@ affinity (Linux only).
 [`supervisor::Supervisor`] provides a lightweight task supervisor to manage
 launched threads.
 
+## Controller
+
+[`controller::Controller`] is the primary component of mixing up all the
+functionality together.
+
+<img
+src="https://raw.githubusercontent.com/eva-ics/roboplc/main/schemas/controller.png"
+width="550" />
+
+## I/O
+
+[`io`] module provides a set of tools to work with field devices and SCADA
+buses.
+
+Currently supported:
+
+* Modbus (RTU/TCP) via [`io::modbus`]
