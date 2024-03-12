@@ -14,9 +14,11 @@ use crate::{
     DataDeliveryPolicy, Error,
 };
 use parking_lot::Mutex;
+pub use roboplc_derive::WorkerOpts;
 
 pub mod prelude {
     pub use super::{Context, Controller, Worker, WorkerOptions};
+    pub use roboplc_derive::WorkerOpts;
 }
 
 const SLEEP_SLEEP: Duration = Duration::from_millis(100);
