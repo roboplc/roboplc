@@ -3,6 +3,41 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Lit, Meta, MetaNameValue, NestedMeta};
 
+/// Automatically implements the `DataDeliveryPolicy` trait for an enum
+///
+/// Atrributes (should be spcified for each enum variant):
+///
+/// * `data_delivery` - Specifies the delivery policy for a variant. The value can be one of the
+/// following: `single`, `single_optional`, `optional`, `always`. If not specified, the default is
+/// *always*.
+///
+/// * `data_priority` - Specifies the priority for a variant, lower is better. The value must be an
+/// integer. If not specified, the default is *100*.
+///
+/// * `data_expires` - Specifies if the data expires. The value must be a function that returns
+/// boolean. If not specified, the default is *false* (i.e. data does not expire). For named
+/// associated data, the source MUST be stored in `value` field.
+///
+/// Example:
+///
+/// ```rust
+/// use roboplc::DataPolicy;
+/// use roboplc::ttlcell::TtlCell;
+///
+/// #[derive(DataPolicy)]
+/// enum MyEnum {
+///    #[data_delivery(single)]
+///    #[data_priority(10)]
+///    #[data_expires(TtlCell::is_expired)]
+///    SensorData(TtlCell<f32>),
+///    #[data_delivery(optional)]
+///    DatabaseTelemetry(f32),
+///    // the default one, can be omitted
+///    #[data_delivery(always)]
+///    Shutdown,
+/// }
+/// ```
+///
 /// # Panics
 ///
 /// Will panic on parse errors
@@ -175,6 +210,47 @@ fn parse_delivery_policy(s: Option<&str>) -> proc_macro2::TokenStream {
     }
 }
 
+/// Automatically implements the `WorkerOptions` trait for a worker struct
+///
+/// Provides an attribute #[worker_opts] to specify the worker options. The attribute can be
+/// specifieid multiple times.
+///
+/// Atrribute arguments:
+///
+/// * `name` - Specifies the name of the worker. The value is mandatory and must be a quoted
+/// string. The name must be unique and must be 15 characters or less.
+///
+/// * `stack_size` - Specifies the stack size for the worker
+///
+/// * `scheduling` - Specifies the scheduling policy for the worker. The value can be one of the:
+/// `roundrobin`, `fifo`, `idle`, `batch`, `deadline`, `normal`. If not specified, the default is
+/// `normal`.
+///
+/// * `priority` - Specifies the real-time priority for the worker, higher is better. If specified,
+/// the scheduling policy must be `fifo`, `roundrobin` or `deadline`.
+///
+/// * `cpu` - Specifies the CPU affinity for the worker. The value can be a single CPU number or a
+/// range of CPUs separated by a dash. The value can be a quoted string or an integer.
+///
+/// Example:
+///
+/// ```rust
+/// use roboplc::controller::prelude::*;
+///
+/// #[derive(WorkerOpts)]
+/// #[worker_opts(name = "my_worker", stack_size = 8192, scheduling = "fifo", priority = 80, cpu = "0-3")]
+/// struct MyWorker {
+///  // some fields
+/// }
+///
+/// #[derive(WorkerOpts)]
+/// #[worker_opts(name = "my_worker2", scheduling = "fifo", priority = 80, cpu = 1)]
+/// struct MyWorker2 {
+///  // some fields
+/// }
+/// ```
+///
+///
 /// # Panics
 ///
 /// Will panic if the worker name is not specified or is invalid
@@ -298,7 +374,7 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
         quote! {}
     };
     let expanded = quote! {
-        impl WorkerOptions for #name {
+        impl ::roboplc::controller::WorkerOptions for #name {
             fn worker_name(&self) -> &str {
                 #worker_name
             }

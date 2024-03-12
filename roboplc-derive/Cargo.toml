@@ -1,6 +1,6 @@
 [package]
 name = "roboplc-derive"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -17,3 +17,6 @@ syn = { version = "1.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0"
 darling = "0.13.0"
+
+[dev-dependencies]
+roboplc = "0.1"
