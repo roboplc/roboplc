@@ -206,6 +206,8 @@ pub fn suicide(delay: Duration, warn: bool) {
     };
 }
 
+impl DataDeliveryPolicy for usize {}
+
 pub mod prelude {
     pub use super::suicide;
     pub use crate::controller::*;
