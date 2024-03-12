@@ -85,7 +85,8 @@ where
 struct ChannelInner<T: DataDeliveryPolicy> {
     id: UniqueId,
     pc: Mutex<PolicyChannel<T>>,
-    available: Condvar,
+    data_available: Condvar,
+    space_available: Condvar,
 }
 
 impl<T: DataDeliveryPolicy> ChannelInner<T> {
@@ -96,7 +97,7 @@ impl<T: DataDeliveryPolicy> ChannelInner<T> {
         }
         let push_result = pc.queue.try_push(value);
         if push_result.value.is_none() {
-            self.available.notify_one();
+            self.data_available.notify_one();
             if push_result.pushed {
                 Ok(())
             } else {
@@ -117,9 +118,9 @@ impl<T: DataDeliveryPolicy> ChannelInner<T> {
                 break push_result.pushed;
             };
             value = val;
-            self.available.wait(&mut pc);
+            self.space_available.wait(&mut pc);
         };
-        self.available.notify_one();
+        self.data_available.notify_one();
         if pushed {
             Ok(())
         } else {
@@ -130,18 +131,18 @@ impl<T: DataDeliveryPolicy> ChannelInner<T> {
         let mut pc = self.pc.lock();
         loop {
             if let Some(val) = pc.queue.get() {
-                self.available.notify_one();
+                self.space_available.notify_one();
                 return Ok(val);
             } else if pc.senders == 0 {
                 return Err(Error::ChannelClosed);
             }
-            self.available.wait(&mut pc);
+            self.data_available.wait(&mut pc);
         }
     }
     fn try_recv(&self) -> Result<T> {
         let mut pc = self.pc.lock();
         if let Some(val) = pc.queue.get() {
-            self.available.notify_one();
+            self.space_available.notify_one();
             Ok(val)
         } else if pc.senders == 0 {
             Err(Error::ChannelClosed)
@@ -157,7 +158,8 @@ impl<T: DataDeliveryPolicy> Channel<T> {
             ChannelInner {
                 id: <_>::default(),
                 pc: Mutex::new(PolicyChannel::new(capacity, ordering)),
-                available: Condvar::new(),
+                data_available: Condvar::new(),
+                space_available: Condvar::new(),
             }
             .into(),
         )
@@ -242,7 +244,7 @@ where
         let mut pc = self.channel.0.pc.lock();
         pc.senders -= 1;
         if pc.senders == 0 {
-            self.channel.0.available.notify_all();
+            self.channel.0.data_available.notify_all();
         }
     }
 }
@@ -305,7 +307,7 @@ where
         let mut pc = self.channel.0.pc.lock();
         pc.receivers -= 1;
         if pc.receivers == 0 {
-            self.channel.0.available.notify_all();
+            self.channel.0.data_available.notify_all();
         }
     }
 }
