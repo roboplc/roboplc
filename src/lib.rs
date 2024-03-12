@@ -153,11 +153,11 @@ pub trait DataDeliveryPolicy
 where
     Self: Sized,
 {
-    /// Delivery policy
+    /// Delivery policy, the default is [`DeliveryPolicy::Always`]
     fn delivery_policy(&self) -> DeliveryPolicy {
         DeliveryPolicy::Always
     }
-    /// Priority, for ordered
+    /// Priority, for ordered, lower is better, the default is 100
     fn priority(&self) -> usize {
         100
     }

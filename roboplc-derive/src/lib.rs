@@ -212,7 +212,7 @@ fn parse_delivery_policy(s: Option<&str>) -> proc_macro2::TokenStream {
 
 /// Automatically implements the `WorkerOptions` trait for a worker struct
 ///
-/// Provides an attribute #[worker_opts] to specify the worker options. The attribute can be
+/// Provides an attribute `worker_opts` to specify the worker options. The attribute can be
 /// specifieid multiple times.
 ///
 /// Atrribute arguments:
