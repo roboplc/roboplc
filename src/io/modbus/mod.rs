@@ -164,7 +164,7 @@ impl IoMapping for ModbusMapping {
                 if data.is_empty() {
                     return Err(Error::invalid_data("invalid modbus response"));
                 }
-                let mut reader = Cursor::new(&data[1..]);
+                let mut reader = Cursor::new(data);
                 T::read_be(&mut reader).map_err(Into::into)
             }
         }
