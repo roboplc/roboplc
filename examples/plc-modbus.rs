@@ -10,7 +10,7 @@ const MODBUS_TIMEOUT: Duration = Duration::from_secs(1);
 // Do not make any decision if the sensor is older than this
 const ENV_DATA_TTL: Duration = Duration::from_millis(1);
 
-// A shared traditional PLC context
+// A shared traditional PLC context, does not used for logic here but provided as an example
 #[derive(Default)]
 struct Variables {
     temperature: f32,
@@ -110,6 +110,8 @@ impl Worker<Message, Variables> for ModbusRelays1 {
                     if let Some(s) = cell.take() {
                         info!(worker=self.worker_name(), value=%s.temperature,
                             elapsed=?cell.set_at().elapsed());
+                        // apply some logic: if temperature is above 30, turn on both fans, if
+                        // below 25, turn off both fans, otherwise do nothing (keep hysterisis)
                         let relay = if s.temperature > 30.0 {
                             Some(Relay1 { fan1: 1, fan2: 1 })
                         } else if s.temperature < 25.0 {
