@@ -3,7 +3,7 @@ use roboplc::{
     time::interval,
 };
 use roboplc::{io::modbus::prelude::*, prelude::*};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 const MODBUS_TIMEOUT: Duration = Duration::from_secs(1);
 
@@ -35,7 +35,7 @@ struct Relay1 {
 enum Message {
     #[data_delivery(single)]
     #[data_expires(TtlCell::is_expired)]
-    SensorData(TtlCell<EnvironmentSensors>),
+    EnvSensorData(TtlCell<EnvironmentSensors>),
 }
 
 // First worker, to pull data from Modbus
@@ -44,8 +44,13 @@ enum Message {
 struct ModbusPuller1 {
     sensor_mapping: ModbusMapping,
 }
+
 impl ModbusPuller1 {
     fn create(modbus_client: &Client) -> Result<Self, Box<dyn std::error::Error>> {
+        // creates a Modbus register mapping for a structure
+        // Modbus registers do not need to be parsed manually
+        // RoboPLC fieldbus mappings use [binrw](https://crates.io/crates/binrw) crate for
+        // automatic parsing
         let sensor_mapping = ModbusMapping::create(modbus_client, 2, "h0", 2)?;
         Ok(Self { sensor_mapping })
     }
@@ -55,15 +60,13 @@ impl ModbusPuller1 {
 // controller context
 impl Worker<Message, Variables> for ModbusPuller1 {
     fn run(&mut self, context: &Context<Message, Variables>) {
-        let hc = context
-            .hub()
-            .register(self.worker_name(), event_matches!(Message::SensorData(_)))
-            .unwrap();
+        // this worker does not need to be subscribed to any events
+        let hub = context.hub();
         for _ in interval(Duration::from_millis(500)) {
             match self.sensor_mapping.read::<EnvironmentSensors>() {
                 Ok(v) => {
                     context.variables().lock().temperature = v.temperature;
-                    hc.send(Message::SensorData(TtlCell::new_with_value(
+                    hub.send(Message::EnvSensorData(TtlCell::new_with_value(
                         ENV_DATA_TTL,
                         v,
                     )));
@@ -92,13 +95,18 @@ impl ModbusRelays1 {
 
 impl Worker<Message, Variables> for ModbusRelays1 {
     fn run(&mut self, context: &Context<Message, Variables>) {
+        // this worker needs to be subscribed to EnvSensorData kind of events
         let hc = context
             .hub()
-            .register(self.worker_name(), event_matches!(Message::SensorData(_)))
+            .register(
+                self.worker_name(),
+                event_matches!(Message::EnvSensorData(_)),
+            )
             .unwrap();
         while let Ok(msg) = hc.recv() {
             match msg {
-                Message::SensorData(mut cell) => {
+                Message::EnvSensorData(mut cell) => {
+                    // if data is not expired
                     if let Some(s) = cell.take() {
                         info!(worker=self.worker_name(), value=%s.temperature,
                             elapsed=?cell.set_at().elapsed());
@@ -114,6 +122,10 @@ impl Worker<Message, Variables> for ModbusRelays1 {
                                 error!(worker=self.worker_name(), err=%e, "Modbus send error");
                             }
                         }
+                    } else {
+                        // Should never happen as policy channels do not deliver expired data if
+                        // the policy specifies an expiration condition
+                        warn!(worker=self.worker_name(), elapsed=?cell.set_at().elapsed(), "Expired data");
                     }
                 }
             }
@@ -123,16 +135,23 @@ impl Worker<Message, Variables> for ModbusRelays1 {
 
 // Main function, to start the controller and workers
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // sets the simulated mode for the real-time module, do not set any thread real-time parameters
     roboplc::thread_rt::set_simulated();
+    // initializes a debug logger
     env_logger::builder()
         .filter_level(log::LevelFilter::Info)
         .init();
-    let modbus_tcp_client = tcp::connect("10.90.34.111:5505", MODBUS_TIMEOUT)?;
+    // creates a controller instance
     let mut controller: Controller<Message, Variables> = Controller::new();
+    // creates a reliable auto-reconnecting shared TCP port connection
+    let modbus_tcp_client = tcp::connect("10.90.34.111:5505", MODBUS_TIMEOUT)?;
+    // creates the first worker and spawns it
     let worker = ModbusPuller1::create(&modbus_tcp_client)?;
     controller.spawn_worker(worker)?;
+    // creates the second worker and spawns it
     let worker = ModbusRelays1::create(&modbus_tcp_client)?;
     controller.spawn_worker(worker)?;
+    // block the main thread until the controller is in the online state
     controller.block_while_online();
     Ok(())
 }

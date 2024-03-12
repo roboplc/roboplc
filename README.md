@@ -9,6 +9,10 @@ your own risk!
 RoboPLC is a part of [EVA ICS](https://www.eva-ics.com/) industrial
 automation platform.
 
+## Examples
+
+Can be found at <https://github.com/eva-ics/roboplc/tree/main/examples>
+
 ## DataBuffer
 
 [`buf::DataBuffer`] covers a typical data exchange pattern when data
