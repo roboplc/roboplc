@@ -242,6 +242,16 @@ pub struct Client<T: DataDeliveryPolicy + Clone> {
     rx: Receiver<T>,
 }
 
+impl<T> Iterator for Client<T>
+where
+    T: DataDeliveryPolicy + Clone,
+{
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.recv().ok()
+    }
+}
+
 impl<T: DataDeliveryPolicy + Clone> Client<T> {
     /// Sends a message to hub-subscribed clients, ignores send errors
     pub fn send(&self, message: T) {

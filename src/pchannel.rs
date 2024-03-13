@@ -257,6 +257,16 @@ where
     channel: Channel<T>,
 }
 
+impl<T> Iterator for Receiver<T>
+where
+    T: DataDeliveryPolicy,
+{
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.recv().ok()
+    }
+}
+
 impl<T> Receiver<T>
 where
     T: DataDeliveryPolicy,

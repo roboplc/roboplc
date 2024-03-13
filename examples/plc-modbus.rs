@@ -103,7 +103,7 @@ impl Worker<Message, Variables> for ModbusRelays1 {
                 event_matches!(Message::EnvSensorData(_)),
             )
             .unwrap();
-        while let Ok(msg) = hc.recv() {
+        for msg in hc {
             match msg {
                 Message::EnvSensorData(mut cell) => {
                     // if data is not expired
