@@ -59,13 +59,13 @@ impl ModbusPuller1 {
 // A worker implementation, contains a single function to run which has got access to the
 // controller context
 impl Worker<Message, Variables> for ModbusPuller1 {
-    fn run(&mut self, context: &Context<Message, Variables>) {
+    fn run(&mut self, context: &Context<Message, Variables>) -> WResult {
         // this worker does not need to be subscribed to any events
         let hub = context.hub();
         for _ in interval(Duration::from_millis(500)) {
             match self.sensor_mapping.read::<EnvironmentSensors>() {
                 Ok(v) => {
-                    context.variables().lock().temperature = v.temperature;
+                    context.variables().write().temperature = v.temperature;
                     hub.send(Message::EnvSensorData(TtlCell::new_with_value(
                         ENV_DATA_TTL,
                         v,
@@ -76,6 +76,7 @@ impl Worker<Message, Variables> for ModbusPuller1 {
                 }
             }
         }
+        Ok(())
     }
 }
 
@@ -94,7 +95,7 @@ impl ModbusRelays1 {
 }
 
 impl Worker<Message, Variables> for ModbusRelays1 {
-    fn run(&mut self, context: &Context<Message, Variables>) {
+    fn run(&mut self, context: &Context<Message, Variables>) -> WResult {
         // this worker needs to be subscribed to EnvSensorData kind of events
         let hc = context
             .hub()
@@ -132,6 +133,7 @@ impl Worker<Message, Variables> for ModbusRelays1 {
                 }
             }
         }
+        Ok(())
     }
 }
 

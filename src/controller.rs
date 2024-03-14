@@ -13,13 +13,16 @@ use crate::{
     thread_rt::{Builder, RTParams, Scheduling},
     DataDeliveryPolicy, Error,
 };
-use parking_lot::Mutex;
+use parking_lot::RwLock;
 pub use roboplc_derive::WorkerOpts;
+use tracing::error;
 
 pub mod prelude {
-    pub use super::{Context, Controller, Worker, WorkerOptions};
+    pub use super::{Context, Controller, WResult, Worker, WorkerOptions};
     pub use roboplc_derive::WorkerOpts;
 }
+
+pub type WResult = Result<(), Box<dyn std::error::Error>>;
 
 const SLEEP_SLEEP: Duration = Duration::from_millis(100);
 
@@ -89,18 +92,18 @@ impl From<i8> for StateKind {
 pub struct Controller<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
-    V: Send + 'static,
+    V: Send + Sync + 'static,
 {
     supervisor: Supervisor<()>,
     hub: Hub<D>,
     state: State,
-    variables: Arc<Mutex<V>>,
+    variables: Arc<RwLock<V>>,
 }
 
 impl<D, V> Controller<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
-    V: Send + 'static,
+    V: Send + Sync + 'static,
 {
     /// Creates a new controller instance, variables MUST implement [`Default`] trait
     pub fn new() -> Self
@@ -123,7 +126,7 @@ where
             supervisor: <_>::default(),
             hub: <_>::default(),
             state: State::new(),
-            variables: Arc::new(Mutex::new(variables)),
+            variables: Arc::new(RwLock::new(variables)),
         }
     }
     /// Spawns a worker
@@ -146,7 +149,9 @@ where
             builder = builder.stack_size(stack_size);
         }
         self.supervisor.spawn(builder, move || {
-            worker.run(&context);
+            if let Err(e) = worker.run(&context) {
+                error!(worker=worker.worker_name(), error=%e, "worker terminated");
+            }
         })?;
         Ok(())
     }
@@ -194,7 +199,7 @@ where
         &self.supervisor
     }
     /// Controller shared variables
-    pub fn variables(&self) -> &Arc<Mutex<V>> {
+    pub fn variables(&self) -> &Arc<RwLock<V>> {
         &self.variables
     }
 }
@@ -202,7 +207,7 @@ where
 impl<D, V> Default for Controller<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
-    V: Send + 'static + Default,
+    V: Send + Sync + 'static + Default,
 {
     fn default() -> Self {
         Self::new()
@@ -218,7 +223,7 @@ where
 {
     hub: Hub<D>,
     state: State,
-    variables: Arc<Mutex<V>>,
+    variables: Arc<RwLock<V>>,
 }
 
 impl<D, V> Context<D, V>
@@ -231,7 +236,7 @@ where
         &self.hub
     }
     /// Controller's shared variables (locked)
-    pub fn variables(&self) -> &Arc<Mutex<V>> {
+    pub fn variables(&self) -> &Arc<RwLock<V>> {
         &self.variables
     }
     /// Controller's state
@@ -253,7 +258,7 @@ pub trait Worker<D: DataDeliveryPolicy + Clone + Send + Sync + 'static, V: Send>
     Send + Sync
 {
     /// The worker's main function, started by [`Controller::spawn_worker()`]
-    fn run(&mut self, context: &Context<D, V>);
+    fn run(&mut self, context: &Context<D, V>) -> WResult;
 }
 
 /// The trait which MUST be implemented by all workers
