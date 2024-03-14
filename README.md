@@ -70,10 +70,11 @@ Additionally, components support ordering by data priority and automatically
 drop expired data if the data type has got an expiration marker method
 implemented.
 
-Without policies applied, speed is similar to other popular channel/storage
-implementations. With policies data transfer speed can be lower, latency can
-rise, however the overall effect is significantly better as the data is
-processed directly inside a channel or a storage buffer.
+[`pchannel`] is a real-time safe channel, mean it may be not so fast as popular
+channel implementations (it may be even slower than channels provided by
+[`std::sync::mpsc`]). But it is **completely safe for real-time applications**,
+mean there are no spin loops, data is always delivered with minimal latency and
+threads do not block each other.
 
 ## Real-time
 
