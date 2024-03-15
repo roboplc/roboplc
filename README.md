@@ -102,4 +102,7 @@ buses.
 Currently supported:
 
 * Modbus (RTU/TCP) via [`io::modbus`]
+  ([Modbus PLC example](https://github.com/eva-ics/roboplc/blob/main/examples/plc-modbus.rs))
+
 * Raw UDP in/out via [`io::raw_udp`]
+  ([Raw UDP in/out example](https://github.com/eva-ics/roboplc/blob/main/examples/raw-udp.rs))
