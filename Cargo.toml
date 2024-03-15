@@ -33,12 +33,12 @@ serial = "0.4.0"
 sysinfo = "0.30.6"
 thiserror = "1.0.57"
 tracing = "0.1.40"
+signal-hook = "0.3.17"
 
 [dev-dependencies]
 env_logger = "0.11.3"
 insta = "1.36.1"
 log = "0.4.21"
-signal-hook = "0.3.17"
 tokio = { version = "1.36.0", features = ["rt", "macros", "time"] }
 tracing = { version = "0.1.40", features = ["log"] }
 

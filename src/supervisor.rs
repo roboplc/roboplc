@@ -31,8 +31,8 @@ macro_rules! vacant_entry {
         let Some(name) = $builder.name.clone() else {
             return Err(Error::SupervisorNameNotSpecified);
         };
-        let btree_map::Entry::Vacant(entry) = $self.tasks.entry(name) else {
-            return Err(Error::SupervisorDuplicateTask);
+        let btree_map::Entry::Vacant(entry) = $self.tasks.entry(name.clone()) else {
+            return Err(Error::SupervisorDuplicateTask(name));
         };
         entry
     }};

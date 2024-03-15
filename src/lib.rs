@@ -51,30 +51,43 @@ pub enum Error {
     /// Receive attempt failed because the channel is empty
     #[error("channel empty")]
     ChannelEmpty,
+    /// Hub send errors
     #[error("hub send error {0}")]
     HubSend(Box<Error>),
+    /// Hub client with the given name is already registered
     #[error("hub client already registered: {0}")]
     HubAlreadyRegistered(Arc<str>),
+    /// I/O and threading errors
     #[error("I/O error {0}")]
     IO(String),
+    /// Real-time engine error: unable to get the system thread id
     #[error("RT SYS_gettid {0}")]
     RTGetTId(libc::c_int),
+    /// Real-time engine error: unable to set the thread scheduler affinity
     #[error("RT sched_setaffinity {0}")]
     RTSchedSetAffinity(libc::c_int),
+    /// Real-time engine error: unable to set the thread scheduler policy
     #[error("RT sched_setscheduler {0}")]
     RTSchedSetSchduler(libc::c_int),
+    /// Supervisor error: task name is not specified in the thread builder
     #[error("Task name must be specified when spawning by a supervisor")]
     SupervisorNameNotSpecified,
-    #[error("Task already registered")]
-    SupervisorDuplicateTask,
+    /// Supervisor error: task with the given name is already registered
+    #[error("Task already registered: `{0}`")]
+    SupervisorDuplicateTask(String),
+    /// Supervisor error: task with the given name is not found
     #[error("Task not found")]
     SupervisorTaskNotFound,
+    /// Invalid data receied / parameters provided
     #[error("Invalid data")]
     InvalidData(String),
+    /// [binrw](https://crates.io/crates/binrw) crate errors
     #[error("binrw {0}")]
     BinRw(String),
+    /// The requested operation is not implemented
     #[error("not implemented")]
     Unimplemented,
+    /// This error never happens and is used as a compiler hint only
     #[error("never happens")]
     Infallible(#[from] std::convert::Infallible),
 }
@@ -192,11 +205,11 @@ pub fn suicide(delay: Duration, warn: bool) {
     let mut builder = thread_rt::Builder::new().name("suicide").rt_params(
         RTParams::new()
             .set_priority(99)
-            .set_scheduling(Scheduling::FIFO),
+            .set_scheduling(Scheduling::FIFO)
+            .set_cpu_ids(&[0]),
     );
     builder.park_on_errors = true;
     let res = builder.spawn(move || {
-        dbg!("realtime");
         thread_rt::suicide_myself(delay, warn);
     });
     if res.is_err() {

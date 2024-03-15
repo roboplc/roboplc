@@ -75,6 +75,9 @@ impl Worker<Message, Variables> for ModbusPuller1 {
                     error!(worker=self.worker_name(), err=%e, "Modbus pull error");
                 }
             }
+            if !context.is_online() {
+                break;
+            }
         }
         Ok(())
     }
@@ -82,7 +85,13 @@ impl Worker<Message, Variables> for ModbusPuller1 {
 
 // Second worker, to control relays
 #[derive(WorkerOpts)]
-#[worker_opts(name = "relays", cpu = 2, scheduling = "fifo", priority = 80)]
+#[worker_opts(
+    name = "relays",
+    cpu = 2,
+    scheduling = "fifo",
+    priority = 80,
+    blocking = true
+)]
 struct ModbusRelays1 {
     fan_mapping: ModbusMapping,
 }
@@ -155,7 +164,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // creates the second worker and spawns it
     let worker = ModbusRelays1::create(&modbus_tcp_client)?;
     controller.spawn_worker(worker)?;
-    // block the main thread until the controller is in the online state
-    controller.block_while_online();
+    // register SIGINT and SIGTERM signals with max shutdown timeout of 5 seconds
+    controller.register_signals(Duration::from_secs(5))?;
+    // blocks the main thread while the controller is online and the workers are running
+    controller.block();
     Ok(())
 }

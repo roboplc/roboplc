@@ -25,7 +25,7 @@ pub fn set_simulated() {
 /// A thread builder object, similar to [`thread::Builder`] but with real-time capabilities
 ///
 /// Warning: works on Linux systems only
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Builder {
     pub(crate) name: Option<String>,
     stack_size: Option<usize>,

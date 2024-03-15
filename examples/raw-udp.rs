@@ -23,7 +23,7 @@ struct EnvData {
 
 // A worker to collect data from incoming UDP packets
 #[derive(WorkerOpts)]
-#[worker_opts(name = "udp_in")]
+#[worker_opts(name = "udp_in", blocking = true)]
 struct UdpIn {}
 
 impl Worker<Message, ()> for UdpIn {
@@ -51,7 +51,7 @@ impl Worker<Message, ()> for UdpIn {
 struct UdpOut {}
 
 impl Worker<Message, ()> for UdpOut {
-    fn run(&mut self, _context: &Context<Message, ()>) -> WResult {
+    fn run(&mut self, context: &Context<Message, ()>) -> WResult {
         let mut client = UdpOutput::connect("localhost:25000")?;
         for _ in interval(Duration::from_secs(1)) {
             let data = EnvData {
@@ -62,6 +62,9 @@ impl Worker<Message, ()> for UdpOut {
             if let Err(e) = client.send(data) {
                 error!(worker=self.worker_name(), error=%e, "udp send error");
             }
+            if !context.is_online() {
+                break;
+            }
         }
         Ok(())
     }
@@ -69,7 +72,7 @@ impl Worker<Message, ()> for UdpOut {
 
 // A worker to print data, received by the `UdpIn` worker
 #[derive(WorkerOpts)]
-#[worker_opts(name = "printEnv")]
+#[worker_opts(name = "printEnv", blocking = true)]
 struct PrintEnv {}
 
 impl Worker<Message, ()> for PrintEnv {
@@ -86,8 +89,6 @@ impl Worker<Message, ()> for PrintEnv {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // sets the simulated mode for the real-time module, do not set any thread real-time parameters
-    roboplc::thread_rt::set_simulated();
     // initializes a debug logger
     env_logger::builder()
         .filter_level(log::LevelFilter::Info)
@@ -98,7 +99,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     controller.spawn_worker(UdpIn {})?;
     controller.spawn_worker(PrintEnv {})?;
     controller.spawn_worker(UdpOut {})?;
-    // block the main thread until the controller is in the online state
-    controller.block_while_online();
+    // register SIGINT and SIGTERM signals with max shutdown timeout of 5 seconds
+    controller.register_signals(Duration::from_secs(5))?;
+    // blocks the main thread while the controller is online and the workers are running
+    controller.block();
     Ok(())
 }

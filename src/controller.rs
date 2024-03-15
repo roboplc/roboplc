@@ -9,12 +9,17 @@ use std::{
 
 use crate::{
     hub::Hub,
+    suicide,
     supervisor::Supervisor,
     thread_rt::{Builder, RTParams, Scheduling},
     DataDeliveryPolicy, Error,
 };
 use parking_lot::RwLock;
 pub use roboplc_derive::WorkerOpts;
+use signal_hook::{
+    consts::{SIGINT, SIGTERM},
+    iterator::Signals,
+};
 use tracing::error;
 
 pub mod prelude {
@@ -22,6 +27,7 @@ pub mod prelude {
     pub use roboplc_derive::WorkerOpts;
 }
 
+/// Result type, which must be returned by workers' `run` method
 pub type WResult = Result<(), Box<dyn std::error::Error>>;
 
 const SLEEP_SLEEP: Duration = Duration::from_millis(100);
@@ -163,6 +169,53 @@ where
         F: FnOnce() + Send + 'static,
     {
         self.supervisor.spawn(Builder::new().name(name), f)?;
+        Ok(())
+    }
+    /// Registers SIGINT and SIGTERM signals to a thread which terminates the controller.
+    ///     
+    /// Note: to properly terminate all workers must either periodically check the controller state
+    /// with [`Context::is_online()`] or be marked as blocking by overriding
+    /// [`WorkerOptions::worker_is_blocking()`] (or setting `blocking` to `true` in [`WorkerOpts`]
+    /// derive macro).
+    ///
+    /// Workers that listen to hub messages may also receive a custom termination message and gracefully
+    /// shut themselves down. For such functionality a custom signal handler should be implemented
+    /// (See <https://github.com/eva-ics/roboplc/blob/main/examples/shutdown.rs>).
+    ///
+    /// The thread is automatically spawned with FIFO scheduling and the highest priority on CPU 0
+    /// or falled back to non-realtime.
+    pub fn register_signals(&mut self, shutdown_timeout: Duration) -> Result<(), Error> {
+        let mut builder = Builder::new().name("RoboPLCSigRT").rt_params(
+            RTParams::new()
+                .set_priority(99)
+                .set_scheduling(Scheduling::FIFO)
+                .set_cpu_ids(&[0]),
+        );
+        builder.park_on_errors = true;
+        macro_rules! sig_handler {
+            () => {{
+                let context = self.context();
+                let mut signals = Signals::new([SIGTERM, SIGINT])?;
+                move || {
+                    if let Some(sig) = signals.forever().next() {
+                        match sig {
+                            SIGTERM | SIGINT => {
+                                suicide(shutdown_timeout, true);
+                                context.terminate();
+                            }
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+            }};
+        }
+        if let Err(e) = self.supervisor.spawn(builder.clone(), sig_handler!()) {
+            if !matches!(e, Error::RTSchedSetSchduler(_)) {
+                return Err(e);
+            }
+        }
+        let builder = builder.name("RoboPLCSig").rt_params(RTParams::new());
+        self.supervisor.spawn(builder, sig_handler!())?;
         Ok(())
     }
     fn context(&self) -> Context<D, V> {
