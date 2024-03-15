@@ -222,15 +222,19 @@ fn parse_delivery_policy(s: Option<&str>) -> proc_macro2::TokenStream {
 ///
 /// * `stack_size` - Specifies the stack size for the worker
 ///
+/// * `blocking` - Specifies if the worker is blocking. The value can be `true` or `false`. A hint
+/// for task supervisors that the worker blocks the thread (e.g. listens to a socket or has got a
+/// big interval in the main loop, does not return any useful result and should not be joined)
+///
 /// * `scheduling` - Specifies the scheduling policy for the worker. The value can be one of the:
 /// `roundrobin`, `fifo`, `idle`, `batch`, `deadline`, `normal`. If not specified, the default is
-/// `normal`.
+/// `normal`
 ///
 /// * `priority` - Specifies the real-time priority for the worker, higher is better. If specified,
-/// the scheduling policy must be `fifo`, `roundrobin` or `deadline`.
+/// the scheduling policy must be `fifo`, `roundrobin` or `deadline`
 ///
 /// * `cpu` - Specifies the CPU affinity for the worker. The value can be a single CPU number or a
-/// range of CPUs separated by a dash. The value can be a quoted string or an integer.
+/// range of CPUs separated by a dash. The value can be a quoted string or an integer
 ///
 /// Example:
 ///
@@ -265,6 +269,7 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
     let mut scheduling = None;
     let mut priority = None;
     let mut cpus = Vec::new();
+    let mut blocking = false;
 
     for attr in input.attrs {
         if attr.path.is_ident("worker_opts") {
@@ -281,12 +286,22 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
                         } else if path.is_ident("stack_size") {
                             if let Lit::Int(lit_int) = lit {
                                 stack_size = Some(lit_int.base10_parse::<usize>().unwrap());
+                            } else {
+                                panic!("worker stack size must be usize");
+                            }
+                        } else if path.is_ident("blocking") {
+                            if let Lit::Bool(lit_bool) = lit {
+                                blocking = lit_bool.value;
+                            } else {
+                                panic!("worker blocking must be bool");
                             }
                         } else if path.is_ident("scheduling") {
                             scheduling = Some(parse_scheduling(lit));
                         } else if path.is_ident("priority") {
                             if let Lit::Int(lit_int) = lit {
                                 priority = Some(lit_int.base10_parse::<i32>().unwrap());
+                            } else {
+                                panic!("worker priority must be i32");
                             }
                         } else if path.is_ident("cpu") {
                             if let Lit::Int(lit_int) = lit {
@@ -373,6 +388,15 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
     } else {
         quote! {}
     };
+    let blocking_impl = if blocking {
+        quote! {
+            fn worker_is_blocking(&self) -> bool {
+                true
+            }
+        }
+    } else {
+        quote! {}
+    };
     let expanded = quote! {
         impl ::roboplc::controller::WorkerOptions for #name {
             fn worker_name(&self) -> &str {
@@ -383,6 +407,7 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
             #scheduling_impl
             #priority_impl
             #cpus_impl
+            #blocking_impl
 
         }
     };
