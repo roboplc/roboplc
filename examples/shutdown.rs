@@ -7,6 +7,9 @@ use signal_hook::{
 };
 use tracing::info;
 
+// The maximum shutdown time
+const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
+
 #[derive(DataPolicy, Clone)]
 enum Message {
     Data(u8),
@@ -73,9 +76,9 @@ impl Worker<Message, ()> for SignalHandler {
                     // it is really important to set max shutdown timeout for the controller if the
                     // controller does not terminate in the given time, the process and all its
                     // sub-processes are forcibly killed
-                    suicide(Duration::from_secs(2), true);
-                    // set controller state to terminating
-                    context.set_state(ControllerStateKind::Stopping);
+                    suicide(SHUTDOWN_TIMEOUT, true);
+                    // set controller state to Stopping
+                    context.terminate();
                     // send Terminate message to workers who listen to the hub
                     context.hub().send(Message::Terminate);
                 }

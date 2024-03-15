@@ -187,6 +187,10 @@ where
     pub fn is_online(&self) {
         self.state.is_online();
     }
+    /// Sets controller state to Stopping
+    pub fn terminate(&mut self) {
+        self.state.set(ControllerStateKind::Stopping);
+    }
     /// State beacon
     pub fn state(&self) -> &State {
         &self.state
@@ -251,6 +255,10 @@ where
     /// Is the controller online (starting or running)
     pub fn is_online(&self) -> bool {
         self.state.is_online()
+    }
+    /// Sets controller state to Stopping
+    pub fn terminate(&self) {
+        self.state.set(ControllerStateKind::Stopping);
     }
 }
 
