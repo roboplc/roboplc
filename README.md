@@ -103,4 +103,3 @@ Currently supported:
 
 * Modbus (RTU/TCP) via [`io::modbus`]
 * Raw UDP in/out via [`io::raw_udp`]
-
