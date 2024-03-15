@@ -35,20 +35,20 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self {
-            state: AtomicI8::new(StateKind::Starting as i8).into(),
+            state: AtomicI8::new(ControllerStateKind::Starting as i8).into(),
         }
     }
     /// Set controller state
-    pub fn set(&self, state: StateKind) {
+    pub fn set(&self, state: ControllerStateKind) {
         self.state.store(state as i8, Ordering::SeqCst);
     }
     /// Get controller state
-    pub fn get(&self) -> StateKind {
-        StateKind::from(self.state.load(Ordering::SeqCst))
+    pub fn get(&self) -> ControllerStateKind {
+        ControllerStateKind::from(self.state.load(Ordering::SeqCst))
     }
     /// Is the controller online (starting or running)
     pub fn is_online(&self) -> bool {
-        self.get() >= StateKind::Starting
+        self.get() >= ControllerStateKind::Starting
     }
 }
 
@@ -61,7 +61,8 @@ impl Default for State {
 /// Controller state kind
 #[derive(Default, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 #[repr(i8)]
-pub enum StateKind {
+#[allow(clippy::module_name_repetitions)]
+pub enum ControllerStateKind {
     #[default]
     Starting = 0,
     Active = 1,
@@ -71,14 +72,14 @@ pub enum StateKind {
     Unknown = -128,
 }
 
-impl From<i8> for StateKind {
+impl From<i8> for ControllerStateKind {
     fn from(v: i8) -> Self {
         match v {
-            0 => StateKind::Starting,
-            1 => StateKind::Active,
-            2 => StateKind::Running,
-            -100 => StateKind::Stopped,
-            _ => StateKind::Unknown,
+            0 => ControllerStateKind::Starting,
+            1 => ControllerStateKind::Active,
+            2 => ControllerStateKind::Running,
+            -100 => ControllerStateKind::Stopped,
+            _ => ControllerStateKind::Unknown,
         }
     }
 }
@@ -173,14 +174,14 @@ where
     /// Blocks until all tasks/workers are finished
     pub fn block(&mut self) {
         self.supervisor.join_all();
-        self.state.set(StateKind::Stopped);
+        self.state.set(ControllerStateKind::Stopped);
     }
     /// Blocks until the controller goes into stopping/stopped
     pub fn block_while_online(&self) {
         while self.state.is_online() {
             thread::sleep(SLEEP_SLEEP);
         }
-        self.state.set(StateKind::Stopped);
+        self.state.set(ControllerStateKind::Stopped);
     }
     /// Is the controller online (starting or running)
     pub fn is_online(&self) {
@@ -240,11 +241,11 @@ where
         &self.variables
     }
     /// Controller's state
-    pub fn get_state(&self) -> StateKind {
+    pub fn get_state(&self) -> ControllerStateKind {
         self.state.get()
     }
     /// Set controller's state
-    pub fn set_state(&self, state: StateKind) {
+    pub fn set_state(&self, state: ControllerStateKind) {
         self.state.set(state);
     }
     /// Is the controller online (starting or running)
