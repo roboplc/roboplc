@@ -17,6 +17,22 @@ enum Message {
     Terminate,
 }
 
+/// A worker which has got a blocking loop (e.g. listening to a socket, having a long cycle etc.)
+/// and it is not possible to terminate it immediately. In this case the worker is not joined on
+/// shutdown
+#[derive(WorkerOpts)]
+#[worker_opts(name = "veryblocking", blocking = true)]
+struct VeryBlocking {}
+
+impl Worker<Message, ()> for VeryBlocking {
+    fn run(&mut self, _context: &Context<Message, ()>) -> WResult {
+        for _ in interval(Duration::from_secs(120)) {
+            info!(worker = self.worker_name(), "I am still running");
+        }
+        Ok(())
+    }
+}
+
 #[derive(WorkerOpts)]
 #[worker_opts(name = "parser")]
 struct DataParser {}
@@ -97,6 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     controller.spawn_worker(DataGenerator {})?;
     controller.spawn_worker(DataParser {})?;
     controller.spawn_worker(SignalHandler {})?;
+    controller.spawn_worker(VeryBlocking {})?;
     info!("controller started");
     controller.block();
     info!("controller terminated");

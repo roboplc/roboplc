@@ -145,7 +145,8 @@ where
         }
         let mut builder = Builder::new()
             .name(worker.worker_name())
-            .rt_params(rt_params);
+            .rt_params(rt_params)
+            .blocking(worker.worker_is_blocking());
         if let Some(stack_size) = worker.worker_stack_size() {
             builder = builder.stack_size(stack_size);
         }
@@ -156,7 +157,7 @@ where
         })?;
         Ok(())
     }
-    /// Spawns a task thread (non-real-time)
+    /// Spawns a task thread (non-real-time) with the default options
     pub fn spawn_task<F>(&mut self, name: &str, f: F) -> Result<(), Error>
     where
         F: FnOnce() + Send + 'static,
@@ -289,5 +290,11 @@ pub trait WorkerOptions {
     /// The CPU ID(s) affinity for the worker thread
     fn worker_cpu_ids(&self) -> Option<&[usize]> {
         None
+    }
+    /// A hint for task supervisors that the worker blocks the thread (e.g. listens to a socket or
+    /// has got a big interval in the main loop, does not return any useful result and should not
+    /// be joined)
+    fn worker_is_blocking(&self) -> bool {
+        false
     }
 }

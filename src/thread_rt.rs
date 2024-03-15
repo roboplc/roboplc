@@ -29,6 +29,7 @@ pub fn set_simulated() {
 pub struct Builder {
     pub(crate) name: Option<String>,
     stack_size: Option<usize>,
+    blocking: bool,
     rt_params: RTParams,
     // an internal parameter to suspend (park) failed threads instead of panic
     pub(crate) park_on_errors: bool,
@@ -89,6 +90,15 @@ impl Builder {
         self.stack_size = Some(size);
         self
     }
+    /// A hint for task supervisors that the task blocks the thread (e.g. listens to a socket or
+    /// has got a big interval in the main loop, does not return any useful result and should not
+    /// be joined)
+    ///
+    /// For scoped tasks: the task may be still forcibly joined at the end of the scope
+    pub fn blocking(mut self, blocking: bool) -> Self {
+        self.blocking = blocking;
+        self
+    }
     /// Applies real-time parameters to the task
     ///
     /// See [`RTParams`]
@@ -98,7 +108,7 @@ impl Builder {
     }
     fn try_into_thread_builder_name_and_params(
         self,
-    ) -> Result<(thread::Builder, String, RTParams, bool)> {
+    ) -> Result<(thread::Builder, String, bool, RTParams, bool)> {
         let mut builder = thread::Builder::new();
         if let Some(ref name) = self.name {
             if name.len() > 15 {
@@ -115,6 +125,7 @@ impl Builder {
         Ok((
             builder,
             self.name.unwrap_or_default(),
+            self.blocking,
             self.rt_params,
             self.park_on_errors,
         ))
@@ -130,7 +141,7 @@ impl Builder {
         F: FnOnce() -> T + Send + 'static,
         T: Send + 'static,
     {
-        let (builder, name, rt_params, park_on_errors) =
+        let (builder, name, blocking, rt_params, park_on_errors) =
             self.try_into_thread_builder_name_and_params()?;
         let (tx, rx) = oneshot::channel();
         let handle = builder.spawn(move || {
@@ -141,6 +152,7 @@ impl Builder {
         Ok(Task {
             name,
             handle,
+            blocking,
             tid,
             rt_params,
             info: <_>::default(),
@@ -180,7 +192,7 @@ impl Builder {
         F: FnOnce() -> T + Send + 'scope,
         T: Send + 'scope,
     {
-        let (builder, name, rt_params, park_on_errors) =
+        let (builder, name, blocking, rt_params, park_on_errors) =
             self.try_into_thread_builder_name_and_params()?;
         let (tx, rx) = oneshot::channel();
         let handle = builder.spawn_scoped(scope, move || {
@@ -191,6 +203,7 @@ impl Builder {
         Ok(ScopedTask {
             name,
             handle,
+            blocking,
             tid,
             rt_params,
             info: <_>::default(),
@@ -239,6 +252,7 @@ pub struct Task<T> {
         serialize_with = "serialize_join_handle_active"
     )]
     handle: JoinHandle<T>,
+    blocking: bool,
     tid: libc::c_int,
     rt_params: RTParams,
     info: TaskInfo,
@@ -277,6 +291,9 @@ impl<T> Task<T> {
     pub fn elapsed(&self) -> Duration {
         self.info.started_mt.elapsed()
     }
+    pub fn is_blocking(&self) -> bool {
+        self.blocking
+    }
 }
 
 impl<T> From<Task<T>> for JoinHandle<T> {
@@ -296,6 +313,7 @@ pub struct ScopedTask<'scope, T> {
         serialize_with = "serialize_scoped_join_handle_active"
     )]
     handle: ScopedJoinHandle<'scope, T>,
+    blocking: bool,
     tid: libc::c_int,
     rt_params: RTParams,
     info: TaskInfo,
@@ -333,6 +351,9 @@ impl<'scope, T> ScopedTask<'scope, T> {
     /// Returns duration since the task was started
     pub fn elapsed(&self) -> Duration {
         self.info.started_mt.elapsed()
+    }
+    pub fn is_blocking(&self) -> bool {
+        self.blocking
     }
 }
 

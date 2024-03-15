@@ -97,7 +97,9 @@ impl<T> Supervisor<T> {
     pub fn join_all(&mut self) -> BTreeMap<String, thread::Result<T>> {
         let mut result = BTreeMap::new();
         for (name, task) in mem::take(&mut self.tasks) {
-            result.insert(name, task.join());
+            if !task.is_blocking() {
+                result.insert(name, task.join());
+            }
         }
         result
     }
@@ -178,7 +180,9 @@ impl<'a, 'env, T> ScopedSupervisor<'a, 'env, T> {
     pub fn join_all(&mut self) -> BTreeMap<String, thread::Result<T>> {
         let mut result = BTreeMap::new();
         for (name, task) in mem::take(&mut self.tasks) {
-            result.insert(name, task.join());
+            if !task.is_blocking() {
+                result.insert(name, task.join());
+            }
         }
         result
     }
