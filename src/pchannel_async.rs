@@ -626,7 +626,7 @@ mod test {
         let mut c = 0;
         while let Ok(msg) = rx.recv().await {
             if let Message::Test(_) = msg {
-                c += 1
+                c += 1;
             }
         }
         insta::assert_snapshot!(c, @"20");
