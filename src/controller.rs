@@ -275,6 +275,7 @@ where
 
 /// The context type is used to give workers access to the controller's hub, state, and shared
 /// variables.
+#[derive(Clone)]
 pub struct Context<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
