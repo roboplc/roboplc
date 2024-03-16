@@ -32,7 +32,7 @@ width="350" />
 
 ## Hub
 
-[`hub::Hub`] implements a data-hub (in process pub/sub) model, when multiple
+[`hub::Hub`] implements a data-hub (in-process pub/sub) model, when multiple
 clients (usually thread workers) exchange data via a single virtual bus instead
 of using direct channels.
 
