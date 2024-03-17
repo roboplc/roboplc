@@ -126,7 +126,7 @@ impl<T> TtlCell<T> {
     /// A value take-coupler
     ///
     /// Takes two [`TtlCell`] values in case if both of them are not expired and set time
-    /// difference matches "max_time_delta" parameter. Both cells are cleared.
+    /// difference matches "max_time_delta" parameter. Both cells are cleared
     #[inline]
     pub fn take_with<O>(
         &mut self,
