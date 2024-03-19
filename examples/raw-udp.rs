@@ -1,4 +1,4 @@
-use roboplc::io::raw_udp::{UdpInput, UdpOutput};
+use roboplc::io::{UdpReceiver, UdpSender};
 use roboplc::prelude::*;
 use roboplc::time::interval;
 use tracing::{error, info};
@@ -9,6 +9,8 @@ enum Message {
 }
 
 // A raw UDP structure, to be sent and received
+//
+// The recommended way of IPC for RoboPLC
 //
 // Raw UDP structures are used by various software, e.g. Matlab, LabView, etc. as well as by some
 // fieldbus devices
@@ -28,7 +30,7 @@ struct UdpIn {}
 
 impl Worker<Message, ()> for UdpIn {
     fn run(&mut self, context: &Context<Message, ()>) -> WResult {
-        let server = UdpInput::<EnvData>::bind("127.0.0.1:25000", 24)?;
+        let server = UdpReceiver::<EnvData>::bind("127.0.0.1:25000", 24)?;
         // [`UdpInput`] is an iterator of incoming UDP packets which are automatically parsed
         for data in server {
             match data {
@@ -52,7 +54,7 @@ struct UdpOut {}
 
 impl Worker<Message, ()> for UdpOut {
     fn run(&mut self, context: &Context<Message, ()>) -> WResult {
-        let mut client = UdpOutput::connect("localhost:25000")?;
+        let mut client = UdpSender::connect("localhost:25000")?;
         for _ in interval(Duration::from_secs(1)) {
             let data = EnvData {
                 temp: 25.0,

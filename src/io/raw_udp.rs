@@ -7,7 +7,8 @@ use std::{
 
 use crate::{Error, Result};
 
-pub struct UdpInput<T>
+/// Raw UDP receiver
+pub struct UdpReceiver<T>
 where
     T: for<'a> BinRead<Args<'a> = ()>,
 {
@@ -16,7 +17,7 @@ where
     _phantom: PhantomData<T>,
 }
 
-impl<T> UdpInput<T>
+impl<T> UdpReceiver<T>
 where
     T: for<'a> BinRead<Args<'a> = ()>,
 {
@@ -30,7 +31,7 @@ where
     }
 }
 
-impl<T> Iterator for UdpInput<T>
+impl<T> Iterator for UdpReceiver<T>
 where
     T: for<'a> BinRead<Args<'a> = ()>,
 {
@@ -47,13 +48,23 @@ where
     }
 }
 
-pub struct UdpOutput {
+/// Raw UDP sender
+pub struct UdpSender<T>
+where
+    T: for<'a> BinWrite<Args<'a> = ()>,
+{
     socket: UdpSocket,
     target: SocketAddr,
     data_buf: Vec<u8>,
+    // keep the generic `T` global (including traits) as each instance is dedicated to send a
+    // specific type only
+    _phantom: PhantomData<T>,
 }
 
-impl UdpOutput {
+impl<T> UdpSender<T>
+where
+    T: for<'a> BinWrite<Args<'a> = ()>,
+{
     pub fn connect<A: ToSocketAddrs>(addr: A) -> Result<Self> {
         let socket = UdpSocket::bind(("0.0.0.0", 0))?;
         let target = addr
@@ -64,13 +75,11 @@ impl UdpOutput {
             socket,
             target,
             data_buf: <_>::default(),
+            _phantom: PhantomData,
         })
     }
 
-    pub fn send<T>(&mut self, value: T) -> Result<()>
-    where
-        T: for<'a> BinWrite<Args<'a> = ()>,
-    {
+    pub fn send(&mut self, value: T) -> Result<()> {
         let mut buf = Cursor::new(&mut self.data_buf);
         value.write_le(&mut buf)?;
         self.socket.send_to(&self.data_buf, self.target)?;

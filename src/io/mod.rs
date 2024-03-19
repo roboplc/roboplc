@@ -4,7 +4,9 @@ use binrw::{BinRead, BinWrite};
 use crate::Result;
 
 pub mod modbus;
-pub mod raw_udp;
+mod raw_udp;
+
+pub use raw_udp::{UdpReceiver, UdpSender};
 
 #[allow(clippy::module_name_repetitions)]
 pub trait IoMapping {
