@@ -21,6 +21,7 @@ struct EnvData {
     temp: f64,
     hum: f64,
     pressure: f64,
+    set_at: u64,
 }
 
 // A worker to collect data from incoming UDP packets
@@ -30,11 +31,13 @@ struct UdpIn {}
 
 impl Worker<Message, ()> for UdpIn {
     fn run(&mut self, context: &Context<Message, ()>) -> WResult {
-        let server = UdpReceiver::<EnvData>::bind("127.0.0.1:25000", 24)?;
+        let server = UdpReceiver::<EnvData>::bind("127.0.0.1:25000", 32)?;
         // [`UdpInput`] is an iterator of incoming UDP packets which are automatically parsed
         for data in server {
             match data {
                 Ok(data) => {
+                    let latency = Monotonic::now() - Monotonic::from_nanos(data.set_at);
+                    info!(worker = self.worker_name(), latency = ?latency);
                     context.hub().send(Message::Env(data));
                 }
                 Err(e) => {
@@ -60,6 +63,7 @@ impl Worker<Message, ()> for UdpOut {
                 temp: 25.0,
                 hum: 50.0,
                 pressure: 1000.0,
+                set_at: u64::try_from(Monotonic::now().as_nanos()).unwrap(),
             };
             if let Err(e) = client.send(data) {
                 error!(worker=self.worker_name(), error=%e, "udp send error");
