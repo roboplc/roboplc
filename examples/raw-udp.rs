@@ -31,9 +31,9 @@ struct UdpIn {}
 
 impl Worker<Message, ()> for UdpIn {
     fn run(&mut self, context: &Context<Message, ()>) -> WResult {
-        let server = UdpReceiver::<EnvData>::bind("127.0.0.1:25000", 32)?;
+        let rx = UdpReceiver::<EnvData>::bind("127.0.0.1:25000", 32)?;
         // [`UdpInput`] is an iterator of incoming UDP packets which are automatically parsed
-        for data in server {
+        for data in rx {
             match data {
                 Ok(data) => {
                     let latency = Monotonic::now() - Monotonic::from_nanos(data.set_at);
@@ -57,7 +57,7 @@ struct UdpOut {}
 
 impl Worker<Message, ()> for UdpOut {
     fn run(&mut self, context: &Context<Message, ()>) -> WResult {
-        let mut client = UdpSender::connect("localhost:25000")?;
+        let mut tx = UdpSender::connect("localhost:25000")?;
         for _ in interval(Duration::from_secs(1)) {
             let data = EnvData {
                 temp: 25.0,
@@ -65,7 +65,7 @@ impl Worker<Message, ()> for UdpOut {
                 pressure: 1000.0,
                 set_at: u64::try_from(Monotonic::now().as_nanos()).unwrap(),
             };
-            if let Err(e) = client.send(data) {
+            if let Err(e) = tx.send(data) {
                 error!(worker=self.worker_name(), error=%e, "udp send error");
             }
             if !context.is_online() {
