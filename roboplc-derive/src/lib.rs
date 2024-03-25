@@ -205,6 +205,7 @@ fn parse_delivery_policy(s: Option<&str>) -> proc_macro2::TokenStream {
         Some("single_optional") => quote! { ::roboplc::DeliveryPolicy::SingleOptional },
         Some("optional") => quote! { ::roboplc::DeliveryPolicy::Optional },
         Some("always") => quote! { ::roboplc::DeliveryPolicy::Always },
+        Some("latest") => quote! { ::roboplc::DeliveryPolicy::Latest },
         Some(v) => panic!("Unknown policy variant: {}", v),
         None => panic!("Policy variant not specified"),
     }
