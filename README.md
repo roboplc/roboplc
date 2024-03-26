@@ -61,6 +61,8 @@ channels.
 Data policies supported:
 
 * **Always** a frame is always delivered
+* **Latest** a frame is always delivered, previous are dropped if no room
+  (acts like a ring-buffer)
 * **Optional** a frame can be skipped if no room
 * **Single** a frame must be delivered only once (the latest one)
 * **SingleOptional** a frame must be delivered only once (the latest one) and

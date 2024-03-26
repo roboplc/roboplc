@@ -68,6 +68,18 @@ where
         if value.is_delivery_policy_single() {
             self.data.retain(|d| !d.eq_kind(&value) && !d.is_expired());
         }
+        macro_rules! push_final {
+            () => {
+                if self.data.len() < self.capacity {
+                    push!()
+                } else {
+                    TryPushOutput {
+                        pushed: false,
+                        value: Some(value),
+                    }
+                }
+            };
+        }
         if self.data.len() < self.capacity {
             push!()
         } else {
@@ -84,14 +96,24 @@ where
                             true
                         }
                     });
-                    if self.data.len() < self.capacity {
-                        push!()
-                    } else {
-                        TryPushOutput {
-                            pushed: false,
-                            value: Some(value),
+                    push_final!()
+                }
+                DeliveryPolicy::Latest => {
+                    let mut entry_removed = false;
+                    self.data.retain(|d| {
+                        if entry_removed {
+                            true
+                        } else if d.is_expired()
+                            || d.is_delivery_policy_optional()
+                            || d.eq_kind(&value)
+                        {
+                            entry_removed = true;
+                            false
+                        } else {
+                            true
                         }
-                    }
+                    });
+                    push_final!()
                 }
                 DeliveryPolicy::Optional | DeliveryPolicy::SingleOptional => TryPushOutput {
                     pushed: false,

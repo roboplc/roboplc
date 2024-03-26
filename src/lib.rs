@@ -116,6 +116,9 @@ impl Error {
     pub fn invalid_data<S: fmt::Display>(msg: S) -> Self {
         Error::InvalidData(msg.to_string())
     }
+    pub fn io<S: fmt::Display>(msg: S) -> Self {
+        Error::IO(msg.to_string())
+    }
 }
 
 /// Data delivery policies, used by [`hub::Hub`], [`pchannel::Receiver`] and [`pdeque::Deque`]
@@ -124,6 +127,8 @@ pub enum DeliveryPolicy {
     #[default]
     /// always deliver, fail if no room (default)
     Always,
+    /// always deliver, drop the previous if no room (act as a ring-buffer)
+    Latest,
     /// skip delivery if no room
     Optional,
     /// always deliver the frame but always in a single copy (latest)
@@ -153,6 +158,7 @@ impl fmt::Display for DeliveryPolicy {
             "{}",
             match self {
                 DeliveryPolicy::Always => "always",
+                DeliveryPolicy::Latest => "latest",
                 DeliveryPolicy::Optional => "optional",
                 DeliveryPolicy::Single => "single",
                 DeliveryPolicy::SingleOptional => "single-optional",
