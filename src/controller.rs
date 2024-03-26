@@ -30,7 +30,7 @@ pub mod prelude {
 /// Result type, which must be returned by workers' `run` method
 pub type WResult = Result<(), Box<dyn std::error::Error>>;
 
-const SLEEP_SLEEP: Duration = Duration::from_millis(100);
+pub const SLEEP_STEP: Duration = Duration::from_millis(100);
 
 /// Controller state beacon. Can be cloned and shared with no limitations.
 #[derive(Clone)]
@@ -125,10 +125,7 @@ where
         }
     }
     /// Creates a new controller instance with a pre-defined variables object
-    pub fn new_with_variables(variables: V) -> Self
-    where
-        V: Default,
-    {
+    pub fn new_with_variables(variables: V) -> Self {
         Self {
             supervisor: <_>::default(),
             hub: <_>::default(),
@@ -233,7 +230,7 @@ where
     /// Blocks until the controller goes into stopping/stopped
     pub fn block_while_online(&self) {
         while self.state.is_online() {
-            thread::sleep(SLEEP_SLEEP);
+            thread::sleep(SLEEP_STEP);
         }
         self.state.set(ControllerStateKind::Stopped);
     }
