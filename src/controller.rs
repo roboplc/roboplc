@@ -272,7 +272,6 @@ where
 
 /// The context type is used to give workers access to the controller's hub, state, and shared
 /// variables.
-#[derive(Clone)]
 pub struct Context<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
@@ -281,6 +280,20 @@ where
     hub: Hub<D>,
     state: State,
     variables: Arc<RwLock<V>>,
+}
+
+impl<D, V> Clone for Context<D, V>
+where
+    D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
+    V: Send,
+{
+    fn clone(&self) -> Self {
+        Self {
+            hub: self.hub.clone(),
+            state: self.state.clone(),
+            variables: self.variables.clone(),
+        }
+    }
 }
 
 impl<D, V> Context<D, V>
