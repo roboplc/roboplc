@@ -23,17 +23,26 @@ impl Register {
 }
 
 fn parse_kind_offset(r: &str) -> Result<(Kind, u16)> {
-    if let Some(v) = r.strip_prefix('c') {
-        Ok((Kind::Coil, v.parse()?))
-    } else if let Some(v) = r.strip_prefix('d') {
-        Ok((Kind::Discrete, v.parse()?))
-    } else if let Some(v) = r.strip_prefix('i') {
-        Ok((Kind::Input, v.parse()?))
-    } else if let Some(v) = r.strip_prefix('h') {
-        Ok((Kind::Holding, v.parse()?))
-    } else {
-        Err(Error::invalid_data(format!("invalid register kind: {}", r)))
+    macro_rules! err {
+        () => {
+            Error::invalid_data(format!("invalid register: {}", r))
+        };
     }
+    let mut chars = r.chars();
+    let kind = match chars.next().ok_or_else(|| err!())? {
+        'c' => Kind::Coil,
+        'd' => Kind::Discrete,
+        'i' => Kind::Input,
+        'h' => Kind::Holding,
+        _ => return Err(Error::invalid_data(format!("invalid register kind: {}", r))),
+    };
+    let o = if chars.next().ok_or_else(|| err!())? == '@' {
+        2
+    } else {
+        1
+    };
+    let offset = r[o..].parse().map_err(|_| err!())?;
+    Ok((kind, offset))
 }
 
 impl FromStr for Register {
