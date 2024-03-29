@@ -5,6 +5,7 @@ use crate::Result;
 
 #[cfg(feature = "eapi")]
 pub mod eapi;
+#[cfg(feature = "modbus")]
 pub mod modbus;
 mod raw_udp;
 

@@ -105,6 +105,7 @@ macro_rules! impl_error {
 }
 
 impl_error!(std::io::Error, IO);
+#[cfg(feature = "modbus")]
 impl_error!(rmodbus::ErrorKind, IO);
 impl_error!(oneshot::RecvError, IO);
 impl_error!(num::ParseIntError, InvalidData);
