@@ -3,6 +3,8 @@ use binrw::{BinRead, BinWrite};
 
 use crate::Result;
 
+#[cfg(feature = "eapi")]
+pub mod eapi;
 pub mod modbus;
 mod raw_udp;
 
