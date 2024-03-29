@@ -9,7 +9,6 @@ use std::sync::Arc;
 use tracing::info;
 
 #[derive(Clone, Debug)]
-#[repr(C)]
 #[binrw]
 struct Env {
     temp: f64,
@@ -63,7 +62,7 @@ impl Worker<Message, Variables> for Worker1 {
     }
 }
 
-// EAPI requires a separate connector worker
+// EAPI requires a separate connector worker to run with
 #[derive(WorkerOpts)]
 #[worker_opts(name = "eapi", blocking = true)]
 struct EAPIConnector {
