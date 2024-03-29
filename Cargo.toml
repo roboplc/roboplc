@@ -1,6 +1,6 @@
 [package]
 name = "roboplc"
-version = "0.1.17"
+version = "0.1.18"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -41,6 +41,7 @@ tokio = { version = "1.36.0", optional = true }
 
 [features]
 eapi = ["eva-common", "eva-sdk", "busrt", "tokio"]
+openssl-vendored = ["busrt/openssl-vendored", "eva-common/openssl-vendored"]
 full = ["eapi"]
 
 [dev-dependencies]
