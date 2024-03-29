@@ -70,6 +70,7 @@ impl SemaphoreInner {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub struct SemaphoreGuard {
     inner: Arc<SemaphoreInner>,
 }
@@ -121,9 +122,8 @@ mod test {
         }
         'outer: loop {
             for task in &tasks {
-                if sem.is_poisoned() {
-                    panic!("Semaphore is poisoned");
-                }
+                std::hint::spin_loop();
+                assert!(!sem.is_poisoned(), "Semaphore is poisoned");
                 if !task.is_finished() {
                     continue 'outer;
                 }

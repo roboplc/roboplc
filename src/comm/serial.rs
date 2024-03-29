@@ -106,7 +106,7 @@ fn parse_path(path: &str) -> Result<Parameters> {
 pub fn open(params: &Parameters, timeout: Duration) -> Result<SystemPort> {
     let mut port = serial::open(&params.port_dev).map_err(Error::io)?;
     port.reconfigure(&|settings| {
-        (settings.set_baud_rate(params.baud_rate).unwrap());
+        settings.set_baud_rate(params.baud_rate)?;
         settings.set_char_size(params.char_size);
         settings.set_parity(params.parity);
         settings.set_stop_bits(params.stop_bits);
