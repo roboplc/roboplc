@@ -108,3 +108,7 @@ Currently supported:
 
 * Raw UDP in/out via [`io::raw_udp`]
   ([Raw UDP in/out example](https://github.com/eva-ics/roboplc/blob/main/examples/raw-udp.rs))
+
+* [EVA ICS](https://www.eva-ics.com/) EAPI in/out via [`io::eapi`] ([EVA ICS
+  example](https://github.com/eva-ics/roboplc/blob/main/examples/eapi.rs)),
+  requires `eapi` crate feature.
