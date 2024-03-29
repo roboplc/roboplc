@@ -27,7 +27,7 @@ impl Client {
 
 pub enum Protocol {
     Tcp,
-    Serial,
+    Rtu,
 }
 
 trait Communicator {

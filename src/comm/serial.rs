@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::{Error, Result};
 
 use super::Client;
 use super::Communicator;
@@ -6,37 +6,47 @@ use super::Protocol;
 use parking_lot::{Mutex, MutexGuard};
 use serial::prelude::*;
 use serial::SystemPort;
+use std::io;
 use std::io::{Read, Write};
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-pub fn connect(path: &str, timeout: Duration, frame_delay: Duration) -> Result<Client, Error> {
+pub fn connect(path: &str, timeout: Duration, frame_delay: Duration) -> Result<Client> {
     Ok(Client(Serial::create(path, timeout, frame_delay)?))
 }
 
-fn parse_path(
-    path: &str,
-) -> (
-    &str,
-    serial::BaudRate,
-    serial::CharSize,
-    serial::Parity,
-    serial::StopBits,
-) {
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Parameters {
+    pub port_dev: String,
+    pub baud_rate: serial::BaudRate,
+    pub char_size: serial::CharSize,
+    pub parity: serial::Parity,
+    pub stop_bits: serial::StopBits,
+}
+
+impl FromStr for Parameters {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self> {
+        parse_path(s)
+    }
+}
+
+fn parse_path(path: &str) -> Result<Parameters> {
     let mut sp = path.split(':');
     let port_dev = sp.next().unwrap();
     let s_baud_rate = sp
         .next()
-        .unwrap_or_else(|| panic!("serial baud rate not specified: {}", path));
+        .ok_or_else(|| Error::invalid_data(format!("serial baud rate not specified: {}", path)))?;
     let s_char_size = sp
         .next()
-        .unwrap_or_else(|| panic!("serial char size not specified: {}", path));
+        .ok_or_else(|| Error::invalid_data(format!("serial char size not specified: {}", path)))?;
     let s_parity = sp
         .next()
-        .unwrap_or_else(|| panic!("serial parity not specified: {}", path));
+        .ok_or_else(|| Error::invalid_data(format!("serial parity not specified: {}", path)))?;
     let s_stop_bits = sp
         .next()
-        .unwrap_or_else(|| panic!("serial stopbits not specified: {}", path));
+        .ok_or_else(|| Error::invalid_data(format!("serial stopbits not specified: {}", path)))?;
     let baud_rate = match s_baud_rate {
         "110" => serial::Baud110,
         "300" => serial::Baud300,
@@ -49,61 +59,72 @@ fn parse_path(
         "38400" => serial::Baud38400,
         "57600" => serial::Baud57600,
         "115200" => serial::Baud115200,
-        v => panic!("specified serial baud rate not supported: {}", v),
+        v => {
+            return Err(Error::invalid_data(format!(
+                "specified serial baud rate not supported: {}",
+                v
+            )))
+        }
     };
     let char_size = match s_char_size {
         "5" => serial::Bits5,
         "6" => serial::Bits6,
         "7" => serial::Bits7,
         "8" => serial::Bits8,
-        v => panic!("specified serial char size not supported: {}", v),
+        v => {
+            return Err(Error::invalid_data(format!(
+                "specified serial char size not supported: {}",
+                v
+            )))
+        }
     };
     let parity = match s_parity {
         "N" => serial::ParityNone,
         "E" => serial::ParityEven,
         "O" => serial::ParityOdd,
-        v => panic!("specified serial parity not supported: {}", v),
+        v => {
+            return Err(Error::invalid_data(format!(
+                "specified serial parity not supported: {}",
+                v
+            )))
+        }
     };
     let stop_bits = match s_stop_bits {
         "1" => serial::Stop1,
         "2" => serial::Stop2,
         v => unimplemented!("specified serial stop bits not supported: {}", v),
     };
-    (port_dev, baud_rate, char_size, parity, stop_bits)
+    Ok(Parameters {
+        port_dev: port_dev.to_owned(),
+        baud_rate,
+        char_size,
+        parity,
+        stop_bits,
+    })
 }
 
-/// # Panics
-///
-/// Will panic on misconfigured listen string
-pub fn check_path(path: &str) {
-    let _ = parse_path(path);
-}
-
-/// # Panics
-///
-/// Will panic on misconfigured listen string
-pub fn open(listen: &str, timeout: Duration) -> Result<SystemPort, serial::Error> {
-    let (port_dev, baud_rate, char_size, parity, stop_bits) = parse_path(listen);
-    let mut port = serial::open(&port_dev)?;
+pub fn open(params: &Parameters, timeout: Duration) -> Result<SystemPort> {
+    let mut port = serial::open(&params.port_dev).map_err(Error::io)?;
     port.reconfigure(&|settings| {
-        (settings.set_baud_rate(baud_rate).unwrap());
-        settings.set_char_size(char_size);
-        settings.set_parity(parity);
-        settings.set_stop_bits(stop_bits);
+        (settings.set_baud_rate(params.baud_rate).unwrap());
+        settings.set_char_size(params.char_size);
+        settings.set_parity(params.parity);
+        settings.set_stop_bits(params.stop_bits);
         settings.set_flow_control(serial::FlowNone);
         Ok(())
-    })?;
-    port.set_timeout(timeout)?;
+    })
+    .map_err(Error::io)?;
+    port.set_timeout(timeout).map_err(Error::io)?;
     Ok(port)
 }
 
 #[allow(clippy::module_name_repetitions)]
 pub struct Serial {
-    path: String,
     port: Mutex<SPort>,
     timeout: Duration,
     frame_delay: Duration,
     busy: Mutex<()>,
+    params: Parameters,
 }
 
 #[derive(Default)]
@@ -124,8 +145,10 @@ impl Communicator for Serial {
         port.system_port.take();
         port.last_frame.take();
     }
-    fn write(&self, buf: &[u8]) -> Result<(), std::io::Error> {
-        let mut port = self.get_port()?;
+    fn write(&self, buf: &[u8]) -> std::result::Result<(), std::io::Error> {
+        let mut port = self
+            .get_port()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
         if let Some(last_frame) = port.last_frame {
             let el = last_frame.elapsed();
             if el < self.frame_delay {
@@ -144,10 +167,12 @@ impl Communicator for Serial {
         if result.is_ok() {
             port.last_frame.replace(Instant::now());
         }
-        result
+        result.map_err(Into::into)
     }
-    fn read_exact(&self, buf: &mut [u8]) -> Result<(), std::io::Error> {
-        let mut port = self.get_port()?;
+    fn read_exact(&self, buf: &mut [u8]) -> std::result::Result<(), std::io::Error> {
+        let mut port = self
+            .get_port()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
         port.system_port
             .as_mut()
             .unwrap()
@@ -156,35 +181,29 @@ impl Communicator for Serial {
                 self.reconnect();
                 e
             })
+            .map_err(Into::into)
     }
     fn protocol(&self) -> Protocol {
-        Protocol::Serial
+        Protocol::Rtu
     }
 }
 
 impl Serial {
-    /// # Panics
-    ///
-    /// Will panic on misconfigured path string
-    pub fn create(
-        path: &str,
-        timeout: Duration,
-        frame_delay: Duration,
-    ) -> Result<Arc<Self>, Error> {
-        check_path(path);
+    pub fn create(path: &str, timeout: Duration, frame_delay: Duration) -> Result<Arc<Self>> {
+        let params = parse_path(path)?;
         Ok(Self {
-            path: path.to_owned(),
             port: <_>::default(),
             timeout,
             frame_delay,
             busy: <_>::default(),
+            params,
         }
         .into())
     }
-    fn get_port(&self) -> Result<MutexGuard<SPort>, std::io::Error> {
+    fn get_port(&self) -> Result<MutexGuard<SPort>> {
         let mut lock = self.port.lock();
         if lock.system_port.as_mut().is_none() {
-            let port = open(&self.path, self.timeout)?;
+            let port = open(&self.params, self.timeout)?;
             lock.system_port.replace(port);
             lock.last_frame.take();
         }
