@@ -24,6 +24,8 @@ pub mod pchannel;
 pub mod pchannel_async;
 /// Policy-based data storages
 pub mod pdeque;
+/// A lighweight real-time safe semaphore
+pub mod semaphore;
 /// Task supervisor to manage real-time threads
 pub mod supervisor;
 /// Real-time thread functions to work with [`supervisor::Supervisor`] and standalone
@@ -225,6 +227,7 @@ pub fn suicide(delay: Duration, warn: bool) {
     };
 }
 
+impl DataDeliveryPolicy for () {}
 impl DataDeliveryPolicy for usize {}
 
 pub mod prelude {
