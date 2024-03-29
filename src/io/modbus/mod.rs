@@ -7,13 +7,19 @@ use binrw::{BinRead, BinWrite};
 pub use regs::{Kind as ModbusRegisterKind, Register as ModbusRegister};
 use rmodbus::guess_response_frame_len;
 use rmodbus::{client::ModbusRequest as RModbusRequest, ModbusProto};
+#[allow(clippy::module_name_repetitions)]
+pub use server::{ModbusServer, ModbusServerMapping};
 
 use super::IoMapping;
 
 mod regs;
+mod server;
 
 pub mod prelude {
-    pub use super::{ModbusMapping, ModbusMappingOptions, ModbusRegister, ModbusRegisterKind};
+    pub use super::{
+        ModbusMapping, ModbusMappingOptions, ModbusRegister, ModbusRegisterKind, ModbusServer,
+        ModbusServerMapping,
+    };
 }
 
 pub trait SwapModbusEndianess {

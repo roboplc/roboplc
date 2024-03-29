@@ -26,7 +26,7 @@ object-id = "0.1.3"
 oneshot = { version = "0.1.6", default-features = false, features = ["std"] }
 parking_lot = "0.12.1"
 pin-project = "1.1.5"
-rmodbus = { version = "0.9.3", optional = true }
+rmodbus = { version = "0.9.4", optional = true }
 roboplc-derive = { version = "0.1.5" }
 serde = { version = "1.0.197", features = ["derive", "rc"] }
 serial = "0.4.0"
@@ -55,6 +55,11 @@ tracing = { version = "0.1.40", features = ["log"] }
 [[example]]
 name = "plc-modbus"
 path = "examples/plc-modbus.rs"
+required-features = ["modbus"]
+
+[[example]]
+name = "modbus-slave"
+path = "examples/modbus-slave.rs"
 required-features = ["modbus"]
 
 [[example]]
