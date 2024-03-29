@@ -211,6 +211,19 @@ fn parse_delivery_policy(s: Option<&str>) -> proc_macro2::TokenStream {
     }
 }
 
+fn lowercase_first_letter(s: &str) -> String {
+    s.chars()
+        .enumerate()
+        .map(|(i, c)| {
+            if i == 0 {
+                c.to_lowercase().to_string()
+            } else {
+                c.to_string()
+            }
+        })
+        .collect()
+}
+
 /// Automatically implements the `WorkerOptions` trait for a worker struct
 ///
 /// Provides an attribute `worker_opts` to specify the worker options. The attribute can be
@@ -218,8 +231,9 @@ fn parse_delivery_policy(s: Option<&str>) -> proc_macro2::TokenStream {
 ///
 /// Atrribute arguments:
 ///
-/// * `name` - Specifies the name of the worker. The value is mandatory and must be a quoted
-/// string. The name must be unique and must be 15 characters or less.
+/// * `name` - Specifies the name of the worker. The value must be a quoted string. The name must
+/// be unique and must be 15 characters or less. If not specified, the default is the the structure
+/// name with the first letter in lowercase
 ///
 /// * `stack_size` - Specifies the stack size for the worker
 ///
@@ -333,7 +347,7 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
         }
     }
 
-    let worker_name = worker_name.expect("worker name is not specified");
+    let worker_name = worker_name.unwrap_or_else(|| lowercase_first_letter(&name.to_string()));
 
     assert!(
         worker_name.len() <= 15,
