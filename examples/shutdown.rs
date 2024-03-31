@@ -106,9 +106,7 @@ impl Worker<Message, ()> for SignalHandler {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
-        .init();
+    roboplc::configure_logger(roboplc::LevelFilter::Info);
     let mut controller = Controller::<Message, ()>::new();
     controller.spawn_worker(DataGenerator {})?;
     controller.spawn_worker(DataParser {})?;

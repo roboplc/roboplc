@@ -148,12 +148,9 @@ impl Worker<Message, Variables> for ModbusRelays1 {
 
 // Main function, to start the controller and workers
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    roboplc::configure_logger(roboplc::LevelFilter::Info);
     // sets the simulated mode for the real-time module, do not set any thread real-time parameters
     roboplc::thread_rt::set_simulated();
-    // initializes a debug logger
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
-        .init();
     // creates a controller instance
     let mut controller: Controller<Message, Variables> = Controller::new();
     // creates a reliable auto-reconnecting shared TCP port connection

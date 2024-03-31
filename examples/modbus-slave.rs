@@ -93,6 +93,7 @@ impl Worker<Message, Variables> for ModbusSrv {
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    roboplc::configure_logger(roboplc::LevelFilter::Info);
     // for TCP
     let addr = "0.0.0.0:5552";
     // for RTU
@@ -100,9 +101,6 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Modbus Unit ID
     let unit = 1;
     let timeout = Duration::from_secs(5);
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
-        .init();
     let server = ModbusServer::bind(Protocol::Tcp, unit, addr, timeout, 1)?;
     // Modbus server register mapping, can be specified with '@' or without
     let env_mapping = server.mapping("i@0".parse()?, 13);

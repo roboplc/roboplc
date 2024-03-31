@@ -1,9 +1,10 @@
 #![ doc = include_str!( concat!( env!( "CARGO_MANIFEST_DIR" ), "/", "README.md" ) ) ]
 use core::{fmt, num};
-use std::{mem, str::FromStr, sync::Arc, time::Duration};
+use std::{env, mem, str::FromStr, sync::Arc, time::Duration};
 
 use thread_rt::{RTParams, Scheduling};
 
+pub use log::LevelFilter;
 pub use roboplc_derive::DataPolicy;
 
 /// Event buffers
@@ -230,6 +231,23 @@ pub fn suicide(delay: Duration, warn: bool) {
 
 impl DataDeliveryPolicy for () {}
 impl DataDeliveryPolicy for usize {}
+
+/// Returns true if started in production mode (as a systemd unit)
+pub fn is_production() -> bool {
+    env::var("INVOCATION_ID").map_or(false, |v| !v.is_empty())
+}
+
+/// Configures stdout logger with the given filter
+/// If started in production mode, does not logs timestamps
+pub fn configure_logger(filter: LevelFilter) {
+    let mut builder = env_logger::Builder::new();
+    builder.target(env_logger::Target::Stdout);
+    builder.filter_level(filter);
+    if is_production() {
+        builder.format_timestamp(None);
+    }
+    builder.init();
+}
 
 pub mod prelude {
     pub use super::suicide;
