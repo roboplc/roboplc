@@ -237,8 +237,8 @@ pub fn is_production() -> bool {
     env::var("INVOCATION_ID").map_or(false, |v| !v.is_empty())
 }
 
-/// Configures stdout logger with the given filter
-/// If started in production mode, does not logs timestamps
+/// Configures stdout logger with the given filter. If started in production mode, does not logs
+/// timestamps
 pub fn configure_logger(filter: LevelFilter) {
     let mut builder = env_logger::Builder::new();
     builder.target(env_logger::Target::Stdout);
