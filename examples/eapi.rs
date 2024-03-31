@@ -87,7 +87,9 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             context.variables().write().fan = val != 0;
             Ok(())
         });
-    let eapi = EAPI::new("fieldbus.host1.plc.test", eapi_config);
+    // this creates a connector instance with the name `fieldbus.HOSTNAME.plc`. To use a custom
+    // name, use `EAPI::new` instead.
+    let eapi = EAPI::new_program(eapi_config);
     let mut controller = Controller::<Message, Variables>::new();
     controller.register_signals(Duration::from_secs(5))?;
     controller.spawn_worker(Worker1 { eapi: eapi.clone() })?;

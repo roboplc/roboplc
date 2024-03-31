@@ -38,9 +38,10 @@ eva-common = { version = "0.3.49", features = ["events", "payload", "common-payl
 eva-sdk = { version = "0.3.45", features = ["controller"], optional = true }
 busrt = { version = "0.4.9", features = ["rpc", "ipc"], optional = true }
 tokio = { version = "1.36.0", optional = true }
+hostname = { version = "0.3.1", optional = true }
 
 [features]
-eapi = ["eva-common", "eva-sdk", "busrt", "tokio"]
+eapi = ["eva-common", "eva-sdk", "busrt", "tokio", "hostname"]
 modbus = ["rmodbus"]
 openssl-vendored = ["busrt/openssl-vendored", "eva-common/openssl-vendored"]
 full = ["eapi", "modbus"]

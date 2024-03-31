@@ -213,6 +213,24 @@ where
                     Err(RpcError::params(None))
                 }
             }
+            "info" => {
+                if payload.is_empty() {
+                    #[derive(Serialize)]
+                    struct Payload {
+                        author: &'static str,
+                        description: &'static str,
+                        version: &'static str,
+                    }
+                    let payload = Payload {
+                        author: env!("CARGO_PKG_AUTHORS"),
+                        description: env!("CARGO_PKG_DESCRIPTION"),
+                        version: env!("CARGO_PKG_VERSION"),
+                    };
+                    Ok(Some(pack(&payload)?))
+                } else {
+                    Err(RpcError::params(None))
+                }
+            }
             "action" | "run" => {
                 if payload.is_empty() {
                     return Err(RpcError::params(None));
@@ -296,6 +314,18 @@ where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
     V: Send + Sync + 'static,
 {
+    /// creates a new EAPI connector instance with the name, automatically formatted as
+    /// `fieldbus.HOSTNAME.program`
+    pub fn new_program(config: EAPIConfig<D, V>) -> Self {
+        Self::new(
+            format!(
+                "fieldbus.{}.program",
+                hostname::get().unwrap().to_string_lossy()
+            ),
+            config,
+        )
+    }
+    /// creates a new EAPI connector instance with the given name
     pub fn new<N: fmt::Display>(name: N, mut config: EAPIConfig<D, V>) -> Self {
         let (tx, rx) =
             pchannel_async::bounded(config.queue_size.unwrap_or(busrt::DEFAULT_QUEUE_SIZE));
