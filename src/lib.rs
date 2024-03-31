@@ -1,5 +1,6 @@
 #![ doc = include_str!( concat!( env!( "CARGO_MANIFEST_DIR" ), "/", "README.md" ) ) ]
 use core::{fmt, num};
+use std::io::Write;
 use std::{env, mem, str::FromStr, sync::Arc, time::Duration};
 
 use thread_rt::{RTParams, Scheduling};
@@ -244,7 +245,7 @@ pub fn configure_logger(filter: LevelFilter) {
     builder.target(env_logger::Target::Stdout);
     builder.filter_level(filter);
     if is_production() {
-        builder.format_timestamp(None);
+        builder.format(|buf, record| writeln!(buf, "{} {}", record.level(), record.args()));
     }
     builder.init();
 }
