@@ -73,6 +73,10 @@ name = "shutdown"
 path = "examples/shutdown.rs"
 
 [[example]]
+name = "shutdown-custom"
+path = "examples/shutdown-custom.rs"
+
+[[example]]
 name = "eapi"
 path = "examples/eapi.rs"
 required-features = ["eapi"]

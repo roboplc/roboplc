@@ -12,7 +12,7 @@ use crate::{
     suicide,
     supervisor::Supervisor,
     thread_rt::{Builder, RTParams, Scheduling},
-    DataDeliveryPolicy, Error,
+    DataDeliveryPolicy, Error, Result,
 };
 use parking_lot::RwLock;
 pub use roboplc_derive::WorkerOpts;
@@ -28,7 +28,7 @@ pub mod prelude {
 }
 
 /// Result type, which must be returned by workers' `run` method
-pub type WResult = Result<(), Box<dyn std::error::Error>>;
+pub type WResult = std::result::Result<(), Box<dyn std::error::Error>>;
 
 pub const SLEEP_STEP: Duration = Duration::from_millis(100);
 
@@ -137,7 +137,7 @@ where
     pub fn spawn_worker<W: Worker<D, V> + WorkerOptions + 'static>(
         &mut self,
         mut worker: W,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let context = self.context();
         let mut rt_params = RTParams::new().set_scheduling(worker.worker_scheduling());
         if let Some(priority) = worker.worker_priority() {
@@ -161,12 +161,17 @@ where
         Ok(())
     }
     /// Spawns a task thread (non-real-time) with the default options
-    pub fn spawn_task<F>(&mut self, name: &str, f: F) -> Result<(), Error>
+    pub fn spawn_task<F>(&mut self, name: &str, f: F) -> Result<()>
     where
         F: FnOnce() + Send + 'static,
     {
         self.supervisor.spawn(Builder::new().name(name), f)?;
         Ok(())
+    }
+    /// Registers SIGINT and SIGTERM signals to a thread which terminates the controller with dummy
+    /// handler (see [`Controller::register_signals_with_shutdown_handler()`]).
+    pub fn register_signals(&mut self, shutdown_timeout: Duration) -> Result<()> {
+        self.register_signals_with_shutdown_handler(|_| {}, shutdown_timeout)
     }
     /// Registers SIGINT and SIGTERM signals to a thread which terminates the controller.
     ///     
@@ -181,7 +186,15 @@ where
     ///
     /// The thread is automatically spawned with FIFO scheduling and the highest priority on CPU 0
     /// or falled back to non-realtime.
-    pub fn register_signals(&mut self, shutdown_timeout: Duration) -> Result<(), Error> {
+    pub fn register_signals_with_shutdown_handler<H>(
+        &mut self,
+        handle_fn: H,
+        shutdown_timeout: Duration,
+    ) -> Result<()>
+    where
+        H: Fn(&Context<D, V>) + Send + Sync + 'static,
+    {
+        let handler = Arc::new(handle_fn);
         let mut builder = Builder::new().name("RoboPLCSigRT").rt_params(
             RTParams::new()
                 .set_priority(99)
@@ -190,7 +203,7 @@ where
         );
         builder.park_on_errors = true;
         macro_rules! sig_handler {
-            () => {{
+            ($handler: expr) => {{
                 let context = self.context();
                 let mut signals = Signals::new([SIGTERM, SIGINT])?;
                 move || {
@@ -198,6 +211,7 @@ where
                         match sig {
                             SIGTERM | SIGINT => {
                                 suicide(shutdown_timeout, true);
+                                $handler(&context);
                                 context.terminate();
                             }
                             _ => unreachable!(),
@@ -206,13 +220,14 @@ where
                 }
             }};
         }
-        if let Err(e) = self.supervisor.spawn(builder.clone(), sig_handler!()) {
+        let h = handler.clone();
+        if let Err(e) = self.supervisor.spawn(builder.clone(), sig_handler!(h)) {
             if !matches!(e, Error::RTSchedSetSchduler(_)) {
                 return Err(e);
             }
         }
         let builder = builder.name("RoboPLCSig").rt_params(RTParams::new());
-        self.supervisor.spawn(builder, sig_handler!())?;
+        self.supervisor.spawn(builder, sig_handler!(handler))?;
         Ok(())
     }
     fn context(&self) -> Context<D, V> {

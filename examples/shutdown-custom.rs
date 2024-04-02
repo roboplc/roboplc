@@ -1,6 +1,10 @@
-// The example provides a graceful shutdown of the controller using built-in methods.
+// The example provides a graceful shutdown of the controller using a custom signal handler.
 
 use roboplc::{prelude::*, time::interval};
+use signal_hook::{
+    consts::{SIGINT, SIGTERM},
+    iterator::Signals,
+};
 use tracing::info;
 
 // The maximum shutdown time
@@ -70,18 +74,44 @@ impl Worker<Message, ()> for DataGenerator {
         Ok(())
     }
 }
+
+#[derive(WorkerOpts)]
+#[worker_opts(name = "sighandle")]
+struct SignalHandler {}
+
+impl Worker<Message, ()> for SignalHandler {
+    // this worker listens to SIGINT and SIGTERM signals, sends a Terminate message to the hub and
+    // sets the controller state to Stopping
+    fn run(&mut self, context: &Context<Message, ()>) -> WResult {
+        let mut signals = Signals::new([SIGTERM, SIGINT])?;
+
+        if let Some(sig) = signals.forever().next() {
+            match sig {
+                SIGTERM | SIGINT => {
+                    info!("terminating");
+                    // it is really important to set max shutdown timeout for the controller if the
+                    // controller does not terminate in the given time, the process and all its
+                    // sub-processes are forcibly killed
+                    suicide(SHUTDOWN_TIMEOUT, true);
+                    // set controller state to Stopping
+                    context.terminate();
+                    // send Terminate message to workers who listen to the hub
+                    context.hub().send(Message::Terminate);
+                }
+                _ => unreachable!(),
+            }
+        }
+        Ok(())
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     let mut controller = Controller::<Message, ()>::new();
     controller.spawn_worker(DataGenerator {})?;
     controller.spawn_worker(DataParser {})?;
+    controller.spawn_worker(SignalHandler {})?;
     controller.spawn_worker(VeryBlocking {})?;
-    controller.register_signals_with_shutdown_handler(
-        move |context| {
-            context.hub().send(Message::Terminate);
-        },
-        SHUTDOWN_TIMEOUT,
-    )?;
     info!("controller started");
     controller.block();
     info!("controller terminated");
