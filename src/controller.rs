@@ -225,7 +225,10 @@ where
             if !matches!(e, Error::RTSchedSetSchduler(_)) {
                 return Err(e);
             }
+        } else {
+            return Ok(());
         }
+        // fall-back to non-rt handler
         let builder = builder.name("RoboPLCSig").rt_params(RTParams::new());
         self.supervisor.spawn(builder, sig_handler!(handler))?;
         Ok(())
