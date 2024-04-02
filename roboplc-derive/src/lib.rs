@@ -111,6 +111,8 @@ pub fn data_policy_derive(input: TokenStream) -> TokenStream {
                         } else {
                             panic!("unable to parse data_priority attribute");
                         }
+                    } else {
+                        panic!("Unknown attribute: {:?}", attr.path);
                     }
                 }
 
