@@ -347,6 +347,8 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
                         }
                     }
                 }
+            } else {
+                panic!("unable to parse worker_opts attribute");
             }
         }
     }
