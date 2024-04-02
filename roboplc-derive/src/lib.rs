@@ -340,6 +340,8 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
                                     panic!("Invalid cpu value: {}", value);
                                 }
                             }
+                        } else {
+                            panic!("Unknown attribute: {:?}", path);
                         }
                     }
                 }
