@@ -63,6 +63,19 @@ impl From<Scheduling> for libc::c_int {
     }
 }
 
+impl From<libc::c_int> for Scheduling {
+    fn from(value: libc::c_int) -> Self {
+        match value {
+            libc::SCHED_RR => Scheduling::RoundRobin,
+            libc::SCHED_FIFO => Scheduling::FIFO,
+            libc::SCHED_IDLE => Scheduling::Idle,
+            libc::SCHED_BATCH => Scheduling::Batch,
+            libc::SCHED_DEADLINE => Scheduling::DeadLine,
+            _ => Scheduling::Normal,
+        }
+    }
+}
+
 macro_rules! impl_builder_from {
     ($t: ty) => {
         impl From<$t> for Builder {
