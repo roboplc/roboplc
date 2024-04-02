@@ -391,9 +391,10 @@ impl RTParams {
     /// Sets thread scheduling policy (can be used as build pattern)
     pub fn set_scheduling(mut self, scheduling: Scheduling) -> Self {
         self.scheduling = scheduling;
-        if scheduling == Scheduling::FIFO
+        if (scheduling == Scheduling::FIFO
             || scheduling == Scheduling::RoundRobin
-            || scheduling == Scheduling::DeadLine && self.priority.is_none()
+            || scheduling == Scheduling::DeadLine)
+            && self.priority.is_none()
         {
             self.priority = Some(1);
         }
