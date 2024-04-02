@@ -1,4 +1,4 @@
-use roboplc::io::{UdpReceiver, UdpSender};
+use roboplc::io::raw_udp::{UdpReceiver, UdpSender};
 use roboplc::prelude::*;
 use roboplc::time::interval;
 use tracing::{error, info};

@@ -7,9 +7,7 @@ use crate::Result;
 pub mod eapi;
 #[cfg(feature = "modbus")]
 pub mod modbus;
-mod raw_udp;
-
-pub use raw_udp::{UdpReceiver, UdpSender};
+pub mod raw_udp;
 
 #[allow(clippy::module_name_repetitions)]
 pub trait IoMapping {
