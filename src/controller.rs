@@ -168,8 +168,8 @@ where
         self.supervisor.spawn(Builder::new().name(name), f)?;
         Ok(())
     }
-    /// Registers SIGINT and SIGTERM signals to a thread which terminates the controller with dummy
-    /// handler (see [`Controller::register_signals_with_shutdown_handler()`]).
+    /// Registers SIGINT and SIGTERM signals to a thread which terminates the controller with a
+    /// dummy handler (see [`Controller::register_signals_with_shutdown_handler()`]).
     pub fn register_signals(&mut self, shutdown_timeout: Duration) -> Result<()> {
         self.register_signals_with_shutdown_handler(|_| {}, shutdown_timeout)
     }
