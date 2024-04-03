@@ -39,8 +39,9 @@ pub struct Builder {
 ///
 /// See <https://man7.org/linux/man-pages/man7/sched.7.html>
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Scheduling {
+    #[serde(rename = "RR")]
     RoundRobin,
     FIFO,
     Idle,
