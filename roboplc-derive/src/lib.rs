@@ -244,8 +244,8 @@ fn lowercase_first_letter(s: &str) -> String {
 /// big interval in the main loop, does not return any useful result and should not be joined)
 ///
 /// * `scheduling` - Specifies the scheduling policy for the worker. The value can be one of the:
-/// `roundrobin`, `fifo`, `idle`, `batch`, `deadline`, `normal`. If not specified, the default is
-/// `normal`
+/// `roundrobin`, `fifo`, `idle`, `batch`, `deadline`, `other`. If not specified, the default is
+/// `other`
 ///
 /// * `priority` - Specifies the real-time priority for the worker, higher is better. If specified,
 /// the scheduling policy must be `fifo`, `roundrobin` or `deadline`
@@ -394,7 +394,7 @@ pub fn worker_opts_derive(input: TokenStream) -> TokenStream {
             "idle" => Some(quote! { ::roboplc::thread_rt::Scheduling::Idle }),
             "batch" => Some(quote! { ::roboplc::thread_rt::Scheduling::Batch }),
             "deadline" => Some(quote! { ::roboplc::thread_rt::Scheduling::DeadLine }),
-            "normal" => Some(quote! { ::roboplc::thread_rt::Scheduling::Normal }),
+            "other" => Some(quote! { ::roboplc::thread_rt::Scheduling::Other }),
             v => panic!("Unknown scheduling policy: {}", v),
         }
     } else {
@@ -440,6 +440,6 @@ fn parse_scheduling(lit: &Lit) -> String {
     match lit {
         Lit::Str(lit_str) => lit_str.value(),
         Lit::Int(lit_int) => lit_int.to_string(),
-        _ => "normal".to_string(),
+        _ => "other".to_string(),
     }
 }
