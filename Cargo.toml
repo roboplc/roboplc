@@ -1,6 +1,6 @@
 [package]
 name = "roboplc"
-version = "0.1.26"
+version = "0.1.27"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -27,7 +27,7 @@ oneshot = { version = "0.1.6", default-features = false, features = ["std"] }
 parking_lot = "0.12.1"
 pin-project = "1.1.5"
 rmodbus = { version = "0.9.4", optional = true }
-roboplc-derive = { version = "0.1.8" }
+roboplc-derive = { version = "0.1.9" }
 serde = { version = "1.0.197", features = ["derive", "rc"] }
 serial = "0.4.0"
 sysinfo = "0.30.6"

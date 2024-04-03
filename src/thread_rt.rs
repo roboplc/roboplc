@@ -48,7 +48,7 @@ pub enum Scheduling {
     Batch,
     DeadLine,
     #[default]
-    Normal,
+    Other,
 }
 
 impl From<Scheduling> for libc::c_int {
@@ -59,7 +59,7 @@ impl From<Scheduling> for libc::c_int {
             Scheduling::Idle => libc::SCHED_IDLE,
             Scheduling::Batch => libc::SCHED_BATCH,
             Scheduling::DeadLine => libc::SCHED_DEADLINE,
-            Scheduling::Normal => libc::SCHED_NORMAL,
+            Scheduling::Other => libc::SCHED_NORMAL,
         }
     }
 }
@@ -72,7 +72,7 @@ impl From<libc::c_int> for Scheduling {
             libc::SCHED_IDLE => Scheduling::Idle,
             libc::SCHED_BATCH => Scheduling::Batch,
             libc::SCHED_DEADLINE => Scheduling::DeadLine,
-            _ => Scheduling::Normal,
+            _ => Scheduling::Other,
         }
     }
 }
