@@ -68,9 +68,9 @@ struct Args {
 enum SubCommand {
     #[clap(name = "stat", about = "Get program status")]
     Stat,
-    #[clap(name = "config", about = "Put remote in CONFIG mode")]
+    #[clap(name = "config", about = "Switch remote into CONFIG mode")]
     Config,
-    #[clap(name = "run", about = "Put remote in RUN mode")]
+    #[clap(name = "run", about = "Switch remote into RUN mode")]
     Run,
     #[clap(name = "flash", about = "Flash program")]
     Flash(FlashCommand),
