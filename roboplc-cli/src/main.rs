@@ -1,6 +1,6 @@
 use core::fmt;
 use std::{
-    env,
+    env, fs,
     path::{Path, PathBuf},
     time::Duration,
 };
@@ -15,6 +15,8 @@ use ureq_multipart::MultipartBuilder;
 use which::which;
 
 const API_PREFIX: &str = "/roboplc/api";
+
+const DEFAULT_TIMEOUT: u64 = 60;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct State {
@@ -54,12 +56,12 @@ pub struct Task {
 
 #[derive(Parser)]
 struct Args {
-    #[clap(short = 'T', long, default_value = "60", help = "Manager API timeout")]
-    timeout: f64,
+    #[clap(short = 'T', long, help = "Manager API timeout")]
+    timeout: Option<u64>,
     #[clap(short = 'U', long, env = "ROBOPLC_URL", help = "Manager URL")]
-    url: String,
+    url: Option<String>,
     #[clap(short = 'k', long, env = "ROBOPLC_KEY", help = "Management key")]
-    key: String,
+    key: Option<String>,
     #[clap(subcommand)]
     subcmd: SubCommand,
 }
@@ -74,7 +76,7 @@ enum SubCommand {
     Run,
     #[clap(name = "flash", about = "Flash program")]
     Flash(FlashCommand),
-    #[clap(name = "purge", about = "Purge var directory")]
+    #[clap(name = "purge", about = "Purge program data directory")]
     Purge,
 }
 
@@ -142,7 +144,7 @@ fn set_mode_command(
 
 fn purge_command(url: &str, key: &str, agent: Agent) -> Result<(), Box<dyn std::error::Error>> {
     agent
-        .post(&format!("{}{}/purge.var", url, API_PREFIX))
+        .post(&format!("{}{}/purge.program.data", url, API_PREFIX))
         .set("x-auth-key", key)
         .call()
         .process_error()?;
@@ -267,11 +269,31 @@ fn find_name_and_chdir() -> Option<String> {
         let mut cargo_toml_path = current_dir.clone();
         cargo_toml_path.push("Cargo.toml");
         if cargo_toml_path.exists() {
-            let contents = std::fs::read_to_string(cargo_toml_path).ok()?;
+            let contents = fs::read_to_string(cargo_toml_path).ok()?;
             let value = contents.parse::<toml::Value>().ok()?;
             env::set_current_dir(current_dir).ok()?;
             return value["package"]["name"].as_str().map(String::from);
-        } else if !current_dir.pop() {
+        }
+        if !current_dir.pop() {
+            break;
+        }
+    }
+    None
+}
+
+fn find_roboplc_toml() -> Option<PathBuf> {
+    let mut current_dir = env::current_dir().ok()?;
+    loop {
+        let mut cargo_toml_path = current_dir.clone();
+        cargo_toml_path.push("Cargo.toml");
+        if cargo_toml_path.exists() {
+            let mut roboplc_toml_path = current_dir.clone();
+            roboplc_toml_path.push("robo.toml");
+            if roboplc_toml_path.exists() {
+                return Some(roboplc_toml_path);
+            }
+        }
+        if !current_dir.pop() {
             break;
         }
     }
@@ -280,25 +302,58 @@ fn find_name_and_chdir() -> Option<String> {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    let mut url = args.url;
+    let mut key = args.key;
+    let mut timeout = args.timeout;
+    if let Some(roboplc_toml_path) = find_roboplc_toml() {
+        let contents = fs::read_to_string(roboplc_toml_path)?;
+        let value = contents.parse::<toml::Value>()?;
+        if url.is_none() {
+            url = value
+                .get("remote")
+                .and_then(|v| v.get("url"))
+                .and_then(|v| v.as_str())
+                .map(String::from);
+        }
+        if key.is_none() {
+            key = value
+                .get("remote")
+                .and_then(|v| v.get("key"))
+                .and_then(|v| v.as_str())
+                .map(String::from);
+        }
+        if timeout.is_none() {
+            timeout = Some(u64::try_from(
+                value
+                    .get("remote")
+                    .and_then(|v| v.get("timeout"))
+                    .and_then(|v| v.as_integer())
+                    .ok_or("Invalid timeout (must be integer)")?,
+            )?);
+        }
+    }
+    let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
+    let url = url.ok_or("URL not specified")?;
+    let key = key.ok_or("Key not specified")?;
     let agent: Agent = ureq::AgentBuilder::new()
-        .timeout_read(Duration::from_secs_f64(args.timeout))
-        .timeout_write(Duration::from_secs_f64(args.timeout))
+        .timeout_read(Duration::from_secs(timeout))
+        .timeout_write(Duration::from_secs(timeout))
         .build();
     match args.subcmd {
         SubCommand::Stat => {
-            stat_command(&args.url, &args.key, agent)?;
+            stat_command(&url, &key, agent)?;
         }
         SubCommand::Config => {
-            set_mode_command(&args.url, &args.key, agent, Mode::Config)?;
+            set_mode_command(&url, &key, agent, Mode::Config)?;
         }
         SubCommand::Run => {
-            set_mode_command(&args.url, &args.key, agent, Mode::Run)?;
+            set_mode_command(&url, &key, agent, Mode::Run)?;
         }
         SubCommand::Flash(opts) => {
-            flash(&args.url, &args.key, agent, opts)?;
+            flash(&url, &key, agent, opts)?;
         }
         SubCommand::Purge => {
-            purge_command(&args.url, &args.key, agent)?;
+            purge_command(&url, &key, agent)?;
         }
     }
     Ok(())
