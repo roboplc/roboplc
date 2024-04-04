@@ -24,3 +24,8 @@ toml = "0.8.12"
 ureq = { version = "2.9.6", features = ["json", "native-certs", "native-tls"] }
 ureq_multipart = "1.1.1"
 which = "6.0.1"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
