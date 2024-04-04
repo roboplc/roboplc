@@ -54,7 +54,7 @@ pub struct Task {
 
 #[derive(Parser)]
 struct Args {
-    #[clap(short = 'T', long, default_value = "30", help = "Manager API timeout")]
+    #[clap(short = 'T', long, default_value = "60", help = "Manager API timeout")]
     timeout: f64,
     #[clap(short = 'U', long, env = "ROBOPLC_URL", help = "Manager URL")]
     url: String,
