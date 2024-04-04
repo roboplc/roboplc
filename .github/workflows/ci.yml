@@ -71,3 +71,32 @@ jobs:
           -A clippy::uninlined_format_args \
           -A clippy::no_effect_underscore_binding \
           -A clippy::large_futures
+  cli-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: cargo test
+        run: cd roboplc-cli && cargo test --verbose --all-features --all-targets
+  cli-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: cargo fmt
+        run: cd roboplc-cli && cargo fmt --check
+  cli-clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: cargo clippy
+        run: |
+          cd roboplc-cli && cargo clippy --all-targets -- -W clippy::all -W clippy::pedantic \
+          -A clippy::used-underscore-binding \
+          -A clippy::doc_markdown \
+          -A clippy::needless_pass_by_value \
+          -A clippy::must_use_candidate \
+          -A clippy::return_self_not_must_use \
+          -A clippy::missing_errors_doc \
+          -A clippy::single_match \
+          -A clippy::uninlined_format_args \
+          -A clippy::no_effect_underscore_binding \
+          -A clippy::large_futures
