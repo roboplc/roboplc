@@ -267,7 +267,7 @@ fn flash(
             .join(&cargo_target)
             .join("release")
             .join(name);
-        println!("Machine: {}", url.yellow());
+        println!("Remote: {}", url.yellow());
         println!("Cargo: {}", cargo.display().to_string().yellow());
         println!("Cargo target: {}", cargo_target.yellow());
         println!("Binary: {}", binary_name.display().to_string().yellow());
