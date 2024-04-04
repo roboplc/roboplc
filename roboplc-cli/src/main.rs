@@ -67,13 +67,15 @@ struct Args {
 #[derive(Parser)]
 enum SubCommand {
     #[clap(name = "stat", about = "Get program status")]
-    Stat(StatCommand),
+    Stat,
     #[clap(name = "config", about = "Put remote in CONFIG mode")]
     Config,
     #[clap(name = "run", about = "Put remote in RUN mode")]
     Run,
     #[clap(name = "flash", about = "Flash program")]
     Flash(FlashCommand),
+    #[clap(name = "purge", about = "Purge var directory")]
+    Purge,
 }
 
 #[derive(Parser)]
@@ -90,12 +92,7 @@ struct FlashCommand {
     run: bool,
 }
 
-fn stat_command(
-    url: &str,
-    key: &str,
-    agent: Agent,
-    _opts: StatCommand,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn stat_command(url: &str, key: &str, agent: Agent) -> Result<(), Box<dyn std::error::Error>> {
     let resp = agent
         .post(&format!("{}{}/query.stats.program", url, API_PREFIX))
         .set("x-auth-key", key)
@@ -138,6 +135,16 @@ fn set_mode_command(
         .send_json(ureq::json!({
              "mode": mode,
         }))
+        .process_error()?;
+    ok!();
+    Ok(())
+}
+
+fn purge_command(url: &str, key: &str, agent: Agent) -> Result<(), Box<dyn std::error::Error>> {
+    agent
+        .post(&format!("{}{}/purge.var", url, API_PREFIX))
+        .set("x-auth-key", key)
+        .call()
         .process_error()?;
     ok!();
     Ok(())
@@ -271,9 +278,6 @@ fn find_name_and_chdir() -> Option<String> {
     None
 }
 
-#[derive(Parser)]
-struct StatCommand {}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let agent: Agent = ureq::AgentBuilder::new()
@@ -281,8 +285,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .timeout_write(Duration::from_secs_f64(args.timeout))
         .build();
     match args.subcmd {
-        SubCommand::Stat(opts) => {
-            stat_command(&args.url, &args.key, agent, opts)?;
+        SubCommand::Stat => {
+            stat_command(&args.url, &args.key, agent)?;
         }
         SubCommand::Config => {
             set_mode_command(&args.url, &args.key, agent, Mode::Config)?;
@@ -292,6 +296,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         SubCommand::Flash(opts) => {
             flash(&args.url, &args.key, agent, opts)?;
+        }
+        SubCommand::Purge => {
+            purge_command(&args.url, &args.key, agent)?;
         }
     }
     Ok(())
