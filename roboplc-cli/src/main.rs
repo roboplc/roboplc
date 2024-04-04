@@ -55,6 +55,9 @@ pub struct Task {
 }
 
 #[derive(Parser)]
+#[clap(author = "Bohemia Automation (https://bma.ai)",
+    version = env!("CARGO_PKG_VERSION"),
+    about = env!("CARGO_PKG_DESCRIPTION"))]
 struct Args {
     #[clap(short = 'T', long, help = "Manager API timeout")]
     timeout: Option<u64>,
