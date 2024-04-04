@@ -3,6 +3,9 @@
 An ultimate pack of tools for creating real-time micro-services, PLCs and
 industrial-grade robots in Rust.
 
+The crate is designed to let using all its components both separately and
+together.
+
 Note: the crate is actively developed. API can be changed at any time. Use at
 your own risk!
 
