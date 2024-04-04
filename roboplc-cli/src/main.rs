@@ -218,25 +218,50 @@ fn flash(
     key: &str,
     agent: Agent,
     opts: FlashCommand,
+    robo_toml: Option<toml::Value>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(file) = opts.file {
         flash_file(url, key, agent, file, opts.force, opts.run)?;
     } else {
-        let cargo_target = if let Some(cargo_target) = opts.cargo_target {
-            cargo_target
-        } else {
+        let mut cargo_target: Option<String> = None;
+        if let Some(c) = opts.cargo_target {
+            cargo_target.replace(c);
+        }
+        if cargo_target.is_none() {
+            if let Some(ref value) = robo_toml {
+                cargo_target = value
+                    .get("build")
+                    .and_then(|v| v.get("target"))
+                    .map(|v| v.as_str().unwrap().to_owned());
+            }
+        }
+        if cargo_target.is_none() {
             let resp = agent
                 .post(&format!("{}{}/query.info.kernel", url, API_PREFIX))
                 .set("x-auth-key", key)
                 .call()?;
             let info: KernelInfo = resp.into_json()?;
-            format!("{}-unknown-linux-gnu", info.machine)
-        };
-        let cargo = opts
-            .cargo
-            .unwrap_or_else(|| which("cross").unwrap_or_else(|_| Path::new("cargo").to_owned()));
+            cargo_target.replace(format!("{}-unknown-linux-gnu", info.machine));
+        }
+        let mut cargo: Option<PathBuf> = None;
+        if let Some(c) = opts.cargo {
+            cargo.replace(c);
+        }
+        if cargo.is_none() {
+            if let Some(ref value) = robo_toml {
+                cargo = value
+                    .get("build")
+                    .and_then(|v| v.get("cargo"))
+                    .map(|v| v.as_str().unwrap().into());
+            }
+        }
+        if cargo.is_none() {
+            cargo = which("cross").ok();
+        }
+        let cargo_target = cargo_target.unwrap();
+        let cargo = cargo.unwrap_or_else(|| "cargo".into());
         let Some(name) = find_name_and_chdir() else {
-            return Err("Could not find Cross.toml/binary name".into());
+            return Err("Could not find Cargo.toml/binary name".into());
         };
         let binary_name = Path::new("target")
             .join(&cargo_target)
@@ -305,6 +330,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut url = args.url;
     let mut key = args.key;
     let mut timeout = args.timeout;
+    let mut robo_toml: Option<toml::Value> = None;
     if let Some(roboplc_toml_path) = find_roboplc_toml() {
         let contents = fs::read_to_string(roboplc_toml_path)?;
         let value = contents.parse::<toml::Value>()?;
@@ -327,10 +353,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 value
                     .get("remote")
                     .and_then(|v| v.get("timeout"))
-                    .and_then(|v| v.as_integer())
+                    .and_then(toml::Value::as_integer)
                     .ok_or("Invalid timeout (must be integer)")?,
             )?);
         }
+        robo_toml.replace(value);
     }
     let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
     let url = url.ok_or("URL not specified")?;
@@ -350,7 +377,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             set_mode_command(&url, &key, agent, Mode::Run)?;
         }
         SubCommand::Flash(opts) => {
-            flash(&url, &key, agent, opts)?;
+            flash(&url, &key, agent, opts, robo_toml)?;
         }
         SubCommand::Purge => {
             purge_command(&url, &key, agent)?;
