@@ -1,6 +1,6 @@
 //!
 //! The module provides mapping for various protocols. Structural mapping is built on top of
-//! the [binrw](https://crates.io/search?q=binrw) crate.
+//! the [binrw](https://crates.io/crates/binrw) crate.
 pub use binrw;
 use binrw::{BinRead, BinWrite};
 
