@@ -475,6 +475,10 @@ fn apply_thread_params(tid: libc::c_int, params: &RTParams) -> Result<()> {
             }
             let res = libc::sched_setaffinity(tid, std::mem::size_of::<libc::cpu_set_t>(), &cpuset);
             if res != 0 {
+                eprintln!(
+                    "Error setting CPU affinity: {}",
+                    std::io::Error::last_os_error()
+                );
                 return Err(Error::RTSchedSetAffinity(res));
             }
         }
@@ -490,6 +494,10 @@ fn apply_thread_params(tid: libc::c_int, params: &RTParams) -> Result<()> {
             )
         };
         if res != 0 {
+            eprintln!(
+                "Error setting scheduler: {}",
+                std::io::Error::last_os_error()
+            );
             return Err(Error::RTSchedSetSchduler(res));
         }
     }
