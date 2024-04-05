@@ -316,6 +316,10 @@ where
 {
     /// creates a new EAPI connector instance with the name, automatically formatted as
     /// `fieldbus.HOSTNAME.program`
+    ///
+    /// # Panics
+    ///
+    /// Will panic if failed to get the hostname
     pub fn new_program(config: EAPIConfig<D, V>) -> Self {
         Self::new(
             format!(

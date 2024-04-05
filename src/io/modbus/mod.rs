@@ -44,7 +44,7 @@ impl From<Protocol> for ModbusProto {
     fn from(value: Protocol) -> Self {
         match value {
             Protocol::Tcp => ModbusProto::TcpUdp,
-            Protocol::Rtu => ModbusProto::Rtu,
+            Protocol::Serial => ModbusProto::Rtu,
         }
     }
 }

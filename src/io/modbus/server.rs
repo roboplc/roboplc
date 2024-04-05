@@ -83,7 +83,7 @@ impl<const C: usize, const D: usize, const I: usize, const H: usize> ModbusServe
     ) -> Result<Self> {
         let server = match protocol {
             Protocol::Tcp => Server::Tcp(TcpListener::bind(path)?),
-            Protocol::Rtu => Server::Serial(comm::serial::open(&path.parse()?, timeout)?),
+            Protocol::Serial => Server::Serial(comm::serial::open(&path.parse()?, timeout)?),
         };
         Ok(Self {
             storage: <_>::default(),

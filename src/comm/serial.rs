@@ -12,6 +12,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+/// Create a new serial client. The client will attempt to connect to the given address at the time
+/// of the first request. The client will automatically reconnect if the connection is lost.
 pub fn connect(path: &str, timeout: Duration, frame_delay: Duration) -> Result<Client> {
     Ok(Client(Serial::create(path, timeout, frame_delay)?))
 }
@@ -184,7 +186,7 @@ impl Communicator for Serial {
             .map_err(Into::into)
     }
     fn protocol(&self) -> Protocol {
-        Protocol::Rtu
+        Protocol::Serial
     }
 }
 

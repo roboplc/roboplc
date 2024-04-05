@@ -9,6 +9,8 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::Duration;
 
+/// Create a new TCP client. The client will attempt to connect to the given address at the time of
+/// the first request. The client will automatically reconnect if the connection is lost.
 pub fn connect<A: ToSocketAddrs + fmt::Debug>(addr: A, timeout: Duration) -> Result<Client, Error> {
     Ok(Client(Tcp::create(addr, timeout)?))
 }
