@@ -1,3 +1,5 @@
+//!
+//! [EAPI communication example](https://github.com/eva-ics/roboplc/blob/main/examples/eapi.rs)
 use binrw::BinWrite;
 use busrt::rpc::{RpcError, RpcEvent, RpcHandlers, RpcResult};
 use busrt::{async_trait, QoS};
@@ -61,6 +63,7 @@ impl DataDeliveryPolicy for PushPayload {
     }
 }
 
+/// EAPI connection configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EAPIConfig<D, V>
 where
@@ -147,7 +150,9 @@ where
     }
 }
 
+/// Action handler functions type
 pub type ActionHandlerFn<D, V> = fn(&mut Action, context: &Context<D, V>) -> ActionResult;
+/// The result type of action handler functions
 pub type ActionResult = std::result::Result<(), Box<dyn std::error::Error>>;
 
 type ActionHandlers<D, V> = Arc<BTreeMap<OID, ActionHandlerFn<D, V>>>;
@@ -276,6 +281,7 @@ where
     }
 }
 
+/// EAPI connector, requires to be run in a separate thread manually
 pub struct EAPI<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,

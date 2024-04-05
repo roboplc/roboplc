@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::{Error, Result};
 
+/// A Modbus register kind.
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum Kind {
     Coil,
@@ -10,6 +11,7 @@ pub enum Kind {
     Holding,
 }
 
+/// A Modbus register type, contains the kind and the offset.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Register {
     pub kind: Kind,

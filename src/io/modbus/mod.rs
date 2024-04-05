@@ -1,3 +1,9 @@
+//!
+//! Contains Modbus client/server implementations.
+//!
+//! Examples: [modbus
+//! master(client)](https://github.com/eva-ics/roboplc/blob/main/examples/modbus-master.rs),
+//! [modbus slave(server)](https://github.com/eva-ics/roboplc/blob/main/examples/modbus-slave.rs)
 use std::io::Cursor;
 
 use crate::comm::{Client, Protocol};
@@ -22,6 +28,7 @@ pub mod prelude {
     };
 }
 
+/// Swaps endianess of floating point numbers in case of non-standard IEEE 754 layout.
 pub trait SwapModbusEndianess {
     fn to_swapped_modbus_endianness(&self) -> Self;
 }
@@ -49,6 +56,7 @@ impl From<Protocol> for ModbusProto {
     }
 }
 
+/// Mapping options for Modbus client
 #[allow(clippy::module_name_repetitions)]
 #[derive(Clone)]
 pub struct ModbusMappingOptions {
@@ -71,6 +79,7 @@ impl Default for ModbusMappingOptions {
     }
 }
 
+/// Mapping for Modbus client
 #[allow(clippy::module_name_repetitions)]
 pub struct ModbusMapping {
     client: Client,

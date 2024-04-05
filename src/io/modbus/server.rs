@@ -65,6 +65,7 @@ fn handle_client<
     Ok(())
 }
 
+/// Modbus server. Requires to be run in a separate thread manually.
 #[allow(clippy::module_name_repetitions)]
 pub struct ModbusServer<const C: usize, const D: usize, const I: usize, const H: usize> {
     storage: Arc<Mutex<ModbusStorage<C, D, I, H>>>,
@@ -145,6 +146,7 @@ fn prepare_tcp_stream(stream: &TcpStream, timeout: Duration) -> Result<()> {
     Ok(())
 }
 
+/// Server storage context mapping.
 pub struct ModbusServerMapping<const C: usize, const D: usize, const I: usize, const H: usize> {
     storage: Arc<Mutex<ModbusStorage<C, D, I, H>>>,
     register: ModbusRegister,
