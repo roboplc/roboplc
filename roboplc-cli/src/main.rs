@@ -352,13 +352,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(String::from);
         }
         if timeout.is_none() {
-            timeout = Some(u64::try_from(
-                value
-                    .get("remote")
-                    .and_then(|v| v.get("timeout"))
-                    .and_then(toml::Value::as_integer)
-                    .ok_or("Invalid timeout (must be integer)")?,
-            )?);
+            let toml_timeout = value.get("remote").and_then(|v| v.get("timeout"));
+            if let Some(t) = toml_timeout {
+                timeout = Some(u64::try_from(
+                    t.as_integer().ok_or("Invalid timeout (must be integer)")?,
+                )?);
+            }
         }
         robo_toml.replace(value);
     }
