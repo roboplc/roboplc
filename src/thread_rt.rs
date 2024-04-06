@@ -6,13 +6,14 @@ use libc::cpu_set_t;
 use nix::{sys::signal, unistd};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
-    collections::BTreeSet,
-    mem,
+    collections::{BTreeMap, BTreeSet},
+    fs, mem,
     sync::atomic::{AtomicBool, Ordering},
     thread::{self, JoinHandle, Scope, ScopedJoinHandle},
     time::Duration,
 };
 use sysinfo::{Pid, System};
+use tracing::warn;
 
 static REALTIME_MODE: AtomicBool = AtomicBool::new(true);
 
@@ -20,6 +21,10 @@ static REALTIME_MODE: AtomicBool = AtomicBool::new(true);
 /// methods running with no errors
 pub fn set_simulated() {
     REALTIME_MODE.store(false, Ordering::Relaxed);
+}
+
+fn is_simulated() -> bool {
+    REALTIME_MODE.load(Ordering::Relaxed)
 }
 
 /// A thread builder object, similar to [`thread::Builder`] but with real-time capabilities
@@ -464,7 +469,7 @@ fn thread_init_external(
 }
 
 fn apply_thread_params(tid: libc::c_int, params: &RTParams) -> Result<()> {
-    if !REALTIME_MODE.load(Ordering::Relaxed) {
+    if !is_simulated() {
         return Ok(());
     }
     if !params.cpu_ids.is_empty() {
@@ -587,5 +592,61 @@ fn get_child_pids_recursive(pid: Pid, sys: &System, to: &mut BTreeSet<Pid>) {
                 get_child_pids_recursive(*i, sys, to);
             }
         };
+    }
+}
+
+/// Configure kernel parameters (global) while the process is running. Does nothing in simulated
+/// mode
+///
+/// Example:
+///
+/// ```rust,no_run
+/// use roboplc::thread_rt::KernelConfig;
+///
+/// let _kernel_config = KernelConfig::new().set("sched_rt_runtime_us", -1)
+///     .apply()
+///     .expect("Unable to set kernel config");
+/// // some code
+/// // kernel config is restored at the end of the scope
+/// ```
+#[derive(Default)]
+pub struct KernelConfig {
+    values: BTreeMap<&'static str, String>,
+    prev_values: BTreeMap<&'static str, String>,
+}
+
+impl KernelConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn set<V: fmt::Display>(mut self, key: &'static str, value: V) -> Self {
+        self.values.insert(key, value.to_string());
+        self
+    }
+    pub fn apply(mut self) -> Result<KernelConfigGuard> {
+        if is_simulated() {
+            for (key, value) in &self.values {
+                let prev_value = fs::read_to_string(format!("/proc/sys/kernel/{}", key))?;
+                self.prev_values.insert(key, prev_value);
+                fs::write(format!("/proc/sys/kernel/{}", key), value)?;
+            }
+        }
+        Ok(KernelConfigGuard { config: self })
+    }
+}
+
+pub struct KernelConfigGuard {
+    config: KernelConfig,
+}
+
+impl Drop for KernelConfigGuard {
+    fn drop(&mut self) {
+        if is_simulated() {
+            for (key, value) in &self.config.prev_values {
+                if let Err(error) = fs::write(format!("/proc/sys/kernel/{}", key), value) {
+                    warn!(key, value, %error, "Failed to restore kernel config");
+                }
+            }
+        }
     }
 }
