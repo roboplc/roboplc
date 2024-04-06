@@ -23,7 +23,7 @@ pub fn set_simulated() {
     REALTIME_MODE.store(false, Ordering::Relaxed);
 }
 
-fn is_simulated() -> bool {
+fn is_realtime() -> bool {
     REALTIME_MODE.load(Ordering::Relaxed)
 }
 
@@ -469,7 +469,7 @@ fn thread_init_external(
 }
 
 fn apply_thread_params(tid: libc::c_int, params: &RTParams) -> Result<()> {
-    if !is_simulated() {
+    if !is_realtime() {
         return Ok(());
     }
     if !params.cpu_ids.is_empty() {
@@ -626,7 +626,7 @@ impl SystemConfig {
     }
     /// Apply values to /proc/sys keys
     pub fn apply(mut self) -> Result<SystemConfigGuard> {
-        if is_simulated() {
+        if is_realtime() {
             for (key, value) in &self.values {
                 let prev_value = fs::read_to_string(format!("/proc/sys/{}", key))?;
                 self.prev_values.insert(key, prev_value);
@@ -643,7 +643,7 @@ pub struct SystemConfigGuard {
 
 impl Drop for SystemConfigGuard {
     fn drop(&mut self) {
-        if is_simulated() {
+        if is_realtime() {
             for (key, value) in &self.config.prev_values {
                 if let Err(error) = fs::write(format!("/proc/sys/{}", key), value) {
                     warn!(key, value, %error, "Failed to restore system config");
