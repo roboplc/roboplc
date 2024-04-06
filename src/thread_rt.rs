@@ -595,56 +595,58 @@ fn get_child_pids_recursive(pid: Pid, sys: &System, to: &mut BTreeSet<Pid>) {
     }
 }
 
-/// Configure kernel parameters (global) while the process is running. Does nothing in simulated
+/// Configure system parameters (global) while the process is running. Does nothing in simulated
 /// mode
 ///
 /// Example:
 ///
 /// ```rust,no_run
-/// use roboplc::thread_rt::KernelConfig;
+/// use roboplc::thread_rt::SystemConfig;
 ///
-/// let _kernel_config = KernelConfig::new().set("sched_rt_runtime_us", -1)
+/// let _sys = SystemConfig::new().set("kernel/sched_rt_runtime_us", -1)
 ///     .apply()
-///     .expect("Unable to set kernel config");
+///     .expect("Unable to set system config");
 /// // some code
-/// // kernel config is restored at the end of the scope
+/// // system config is restored at the end of the scope
 /// ```
 #[derive(Default)]
-pub struct KernelConfig {
+pub struct SystemConfig {
     values: BTreeMap<&'static str, String>,
     prev_values: BTreeMap<&'static str, String>,
 }
 
-impl KernelConfig {
+impl SystemConfig {
     pub fn new() -> Self {
         Self::default()
     }
+    /// Set a parameter to configure
     pub fn set<V: fmt::Display>(mut self, key: &'static str, value: V) -> Self {
         self.values.insert(key, value.to_string());
         self
     }
-    pub fn apply(mut self) -> Result<KernelConfigGuard> {
+    /// Apply values to /proc/sys keys
+    pub fn apply(mut self) -> Result<SystemConfigGuard> {
         if is_simulated() {
             for (key, value) in &self.values {
-                let prev_value = fs::read_to_string(format!("/proc/sys/kernel/{}", key))?;
+                let prev_value = fs::read_to_string(format!("/proc/sys/{}", key))?;
                 self.prev_values.insert(key, prev_value);
-                fs::write(format!("/proc/sys/kernel/{}", key), value)?;
+                fs::write(format!("/proc/sys/{}", key), value)?;
             }
         }
-        Ok(KernelConfigGuard { config: self })
+        Ok(SystemConfigGuard { config: self })
     }
 }
 
-pub struct KernelConfigGuard {
-    config: KernelConfig,
+pub struct SystemConfigGuard {
+    config: SystemConfig,
 }
 
-impl Drop for KernelConfigGuard {
+impl Drop for SystemConfigGuard {
     fn drop(&mut self) {
         if is_simulated() {
             for (key, value) in &self.config.prev_values {
-                if let Err(error) = fs::write(format!("/proc/sys/kernel/{}", key), value) {
-                    warn!(key, value, %error, "Failed to restore kernel config");
+                if let Err(error) = fs::write(format!("/proc/sys/{}", key), value) {
+                    warn!(key, value, %error, "Failed to restore system config");
                 }
             }
         }
