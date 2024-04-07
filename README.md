@@ -16,6 +16,10 @@ together.
 RoboPLC is a part of [EVA ICS](https://www.eva-ics.com/) industrial
 automation platform.
 
+## Technical documentation
+
+Available at <https://info.bma.ai/en/actual/roboplc/index.html>
+
 ## Examples
 
 Can be found at <https://github.com/eva-ics/roboplc/tree/main/examples>
