@@ -363,7 +363,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT);
     let url_s = url.ok_or("URL not specified")?;
-    let url = url_s.trim_end_matches('/');
+    let mut url = url_s.trim_end_matches('/').to_owned();
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        url = format!("http://{}", url);
+    }
     let key = key.ok_or("Key not specified")?;
     let agent: Agent = ureq::AgentBuilder::new()
         .timeout_read(Duration::from_secs(timeout))
@@ -371,19 +374,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build();
     match args.subcmd {
         SubCommand::Stat => {
-            stat_command(url, &key, agent)?;
+            stat_command(&url, &key, agent)?;
         }
         SubCommand::Config => {
-            set_mode_command(url, &key, agent, Mode::Config)?;
+            set_mode_command(&url, &key, agent, Mode::Config)?;
         }
         SubCommand::Run => {
-            set_mode_command(url, &key, agent, Mode::Run)?;
+            set_mode_command(&url, &key, agent, Mode::Run)?;
         }
         SubCommand::Flash(opts) => {
-            flash(url, &key, agent, opts, robo_toml)?;
+            flash(&url, &key, agent, opts, robo_toml)?;
         }
         SubCommand::Purge => {
-            purge_command(url, &key, agent)?;
+            purge_command(&url, &key, agent)?;
         }
     }
     Ok(())
