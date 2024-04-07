@@ -4,6 +4,9 @@
   <a href="https://docs.rs/roboplc"><img alt="docs.rs page" src="https://docs.rs/roboplc/badge.svg"></img></a>
 </h2>
 
+<img src="https://raw.githubusercontent.com/eva-ics/roboplc/main/roboplcline_.png"
+width="200" />
+
 An ultimate pack of tools for creating real-time micro-services, PLCs and
 industrial-grade robots in Rust.
 
