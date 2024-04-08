@@ -28,7 +28,7 @@ pub mod prelude {
 }
 
 /// Result type, which must be returned by workers' `run` method
-pub type WResult = std::result::Result<(), Box<dyn std::error::Error>>;
+pub type WResult = std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>;
 
 pub const SLEEP_STEP: Duration = Duration::from_millis(100);
 
