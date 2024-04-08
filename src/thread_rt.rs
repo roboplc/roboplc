@@ -167,7 +167,7 @@ impl Builder {
             thread_init_internal(tx, park_on_errors);
             f()
         })?;
-        let tid = thread_init_external(rx, &rt_params)?;
+        let tid = thread_init_external(rx, &rt_params, park_on_errors)?;
         Ok(Task {
             name,
             handle,
@@ -218,7 +218,7 @@ impl Builder {
             thread_init_internal(tx, park_on_errors);
             f()
         })?;
-        let tid = thread_init_external(rx, &rt_params)?;
+        let tid = thread_init_external(rx, &rt_params, park_on_errors)?;
         Ok(ScopedTask {
             name,
             handle,
@@ -290,8 +290,8 @@ impl<T> Task<T> {
     }
     /// Applies new real-time params
     pub fn apply_rt_params(&mut self, rt_params: RTParams) -> Result<()> {
-        if let Err(e) = apply_thread_params(self.tid, &rt_params) {
-            let _ = apply_thread_params(self.tid, &self.rt_params);
+        if let Err(e) = apply_thread_params(self.tid, &rt_params, false) {
+            let _ = apply_thread_params(self.tid, &self.rt_params, false);
             return Err(e);
         }
         self.rt_params = rt_params;
@@ -351,8 +351,8 @@ impl<'scope, T> ScopedTask<'scope, T> {
     }
     /// Applies new real-time params
     pub fn apply_rt_params(&mut self, rt_params: RTParams) -> Result<()> {
-        if let Err(e) = apply_thread_params(self.tid, &rt_params) {
-            let _ = apply_thread_params(self.tid, &self.rt_params);
+        if let Err(e) = apply_thread_params(self.tid, &rt_params, false) {
+            let _ = apply_thread_params(self.tid, &self.rt_params, false);
             return Err(e);
         }
         self.rt_params = rt_params;
@@ -454,13 +454,14 @@ fn thread_init_internal(
 fn thread_init_external(
     rx_tid: oneshot::Receiver<(libc::c_int, oneshot::Sender<bool>)>,
     params: &RTParams,
+    quiet: bool,
 ) -> Result<libc::c_int> {
     let (tid, tx_ok) = rx_tid.recv()?;
     if tid < 0 {
         tx_ok.send(false).map_err(|e| Error::IO(e.to_string()))?;
         return Err(Error::RTGetTId(tid));
     }
-    if let Err(e) = apply_thread_params(tid, params) {
+    if let Err(e) = apply_thread_params(tid, params, quiet) {
         tx_ok.send(false).map_err(|e| Error::IO(e.to_string()))?;
         return Err(e);
     }
@@ -468,7 +469,7 @@ fn thread_init_external(
     Ok(tid)
 }
 
-fn apply_thread_params(tid: libc::c_int, params: &RTParams) -> Result<()> {
+fn apply_thread_params(tid: libc::c_int, params: &RTParams, quiet: bool) -> Result<()> {
     if !is_realtime() {
         return Ok(());
     }
@@ -480,10 +481,12 @@ fn apply_thread_params(tid: libc::c_int, params: &RTParams) -> Result<()> {
             }
             let res = libc::sched_setaffinity(tid, std::mem::size_of::<libc::cpu_set_t>(), &cpuset);
             if res != 0 {
-                eprintln!(
-                    "Error setting CPU affinity: {}",
-                    std::io::Error::last_os_error()
-                );
+                if !quiet {
+                    eprintln!(
+                        "Error setting CPU affinity: {}",
+                        std::io::Error::last_os_error()
+                    );
+                }
                 return Err(Error::RTSchedSetAffinity(res));
             }
         }
@@ -499,10 +502,12 @@ fn apply_thread_params(tid: libc::c_int, params: &RTParams) -> Result<()> {
             )
         };
         if res != 0 {
-            eprintln!(
-                "Error setting scheduler: {}",
-                std::io::Error::last_os_error()
-            );
+            if !quiet {
+                eprintln!(
+                    "Error setting scheduler: {}",
+                    std::io::Error::last_os_error()
+                );
+            }
             return Err(Error::RTSchedSetSchduler(res));
         }
     }
