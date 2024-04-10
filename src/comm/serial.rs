@@ -9,6 +9,8 @@ use serial::SystemPort;
 use std::io;
 use std::io::{Read, Write};
 use std::str::FromStr;
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -127,6 +129,7 @@ pub struct Serial {
     frame_delay: Duration,
     busy: Mutex<()>,
     params: Parameters,
+    session_id: AtomicUsize,
 }
 
 #[derive(Default)]
@@ -142,10 +145,14 @@ impl Communicator for Serial {
     fn lock(&self) -> MutexGuard<()> {
         self.busy.lock()
     }
+    fn session_id(&self) -> usize {
+        self.session_id.load(Ordering::Relaxed)
+    }
     fn reconnect(&self) {
         let mut port = self.port.lock();
         port.system_port.take();
         port.last_frame.take();
+        self.session_id.fetch_add(1, Ordering::Relaxed);
     }
     fn write(&self, buf: &[u8]) -> std::result::Result<(), std::io::Error> {
         let mut port = self
@@ -199,6 +206,7 @@ impl Serial {
             frame_delay,
             busy: <_>::default(),
             params,
+            session_id: <_>::default(),
         }
         .into())
     }

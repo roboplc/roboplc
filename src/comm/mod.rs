@@ -42,4 +42,5 @@ trait Communicator {
     fn write(&self, buf: &[u8]) -> Result<(), std::io::Error>;
     fn read_exact(&self, buf: &mut [u8]) -> Result<(), std::io::Error>;
     fn protocol(&self) -> Protocol;
+    fn session_id(&self) -> usize;
 }

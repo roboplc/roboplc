@@ -6,6 +6,7 @@ use parking_lot::{Mutex, MutexGuard};
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::net::{SocketAddr, ToSocketAddrs};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -21,6 +22,7 @@ pub struct Tcp {
     stream: Mutex<Option<TcpStream>>,
     timeout: Duration,
     busy: Mutex<()>,
+    session_id: AtomicUsize,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -39,8 +41,12 @@ impl Communicator for Tcp {
     fn lock(&self) -> MutexGuard<()> {
         self.busy.lock()
     }
+    fn session_id(&self) -> usize {
+        self.session_id.load(Ordering::Relaxed)
+    }
     fn reconnect(&self) {
         self.stream.lock().take();
+        self.session_id.fetch_add(1, Ordering::Relaxed);
     }
     fn write(&self, buf: &[u8]) -> Result<(), std::io::Error> {
         let mut stream = self.get_stream()?;
@@ -76,6 +82,7 @@ impl Tcp {
             stream: <_>::default(),
             busy: <_>::default(),
             timeout,
+            session_id: <_>::default(),
         }
         .into())
     }
