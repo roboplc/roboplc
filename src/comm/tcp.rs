@@ -1,7 +1,7 @@
 use crate::pchannel;
-use crate::{DataDeliveryPolicy, Error, Result};
+use crate::{Error, Result};
 
-use super::{ChatFn, Client, Communicator, ConnectionOptions, Protocol, Stream};
+use super::{ChatFn, Client, CommReader, Communicator, ConnectionOptions, Protocol, Stream};
 use core::fmt;
 use parking_lot::{Mutex, MutexGuard};
 use std::io::{Read, Write};
@@ -27,24 +27,12 @@ pub fn connect<A: ToSocketAddrs + fmt::Debug>(addr: A, timeout: Duration) -> Res
 pub fn connect_with_options<A: ToSocketAddrs + fmt::Debug>(
     addr: A,
     options: ConnectionOptions,
-) -> Result<(Client, pchannel::Receiver<TcpReader>)> {
-    let (tcp, rx) = Tcp::create(addr, options)?;
-    Ok((Client(tcp), rx.unwrap()))
+) -> Result<(Client, Option<pchannel::Receiver<CommReader>>)> {
+    let (tcp, maybe_rx) = Tcp::create(addr, options)?;
+    Ok((Client(tcp), maybe_rx))
 }
 
 impl Stream for TcpStream {}
-
-pub struct TcpReader {
-    reader: Option<Box<dyn Read + Send + 'static>>,
-}
-
-impl TcpReader {
-    pub fn take(&mut self) -> Option<Box<dyn Read + Send + 'static>> {
-        self.reader.take()
-    }
-}
-
-impl DataDeliveryPolicy for TcpReader {}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct Tcp {
@@ -53,7 +41,7 @@ pub struct Tcp {
     timeout: Duration,
     busy: Mutex<()>,
     session_id: AtomicUsize,
-    reader_tx: Option<pchannel::Sender<TcpReader>>,
+    reader_tx: Option<pchannel::Sender<CommReader>>,
     chat: Option<Box<ChatFn>>,
 }
 
@@ -99,6 +87,15 @@ impl Communicator for Tcp {
             .read_exact(buf)
             .map_err(|e| handle_tcp_stream_error!(self.session_id, stream, e, false))
     }
+    fn local_ip_addr(&self) -> Result<Option<SocketAddr>> {
+        let mut stream = self.get_stream()?;
+        stream
+            .as_mut()
+            .unwrap()
+            .local_addr()
+            .map(Some)
+            .map_err(|e| handle_tcp_stream_error!(self.session_id, stream, e, false))
+    }
     fn protocol(&self) -> Protocol {
         Protocol::Tcp
     }
@@ -108,7 +105,7 @@ impl Tcp {
     fn create<A: ToSocketAddrs + fmt::Debug>(
         addr: A,
         options: ConnectionOptions,
-    ) -> Result<(TcpClient, Option<pchannel::Receiver<TcpReader>>)> {
+    ) -> Result<(TcpClient, Option<pchannel::Receiver<CommReader>>)> {
         let (tx, rx) = if options.with_reader {
             let (tx, rx) = pchannel::bounded(READER_CHANNEL_CAPACITY);
             (Some(tx), Some(rx))
@@ -140,7 +137,7 @@ impl Tcp {
                 chat(&mut stream).map_err(Error::io)?;
             }
             if let Some(ref tx) = self.reader_tx {
-                tx.send(TcpReader {
+                tx.send(CommReader {
                     reader: Some(Box::new(stream.try_clone()?)),
                 })?;
             }

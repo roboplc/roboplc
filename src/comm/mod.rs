@@ -1,11 +1,12 @@
 use parking_lot::MutexGuard;
 use std::{
     io::{Read, Write},
+    net::SocketAddr,
     sync::Arc,
     time::Duration,
 };
 
-use crate::Result;
+use crate::{Result, DataDeliveryPolicy};
 
 pub mod serial; // Serial communications
 pub mod tcp; // TCP communications
@@ -35,6 +36,9 @@ impl Client {
     pub fn protocol(&self) -> Protocol {
         self.0.protocol()
     }
+    pub fn local_ip_addr(&self) -> Result<Option<SocketAddr>> {
+        self.0.local_ip_addr()
+    }
 }
 
 pub enum Protocol {
@@ -51,6 +55,9 @@ trait Communicator {
     fn read_exact(&self, buf: &mut [u8]) -> Result<()>;
     fn protocol(&self) -> Protocol;
     fn session_id(&self) -> usize;
+    fn local_ip_addr(&self) -> Result<Option<SocketAddr>> {
+        Ok(None)
+    }
 }
 
 /// Connection Options
@@ -59,6 +66,18 @@ pub struct ConnectionOptions {
     chat: Option<Box<ChatFn>>,
     timeout: Duration,
 }
+
+pub struct CommReader {
+    reader: Option<Box<dyn Read + Send + 'static>>,
+}
+
+impl CommReader {
+    pub fn take(&mut self) -> Option<Box<dyn Read + Send + 'static>> {
+        self.reader.take()
+    }
+}
+
+impl DataDeliveryPolicy for CommReader {}
 
 pub type ChatFn = dyn Fn(&mut dyn Stream) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
     + Send
