@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{Result, DataDeliveryPolicy};
+use crate::{DataDeliveryPolicy, Result};
 
 pub mod serial; // Serial communications
 pub mod tcp; // TCP communications
