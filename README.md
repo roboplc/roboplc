@@ -8,7 +8,7 @@
 width="200" />
 
 [RoboPLC](https://www.bohemia-automation.com/software/roboplc/) is an ultimate
-pack of framework and tools for creating real-time micro-services, PLCs and
+pack of a framework and tools for creating real-time micro-services, PLCs and
 industrial-grade robots in Rust.
 
 The crate is designed to let using all its components both separately and
