@@ -1,20 +1,50 @@
-use crate::Error;
+use crate::pchannel;
+use crate::{DataDeliveryPolicy, Error, Result};
 
-use super::{Client, Communicator, Protocol};
+use super::{ChatFn, Client, Communicator, ConnectionOptions, Protocol, Stream};
 use core::fmt;
 use parking_lot::{Mutex, MutexGuard};
 use std::io::{Read, Write};
-use std::net::TcpStream;
+use std::net::{self, TcpStream};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
+const READER_CHANNEL_CAPACITY: usize = 1024;
+
 /// Create a new TCP client. The client will attempt to connect to the given address at the time of
 /// the first request. The client will automatically reconnect if the connection is lost.
-pub fn connect<A: ToSocketAddrs + fmt::Debug>(addr: A, timeout: Duration) -> Result<Client, Error> {
-    Ok(Client(Tcp::create(addr, timeout)?))
+pub fn connect<A: ToSocketAddrs + fmt::Debug>(addr: A, timeout: Duration) -> Result<Client> {
+    Ok(Client(
+        Tcp::create(addr, ConnectionOptions::new(timeout))?.0,
+    ))
 }
+
+/// Create a new TCP client with options. The client will attempt to connect to the given address
+/// at the time of the first request. The client will automatically reconnect if the connection is
+/// lost.
+pub fn connect_with_options<A: ToSocketAddrs + fmt::Debug>(
+    addr: A,
+    options: ConnectionOptions,
+) -> Result<(Client, pchannel::Receiver<TcpReader>)> {
+    let (tcp, rx) = Tcp::create(addr, options)?;
+    Ok((Client(tcp), rx.unwrap()))
+}
+
+impl Stream for TcpStream {}
+
+pub struct TcpReader {
+    reader: Option<Box<dyn Read + Send + 'static>>,
+}
+
+impl TcpReader {
+    pub fn take(&mut self) -> Option<Box<dyn Read + Send + 'static>> {
+        self.reader.take()
+    }
+}
+
+impl DataDeliveryPolicy for TcpReader {}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct Tcp {
@@ -23,17 +53,20 @@ pub struct Tcp {
     timeout: Duration,
     busy: Mutex<()>,
     session_id: AtomicUsize,
+    reader_tx: Option<pchannel::Sender<TcpReader>>,
+    chat: Option<Box<ChatFn>>,
 }
 
 #[allow(clippy::module_name_repetitions)]
 pub type TcpClient = Arc<Tcp>;
 
 macro_rules! handle_tcp_stream_error {
-    ($stream: expr, $err: expr, $any: expr) => {{
+    ($sess: expr, $stream: expr, $err: expr, $any: expr) => {{
         if $any || $err.kind() == std::io::ErrorKind::TimedOut {
-            $stream.take();
+            $sess.fetch_add(1, Ordering::Relaxed);
+            $stream.take().map(|s| s.shutdown(net::Shutdown::Both));
         }
-        $err
+        $err.into()
     }};
 }
 
@@ -45,24 +78,26 @@ impl Communicator for Tcp {
         self.session_id.load(Ordering::Relaxed)
     }
     fn reconnect(&self) {
-        self.stream.lock().take();
-        self.session_id.fetch_add(1, Ordering::Relaxed);
+        self.stream.lock().take().map(|s| {
+            self.session_id.fetch_add(1, Ordering::Relaxed);
+            s.shutdown(net::Shutdown::Both)
+        });
     }
-    fn write(&self, buf: &[u8]) -> Result<(), std::io::Error> {
+    fn write(&self, buf: &[u8]) -> Result<()> {
         let mut stream = self.get_stream()?;
         stream
             .as_mut()
             .unwrap()
             .write_all(buf)
-            .map_err(|e| handle_tcp_stream_error!(stream, e, true))
+            .map_err(|e| handle_tcp_stream_error!(self.session_id, stream, e, true))
     }
-    fn read_exact(&self, buf: &mut [u8]) -> Result<(), std::io::Error> {
+    fn read_exact(&self, buf: &mut [u8]) -> Result<()> {
         let mut stream = self.get_stream()?;
         stream
             .as_mut()
             .unwrap()
             .read_exact(buf)
-            .map_err(|e| handle_tcp_stream_error!(stream, e, false))
+            .map_err(|e| handle_tcp_stream_error!(self.session_id, stream, e, false))
     }
     fn protocol(&self) -> Protocol {
         Protocol::Tcp
@@ -72,29 +107,54 @@ impl Communicator for Tcp {
 impl Tcp {
     fn create<A: ToSocketAddrs + fmt::Debug>(
         addr: A,
-        timeout: Duration,
-    ) -> Result<TcpClient, Error> {
-        Ok(Self {
+        options: ConnectionOptions,
+    ) -> Result<(TcpClient, Option<pchannel::Receiver<TcpReader>>)> {
+        let (tx, rx) = if options.with_reader {
+            let (tx, rx) = pchannel::bounded(READER_CHANNEL_CAPACITY);
+            (Some(tx), Some(rx))
+        } else {
+            (None, None)
+        };
+        let client = Self {
             addr: addr
                 .to_socket_addrs()?
                 .next()
                 .ok_or_else(|| Error::invalid_data(format!("Invalid address: {:?}", addr)))?,
             stream: <_>::default(),
             busy: <_>::default(),
-            timeout,
+            timeout: options.timeout,
             session_id: <_>::default(),
-        }
-        .into())
+            reader_tx: tx,
+            chat: options.chat,
+        };
+        Ok((client.into(), rx))
     }
-    fn get_stream(&self) -> Result<MutexGuard<Option<TcpStream>>, std::io::Error> {
+    fn get_stream(&self) -> Result<MutexGuard<Option<TcpStream>>> {
         let mut lock = self.stream.lock();
         if lock.as_mut().is_none() {
-            let stream = TcpStream::connect_timeout(&self.addr, self.timeout)?;
+            let mut stream = TcpStream::connect_timeout(&self.addr, self.timeout)?;
             stream.set_read_timeout(Some(self.timeout))?;
             stream.set_write_timeout(Some(self.timeout))?;
             stream.set_nodelay(true)?;
+            if let Some(ref chat) = self.chat {
+                chat(&mut stream).map_err(Error::io)?;
+            }
+            if let Some(ref tx) = self.reader_tx {
+                tx.send(TcpReader {
+                    reader: Some(Box::new(stream.try_clone()?)),
+                })?;
+            }
             lock.replace(stream);
         }
         Ok(lock)
+    }
+}
+
+impl Drop for Tcp {
+    fn drop(&mut self) {
+        self.stream
+            .lock()
+            .take()
+            .map(|s| s.shutdown(net::Shutdown::Both));
     }
 }

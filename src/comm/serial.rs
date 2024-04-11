@@ -154,7 +154,7 @@ impl Communicator for Serial {
         port.last_frame.take();
         self.session_id.fetch_add(1, Ordering::Relaxed);
     }
-    fn write(&self, buf: &[u8]) -> std::result::Result<(), std::io::Error> {
+    fn write(&self, buf: &[u8]) -> Result<()> {
         let mut port = self
             .get_port()
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
@@ -178,7 +178,7 @@ impl Communicator for Serial {
         }
         result.map_err(Into::into)
     }
-    fn read_exact(&self, buf: &mut [u8]) -> std::result::Result<(), std::io::Error> {
+    fn read_exact(&self, buf: &mut [u8]) -> Result<()> {
         let mut port = self
             .get_port()
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
