@@ -73,10 +73,28 @@ impl CommReader {
 
 impl DataDeliveryPolicy for CommReader {}
 
-pub(crate) struct Timeouts {
+#[derive(Default, Clone)]
+pub struct Timeouts {
     pub connect: Duration,
     pub read: Duration,
     pub write: Duration,
+}
+
+impl Timeouts {
+    pub fn new(default: Duration) -> Self {
+        Self {
+            connect: default,
+            read: default,
+            write: default,
+        }
+    }
+    pub fn none() -> Self {
+        Self {
+            connect: Duration::from_secs(0),
+            read: Duration::from_secs(0),
+            write: Duration::from_secs(0),
+        }
+    }
 }
 
 pub type ChatFn = dyn Fn(&mut dyn Stream) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
@@ -120,6 +138,11 @@ impl ConnectionOptions {
             + 'static,
     {
         self.chat = Some(Box::new(chat));
+        self
+    }
+    /// Set timeouts
+    pub fn timeouts(mut self, timeouts: Timeouts) -> Self {
+        self.timeouts = timeouts;
         self
     }
     /// Set the connect timeout
