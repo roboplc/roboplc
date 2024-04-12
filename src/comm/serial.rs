@@ -118,7 +118,9 @@ pub fn open(params: &Parameters, timeout: Duration) -> Result<SystemPort> {
         Ok(())
     })
     .map_err(Error::io)?;
-    port.set_timeout(timeout).map_err(Error::io)?;
+    if timeout > Duration::from_secs(0) {
+        port.set_timeout(timeout).map_err(Error::io)?;
+    }
     Ok(port)
 }
 

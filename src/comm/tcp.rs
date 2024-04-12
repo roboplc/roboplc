@@ -131,9 +131,18 @@ impl Tcp {
     fn get_stream(&self) -> Result<MutexGuard<Option<TcpStream>>> {
         let mut lock = self.stream.lock();
         if lock.as_mut().is_none() {
-            let mut stream = TcpStream::connect_timeout(&self.addr, self.timeouts.connect)?;
-            stream.set_read_timeout(Some(self.timeouts.read))?;
-            stream.set_write_timeout(Some(self.timeouts.write))?;
+            let zero_to = Duration::from_secs(0);
+            let mut stream = if self.timeouts.connect > zero_to {
+                TcpStream::connect_timeout(&self.addr, self.timeouts.connect)?
+            } else {
+                TcpStream::connect(self.addr)?
+            };
+            if self.timeouts.read > zero_to {
+                stream.set_read_timeout(Some(self.timeouts.read))?;
+            }
+            if self.timeouts.write > zero_to {
+                stream.set_write_timeout(Some(self.timeouts.write))?;
+            }
             stream.set_nodelay(true)?;
             if let Some(ref chat) = self.chat {
                 chat(&mut stream).map_err(Error::io)?;
