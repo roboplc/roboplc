@@ -39,6 +39,9 @@ impl Client {
     pub fn local_ip_addr(&self) -> Result<Option<SocketAddr>> {
         self.0.local_ip_addr()
     }
+    pub fn session_id(&self) -> usize {
+        self.0.session_id()
+    }
 }
 
 pub enum Protocol {
