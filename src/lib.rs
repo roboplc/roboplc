@@ -67,6 +67,9 @@ pub enum Error {
     /// I/O and threading errors
     #[error("I/O error {0}")]
     IO(String),
+    /// 3rd party API errors
+    #[error("API error {0}: {1}")]
+    API(String, i64),
     /// Real-time engine error: unable to get the system thread id
     #[error("RT SYS_gettid {0}")]
     RTGetTId(libc::c_int),
