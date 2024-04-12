@@ -1,7 +1,9 @@
 use crate::pchannel;
 use crate::{Error, Result};
 
-use super::{ChatFn, Client, CommReader, Communicator, ConnectionOptions, Protocol, Stream};
+use super::{
+    ChatFn, Client, CommReader, Communicator, ConnectionOptions, Protocol, Stream, Timeouts,
+};
 use core::fmt;
 use parking_lot::{Mutex, MutexGuard};
 use std::io::{Read, Write};
@@ -38,7 +40,7 @@ impl Stream for TcpStream {}
 pub struct Tcp {
     addr: SocketAddr,
     stream: Mutex<Option<TcpStream>>,
-    timeout: Duration,
+    timeouts: Timeouts,
     busy: Mutex<()>,
     session_id: AtomicUsize,
     reader_tx: Option<pchannel::Sender<CommReader>>,
@@ -119,7 +121,7 @@ impl Tcp {
                 .ok_or_else(|| Error::invalid_data(format!("Invalid address: {:?}", addr)))?,
             stream: <_>::default(),
             busy: <_>::default(),
-            timeout: options.timeout,
+            timeouts: options.timeouts,
             session_id: <_>::default(),
             reader_tx: tx,
             chat: options.chat,
@@ -129,9 +131,9 @@ impl Tcp {
     fn get_stream(&self) -> Result<MutexGuard<Option<TcpStream>>> {
         let mut lock = self.stream.lock();
         if lock.as_mut().is_none() {
-            let mut stream = TcpStream::connect_timeout(&self.addr, self.timeout)?;
-            stream.set_read_timeout(Some(self.timeout))?;
-            stream.set_write_timeout(Some(self.timeout))?;
+            let mut stream = TcpStream::connect_timeout(&self.addr, self.timeouts.connect)?;
+            stream.set_read_timeout(Some(self.timeouts.read))?;
+            stream.set_write_timeout(Some(self.timeouts.write))?;
             stream.set_nodelay(true)?;
             if let Some(ref chat) = self.chat {
                 chat(&mut stream).map_err(Error::io)?;

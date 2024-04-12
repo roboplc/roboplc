@@ -60,13 +60,6 @@ trait Communicator {
     }
 }
 
-/// Connection Options
-pub struct ConnectionOptions {
-    with_reader: bool,
-    chat: Option<Box<ChatFn>>,
-    timeout: Duration,
-}
-
 pub struct CommReader {
     reader: Option<Box<dyn Read + Send + 'static>>,
 }
@@ -79,16 +72,34 @@ impl CommReader {
 
 impl DataDeliveryPolicy for CommReader {}
 
+pub(crate) struct Timeouts {
+    pub connect: Duration,
+    pub read: Duration,
+    pub write: Duration,
+}
+
 pub type ChatFn = dyn Fn(&mut dyn Stream) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
     + Send
     + Sync;
 
+/// Connection Options
+pub struct ConnectionOptions {
+    with_reader: bool,
+    chat: Option<Box<ChatFn>>,
+    timeouts: Timeouts,
+}
+
 impl ConnectionOptions {
+    /// timeout = the default timeout
     pub fn new(timeout: Duration) -> Self {
         Self {
             with_reader: false,
             chat: None,
-            timeout,
+            timeouts: Timeouts {
+                connect: timeout,
+                read: timeout,
+                write: timeout,
+            },
         }
     }
     /// Enable the reader channel. The reader channel allows the client to receive a clone of the
@@ -108,6 +119,21 @@ impl ConnectionOptions {
             + 'static,
     {
         self.chat = Some(Box::new(chat));
+        self
+    }
+    /// Set the connect timeout
+    pub fn connect_timeout(mut self, timeout: Duration) -> Self {
+        self.timeouts.connect = timeout;
+        self
+    }
+    /// Set the read timeout
+    pub fn read_timeout(mut self, timeout: Duration) -> Self {
+        self.timeouts.read = timeout;
+        self
+    }
+    /// Set the write timeout
+    pub fn write_timeout(mut self, timeout: Duration) -> Self {
+        self.timeouts.write = timeout;
         self
     }
 }
