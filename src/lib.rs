@@ -61,6 +61,9 @@ pub enum Error {
     /// Hub client with the given name is already registered
     #[error("hub client already registered: {0}")]
     HubAlreadyRegistered(Arc<str>),
+    /// Timeouts
+    #[error("timed out")]
+    Timeout,
     /// I/O and threading errors
     #[error("I/O error {0}")]
     IO(String),

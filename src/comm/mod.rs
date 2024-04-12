@@ -60,6 +60,7 @@ trait Communicator {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub struct CommReader {
     reader: Option<Box<dyn Read + Send + 'static>>,
 }

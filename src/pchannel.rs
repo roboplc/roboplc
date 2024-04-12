@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use crate::{pdeque::Deque, DataDeliveryPolicy, Error, Result};
 use object_id::UniqueId;
@@ -90,23 +90,6 @@ struct ChannelInner<T: DataDeliveryPolicy> {
 }
 
 impl<T: DataDeliveryPolicy> ChannelInner<T> {
-    fn try_send(&self, value: T) -> Result<()> {
-        let mut pc = self.pc.lock();
-        if pc.receivers == 0 {
-            return Err(Error::ChannelClosed);
-        }
-        let push_result = pc.queue.try_push(value);
-        if push_result.value.is_none() {
-            self.data_available.notify_one();
-            if push_result.pushed {
-                Ok(())
-            } else {
-                Err(Error::ChannelSkipped)
-            }
-        } else {
-            Err(Error::ChannelFull)
-        }
-    }
     fn send(&self, mut value: T) -> Result<()> {
         let mut pc = self.pc.lock();
         let pushed = loop {
@@ -127,6 +110,45 @@ impl<T: DataDeliveryPolicy> ChannelInner<T> {
             Err(Error::ChannelSkipped)
         }
     }
+    fn send_timeout(&self, mut value: T, timeout: Duration) -> Result<()> {
+        let mut pc = self.pc.lock();
+        let pushed = loop {
+            if pc.receivers == 0 {
+                return Err(Error::ChannelClosed);
+            }
+            let push_result = pc.queue.try_push(value);
+            let Some(val) = push_result.value else {
+                break push_result.pushed;
+            };
+            value = val;
+            if self.space_available.wait_for(&mut pc, timeout).timed_out() {
+                return Err(Error::Timeout);
+            }
+        };
+        self.data_available.notify_one();
+        if pushed {
+            Ok(())
+        } else {
+            Err(Error::ChannelSkipped)
+        }
+    }
+    fn try_send(&self, value: T) -> Result<()> {
+        let mut pc = self.pc.lock();
+        if pc.receivers == 0 {
+            return Err(Error::ChannelClosed);
+        }
+        let push_result = pc.queue.try_push(value);
+        if push_result.value.is_none() {
+            self.data_available.notify_one();
+            if push_result.pushed {
+                Ok(())
+            } else {
+                Err(Error::ChannelSkipped)
+            }
+        } else {
+            Err(Error::ChannelFull)
+        }
+    }
     fn recv(&self) -> Result<T> {
         let mut pc = self.pc.lock();
         loop {
@@ -137,6 +159,20 @@ impl<T: DataDeliveryPolicy> ChannelInner<T> {
                 return Err(Error::ChannelClosed);
             }
             self.data_available.wait(&mut pc);
+        }
+    }
+    fn recv_timeout(&self, timeout: Duration) -> Result<T> {
+        let mut pc = self.pc.lock();
+        loop {
+            if let Some(val) = pc.queue.get() {
+                self.space_available.notify_one();
+                return Ok(val);
+            } else if pc.senders == 0 {
+                return Err(Error::ChannelClosed);
+            }
+            if self.data_available.wait_for(&mut pc, timeout).timed_out() {
+                return Err(Error::Timeout);
+            };
         }
     }
     fn try_recv(&self) -> Result<T> {
@@ -201,6 +237,10 @@ where
     #[inline]
     pub fn send(&self, value: T) -> Result<()> {
         self.channel.0.send(value)
+    }
+    #[inline]
+    pub fn send_timeout(&self, value: T, timeout: Duration) -> Result<()> {
+        self.channel.0.send_timeout(value, timeout)
     }
     #[inline]
     pub fn try_send(&self, value: T) -> Result<()> {
@@ -274,6 +314,10 @@ where
     #[inline]
     pub fn recv(&self) -> Result<T> {
         self.channel.0.recv()
+    }
+    #[inline]
+    pub fn recv_timeout(&self, timeout: Duration) -> Result<T> {
+        self.channel.0.recv_timeout(timeout)
     }
     #[inline]
     pub fn try_recv(&self) -> Result<T> {
