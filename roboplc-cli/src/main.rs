@@ -89,6 +89,8 @@ struct FlashCommand {
     cargo: Option<PathBuf>,
     #[clap(long, help = "Override remote cargo target")]
     cargo_target: Option<String>,
+    #[clap(long, help = "Extra cargo arguments")]
+    cargo_args: Option<String>,
     #[clap(long, help = "Do not compile a Rust project, use a file instead")]
     file: Option<PathBuf>,
     #[clap(long, help = "Force flash (automatically put remote in CONFIG mode)")]
@@ -266,21 +268,38 @@ fn flash(
         let Some(name) = find_name_and_chdir() else {
             return Err("Could not find Cargo.toml/binary name".into());
         };
+        let mut cargo_args = None;
+        if let Some(args) = opts.cargo_args {
+            cargo_args.replace(args);
+        } else if let Some(ref value) = robo_toml {
+            cargo_args = value
+                .get("build")
+                .and_then(|v| v.get("cargo-args"))
+                .map(|v| v.as_str().unwrap().to_owned());
+        }
         let binary_name = Path::new("target")
             .join(&cargo_target)
             .join("release")
             .join(name);
+        let mut args: Vec<String> = vec![
+            "build".into(),
+            "--release".into(),
+            "--target".into(),
+            cargo_target.clone(),
+        ];
+        if let Some(extra) = cargo_args {
+            args.extend(shlex::split(&extra).expect("Invalid cargo args"));
+        }
         println!("Remote: {}", url.yellow());
-        println!("Cargo: {}", cargo.display().to_string().yellow());
+        println!(
+            "Cargo command line: {} {}",
+            cargo.display().to_string().yellow(),
+            args.join(" ").yellow()
+        );
         println!("Cargo target: {}", cargo_target.yellow());
         println!("Binary: {}", binary_name.display().to_string().yellow());
         println!("Compiling...");
-        let result = std::process::Command::new(cargo)
-            .arg("build")
-            .arg("--release")
-            .arg("--target")
-            .arg(cargo_target)
-            .status()?;
+        let result = std::process::Command::new(cargo).args(args).status()?;
         if !result.success() {
             return Err("Compilation failed".into());
         }
