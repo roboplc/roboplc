@@ -148,13 +148,12 @@ impl Communicator for Serial {
         self.busy.lock()
     }
     fn session_id(&self) -> usize {
-        self.session_id.load(Ordering::Relaxed)
+        self.session_id.load(Ordering::Acquire)
     }
     fn reconnect(&self) {
         let mut port = self.port.lock();
         port.system_port.take();
         port.last_frame.take();
-        self.session_id.fetch_add(1, Ordering::Relaxed);
     }
     fn write(&self, buf: &[u8]) -> Result<()> {
         let mut port = self
@@ -218,6 +217,7 @@ impl Serial {
             let port = open(&self.params, self.timeout)?;
             lock.system_port.replace(port);
             lock.last_frame.take();
+            self.session_id.fetch_add(1, Ordering::Release);
         }
         Ok(lock)
     }

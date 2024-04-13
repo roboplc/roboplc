@@ -51,9 +51,8 @@ pub struct Tcp {
 pub type TcpClient = Arc<Tcp>;
 
 macro_rules! handle_tcp_stream_error {
-    ($sess: expr, $stream: expr, $err: expr, $any: expr) => {{
+    ($stream: expr, $err: expr, $any: expr) => {{
         if $any || $err.kind() == std::io::ErrorKind::TimedOut {
-            $sess.fetch_add(1, Ordering::Relaxed);
             $stream.take().map(|s| s.shutdown(net::Shutdown::Both));
         }
         $err.into()
@@ -65,13 +64,13 @@ impl Communicator for Tcp {
         self.busy.lock()
     }
     fn session_id(&self) -> usize {
-        self.session_id.load(Ordering::Relaxed)
+        self.session_id.load(Ordering::Acquire)
     }
     fn reconnect(&self) {
-        self.stream.lock().take().map(|s| {
-            self.session_id.fetch_add(1, Ordering::Relaxed);
-            s.shutdown(net::Shutdown::Both)
-        });
+        self.stream
+            .lock()
+            .take()
+            .map(|s| s.shutdown(net::Shutdown::Both));
     }
     fn write(&self, buf: &[u8]) -> Result<()> {
         let mut stream = self.get_stream()?;
@@ -79,7 +78,7 @@ impl Communicator for Tcp {
             .as_mut()
             .unwrap()
             .write_all(buf)
-            .map_err(|e| handle_tcp_stream_error!(self.session_id, stream, e, true))
+            .map_err(|e| handle_tcp_stream_error!(stream, e, true))
     }
     fn read_exact(&self, buf: &mut [u8]) -> Result<()> {
         let mut stream = self.get_stream()?;
@@ -87,7 +86,7 @@ impl Communicator for Tcp {
             .as_mut()
             .unwrap()
             .read_exact(buf)
-            .map_err(|e| handle_tcp_stream_error!(self.session_id, stream, e, false))
+            .map_err(|e| handle_tcp_stream_error!(stream, e, false))
     }
     fn local_ip_addr(&self) -> Result<Option<SocketAddr>> {
         let mut stream = self.get_stream()?;
@@ -96,7 +95,7 @@ impl Communicator for Tcp {
             .unwrap()
             .local_addr()
             .map(Some)
-            .map_err(|e| handle_tcp_stream_error!(self.session_id, stream, e, false))
+            .map_err(|e| handle_tcp_stream_error!(stream, e, false))
     }
     fn protocol(&self) -> Protocol {
         Protocol::Tcp
@@ -147,6 +146,7 @@ impl Tcp {
             if let Some(ref chat) = self.chat {
                 chat(&mut stream).map_err(Error::io)?;
             }
+            self.session_id.fetch_add(1, Ordering::Release);
             if let Some(ref tx) = self.reader_tx {
                 tx.send(CommReader {
                     reader: Some(Box::new(stream.try_clone()?)),
