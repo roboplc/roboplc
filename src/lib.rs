@@ -3,6 +3,7 @@ use core::{fmt, num};
 use std::io::Write;
 use std::{env, mem, str::FromStr, sync::Arc, time::Duration};
 
+use colored::Colorize as _;
 use thread_rt::{RTParams, Scheduling};
 
 pub use log::LevelFilter;
@@ -211,6 +212,13 @@ where
         let dp = self.delivery_policy();
         dp == DeliveryPolicy::Optional || dp == DeliveryPolicy::SingleOptional
     }
+}
+
+/// Immediately kills the current process and all its subprocesses with a message to stderr
+pub fn critical(msg: &str) -> ! {
+    eprintln!("{}", msg.red().bold());
+    thread_rt::suicide_myself(Duration::from_secs(0), false);
+    std::process::exit(1);
 }
 
 /// Terminates the current process and all its subprocesses in the specified period of time with
