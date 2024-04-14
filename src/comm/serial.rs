@@ -13,6 +13,7 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tracing::trace;
 
 /// Create a new serial client. The client will attempt to connect to the given address at the time
 /// of the first request. The client will automatically reconnect if the connection is lost.
@@ -214,10 +215,12 @@ impl Serial {
     fn get_port(&self) -> Result<MutexGuard<SPort>> {
         let mut lock = self.port.lock();
         if lock.system_port.as_mut().is_none() {
+            trace!(dev=%self.params.port_dev, "creating new serial connection");
             let port = open(&self.params, self.timeout)?;
             lock.system_port.replace(port);
             lock.last_frame.take();
             self.session_id.fetch_add(1, Ordering::Release);
+            trace!(dev=%self.params.port_dev, session_id=self.session_id(), "serial connection started");
         }
         Ok(lock)
     }

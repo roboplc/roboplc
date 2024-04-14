@@ -12,6 +12,7 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::trace;
 
 const READER_CHANNEL_CAPACITY: usize = 1024;
 
@@ -130,6 +131,7 @@ impl Tcp {
     fn get_stream(&self) -> Result<MutexGuard<Option<TcpStream>>> {
         let mut lock = self.stream.lock();
         if lock.as_mut().is_none() {
+            trace!(addr=%self.addr, "creating new TCP stream");
             let zero_to = Duration::from_secs(0);
             let mut stream = if self.timeouts.connect > zero_to {
                 TcpStream::connect_timeout(&self.addr, self.timeouts.connect)?
@@ -144,9 +146,11 @@ impl Tcp {
             }
             stream.set_nodelay(true)?;
             if let Some(ref chat) = self.chat {
+                trace!("chatting with the server");
                 chat(&mut stream).map_err(Error::io)?;
             }
             self.session_id.fetch_add(1, Ordering::Release);
+            trace!(addr=%self.addr, session_id=self.session_id(), "TCP session started");
             if let Some(ref tx) = self.reader_tx {
                 tx.send(CommReader {
                     reader: Some(Box::new(stream.try_clone()?)),
