@@ -2,7 +2,7 @@
 //! Can be used to communicate between processes on different machines or with various 3rd party
 //! devices and software, such as Matlab, LabView, etc.
 //!
-//! [Raw UDP example](https://github.com/eva-ics/roboplc/blob/main/examples/raw-udp.rs)
+//! [Raw UDP example](https://github.com/roboplc/roboplc/blob/main/examples/raw-udp.rs)
 use binrw::{BinRead, BinWrite};
 use std::{
     io::Cursor,

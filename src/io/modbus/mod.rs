@@ -2,8 +2,8 @@
 //! Contains Modbus client/server implementations.
 //!
 //! Examples: [modbus
-//! master(client)](https://github.com/eva-ics/roboplc/blob/main/examples/modbus-master.rs),
-//! [modbus slave(server)](https://github.com/eva-ics/roboplc/blob/main/examples/modbus-slave.rs)
+//! master(client)](https://github.com/roboplc/roboplc/blob/main/examples/modbus-master.rs),
+//! [modbus slave(server)](https://github.com/roboplc/roboplc/blob/main/examples/modbus-slave.rs)
 use std::io::Cursor;
 
 use crate::comm::{Client, Protocol};

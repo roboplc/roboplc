@@ -4,7 +4,7 @@
   <a href="https://docs.rs/roboplc"><img alt="docs.rs page" src="https://docs.rs/roboplc/badge.svg"></img></a>
 </h2>
 
-<img src="https://raw.githubusercontent.com/eva-ics/roboplc/main/roboplcline_.png"
+<img src="https://raw.githubusercontent.com/roboplc/roboplc/main/roboplcline_.png"
 width="200" />
 
 [RoboPLC](https://www.bohemia-automation.com/software/roboplc/) is an ultimate
@@ -23,7 +23,7 @@ Available at <https://info.bma.ai/en/actual/roboplc/index.html>
 
 ## Examples
 
-Can be found at <https://github.com/eva-ics/roboplc/tree/main/examples>
+Can be found at <https://github.com/roboplc/roboplc/tree/main/examples>
 
 ## DataBuffer
 
@@ -33,7 +33,7 @@ by a single consumer in bulk and submitted, e.g. into a local database or into
 an external bus.
 
 <img
-src="https://raw.githubusercontent.com/eva-ics/roboplc/main/schemas/databuffer.png"
+src="https://raw.githubusercontent.com/roboplc/roboplc/main/schemas/databuffer.png"
 width="350" />
 
 * always has got a fixed capacity
@@ -53,7 +53,7 @@ architecture significantly clearer, lowers code support costs and brings
 additional features.
 
 <img
-src="https://raw.githubusercontent.com/eva-ics/roboplc/main/schemas/hub.png"
+src="https://raw.githubusercontent.com/roboplc/roboplc/main/schemas/hub.png"
 width="550" />
 
 * classic pub/sub patterns with no data serialization overhead
@@ -105,7 +105,7 @@ launched threads.
 functionality together.
 
 <img
-src="https://raw.githubusercontent.com/eva-ics/roboplc/main/schemas/controller.png"
+src="https://raw.githubusercontent.com/roboplc/roboplc/main/schemas/controller.png"
 width="550" />
 
 ## I/O
@@ -116,12 +116,12 @@ buses.
 Currently supported:
 
 * Modbus (RTU/TCP) via [`io::modbus`] ([Modbus PLC
-  example](https://github.com/eva-ics/roboplc/blob/main/examples/plc-modbus.rs)),
+  example](https://github.com/roboplc/roboplc/blob/main/examples/plc-modbus.rs)),
   requires `modbus` crate feature.
 
 * Raw UDP in/out via [`io::raw_udp`]
-  ([Raw UDP in/out example](https://github.com/eva-ics/roboplc/blob/main/examples/raw-udp.rs))
+  ([Raw UDP in/out example](https://github.com/roboplc/roboplc/blob/main/examples/raw-udp.rs))
 
 * [EVA ICS](https://www.eva-ics.com/) EAPI in/out via [`io::eapi`] ([EVA ICS
-  example](https://github.com/eva-ics/roboplc/blob/main/examples/eapi.rs)),
+  example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)),
   requires `eapi` crate feature.

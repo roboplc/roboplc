@@ -1,5 +1,5 @@
 //!
-//! [EAPI communication example](https://github.com/eva-ics/roboplc/blob/main/examples/eapi.rs)
+//! [EAPI communication example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)
 use binrw::BinWrite;
 use busrt::rpc::{RpcError, RpcEvent, RpcHandlers, RpcResult};
 use busrt::{async_trait, QoS};

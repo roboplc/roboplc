@@ -182,7 +182,7 @@ where
     ///
     /// Workers that listen to hub messages may also receive a custom termination message and gracefully
     /// shut themselves down. For such functionality a custom signal handler should be implemented
-    /// (See <https://github.com/eva-ics/roboplc/blob/main/examples/shutdown.rs>).
+    /// (See <https://github.com/roboplc/roboplc/blob/main/examples/shutdown.rs>).
     ///
     /// The thread is automatically spawned with FIFO scheduling and the highest priority on CPU 0
     /// or falled back to non-realtime.
