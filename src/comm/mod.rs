@@ -36,11 +36,38 @@ impl Client {
     pub fn protocol(&self) -> Protocol {
         self.0.protocol()
     }
+    /// Get local IP address (for TCP/IP)
     pub fn local_ip_addr(&self) -> Result<Option<SocketAddr>> {
         self.0.local_ip_addr()
     }
+    /// Get the current session id
     pub fn session_id(&self) -> usize {
         self.0.session_id()
+    }
+    /// lock the current session (disable reconnects)
+    pub fn lock_session(&self) -> Result<SessionGuard> {
+        let session_id = self.0.lock_session()?;
+        Ok(SessionGuard {
+            client: self.clone(),
+            session_id,
+        })
+    }
+}
+
+pub struct SessionGuard {
+    client: Client,
+    session_id: usize,
+}
+
+impl SessionGuard {
+    pub fn session_id(&self) -> usize {
+        self.session_id
+    }
+}
+
+impl Drop for SessionGuard {
+    fn drop(&mut self) {
+        self.client.0.unlock_session();
     }
 }
 
@@ -61,6 +88,8 @@ trait Communicator {
     fn local_ip_addr(&self) -> Result<Option<SocketAddr>> {
         Ok(None)
     }
+    fn lock_session(&self) -> Result<usize>;
+    fn unlock_session(&self);
 }
 
 #[allow(clippy::module_name_repetitions)]

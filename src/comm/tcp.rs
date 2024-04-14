@@ -9,7 +9,7 @@ use parking_lot::{Mutex, MutexGuard};
 use std::io::{Read, Write};
 use std::net::{self, TcpStream};
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::trace;
@@ -44,6 +44,7 @@ pub struct Tcp {
     timeouts: Timeouts,
     busy: Mutex<()>,
     session_id: AtomicUsize,
+    allow_reconnect: AtomicBool,
     reader_tx: Option<pchannel::Sender<CommReader>>,
     chat: Option<Box<ChatFn>>,
 }
@@ -101,6 +102,16 @@ impl Communicator for Tcp {
     fn protocol(&self) -> Protocol {
         Protocol::Tcp
     }
+    fn lock_session(&self) -> Result<usize> {
+        let _lock = self.lock();
+        let _s = self.get_stream()?;
+        self.allow_reconnect.store(false, Ordering::Release);
+        Ok(self.session_id())
+    }
+
+    fn unlock_session(&self) {
+        self.allow_reconnect.store(true, Ordering::Release);
+    }
 }
 
 impl Tcp {
@@ -123,6 +134,7 @@ impl Tcp {
             busy: <_>::default(),
             timeouts: options.timeouts,
             session_id: <_>::default(),
+            allow_reconnect: AtomicBool::new(true),
             reader_tx: tx,
             chat: options.chat,
         };
@@ -131,6 +143,9 @@ impl Tcp {
     fn get_stream(&self) -> Result<MutexGuard<Option<TcpStream>>> {
         let mut lock = self.stream.lock();
         if lock.as_mut().is_none() {
+            if !self.allow_reconnect.load(Ordering::Acquire) {
+                return Err(Error::io("not connected but reconnects not allowed"));
+            }
             trace!(addr=%self.addr, "creating new TCP stream");
             let zero_to = Duration::from_secs(0);
             let mut stream = if self.timeouts.connect > zero_to {

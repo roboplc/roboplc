@@ -9,6 +9,7 @@ use serial::SystemPort;
 use std::io;
 use std::io::{Read, Write};
 use std::str::FromStr;
+use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -133,6 +134,7 @@ pub struct Serial {
     busy: Mutex<()>,
     params: Parameters,
     session_id: AtomicUsize,
+    allow_reconnect: AtomicBool,
 }
 
 #[derive(Default)]
@@ -197,6 +199,17 @@ impl Communicator for Serial {
     fn protocol(&self) -> Protocol {
         Protocol::Serial
     }
+
+    fn lock_session(&self) -> Result<usize> {
+        let _lock = self.lock();
+        let _s = self.get_port()?;
+        self.allow_reconnect.store(false, Ordering::Release);
+        Ok(self.session_id())
+    }
+
+    fn unlock_session(&self) {
+        self.allow_reconnect.store(true, Ordering::Release);
+    }
 }
 
 impl Serial {
@@ -209,12 +222,16 @@ impl Serial {
             busy: <_>::default(),
             params,
             session_id: <_>::default(),
+            allow_reconnect: AtomicBool::new(true),
         }
         .into())
     }
     fn get_port(&self) -> Result<MutexGuard<SPort>> {
         let mut lock = self.port.lock();
         if lock.system_port.as_mut().is_none() {
+            if !self.allow_reconnect.load(Ordering::Acquire) {
+                return Err(Error::io("not connected but reconnects not allowed"));
+            }
             trace!(dev=%self.params.port_dev, "creating new serial connection");
             let port = open(&self.params, self.timeout)?;
             lock.system_port.replace(port);
