@@ -27,6 +27,42 @@ fn is_realtime() -> bool {
     REALTIME_MODE.load(Ordering::Relaxed)
 }
 
+/// The method preallocates a heap memory region with the given size. The method is useful to
+/// prevent memory fragmentation and speed up memory allocation. It is highly recommended to call
+/// the method at the beginning of the program.
+///
+/// Does nothing in simulated mode.
+///
+/// # Panics
+///
+/// Will panic if the page size is too large (more than usize)
+pub fn prealloc_heap(size: usize) -> Result<()> {
+    if !is_realtime() {
+        return Ok(());
+    }
+    let page_size = unsafe {
+        if libc::mallopt(libc::M_MMAP_MAX, 0) != 1 {
+            return Err(Error::failed(
+                "unable to disable mmap for allocation of large mem regions",
+            ));
+        }
+        if libc::mallopt(libc::M_TRIM_THRESHOLD, -1) != 1 {
+            return Err(Error::failed("unable to disable trimming"));
+        }
+        if libc::mlockall(libc::MCL_FUTURE) == -1 {
+            return Err(Error::failed("unable to lock memory pages"));
+        };
+        usize::try_from(libc::sysconf(libc::_SC_PAGESIZE)).expect("Page size too large")
+    };
+    let mut heap_mem = vec![0_u8; size];
+    std::hint::black_box(move || {
+        for i in (0..size).step_by(page_size) {
+            heap_mem[i] = 0xff;
+        }
+    })();
+    Ok(())
+}
+
 /// A thread builder object, similar to [`thread::Builder`] but with real-time capabilities
 ///
 /// Warning: works on Linux systems only

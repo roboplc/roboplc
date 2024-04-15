@@ -66,7 +66,7 @@ pub enum Error {
     #[error("timed out")]
     Timeout,
     /// I/O and threading errors
-    #[error("I/O error {0}")]
+    #[error("I/O error: {0}")]
     IO(String),
     /// 3rd party API errors
     #[error("API error {0}: {1}")]
@@ -101,6 +101,9 @@ pub enum Error {
     /// This error never happens and is used as a compiler hint only
     #[error("never happens")]
     Infallible(#[from] std::convert::Infallible),
+    /// All other errors
+    #[error("operation failed: {0}")]
+    Failed(String),
 }
 
 macro_rules! impl_error {
@@ -130,6 +133,9 @@ impl Error {
     }
     pub fn io<S: fmt::Display>(msg: S) -> Self {
         Error::IO(msg.to_string())
+    }
+    pub fn failed<S: fmt::Display>(msg: S) -> Self {
+        Error::Failed(msg.to_string())
     }
 }
 
