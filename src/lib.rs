@@ -1,6 +1,7 @@
 #![ doc = include_str!( concat!( env!( "CARGO_MANIFEST_DIR" ), "/", "README.md" ) ) ]
 use core::{fmt, num};
 use std::io::Write;
+use std::panic::PanicInfo;
 use std::{env, mem, str::FromStr, sync::Arc, time::Duration};
 
 use colored::Colorize as _;
@@ -248,6 +249,22 @@ pub fn suicide(delay: Duration, warn: bool) {
             thread_rt::suicide_myself(delay, warn);
         });
     };
+}
+
+/// Sets panic handler to immediately kill the process and its childs with SIGKILL
+pub fn setup_panic() {
+    std::panic::set_hook(Box::new(move |info: &PanicInfo| {
+        panic(info);
+    }));
+}
+
+fn panic(info: &PanicInfo) -> ! {
+    eprintln!("{}", info.to_string().red().bold());
+    thread_rt::suicide_myself(Duration::from_secs(0), false);
+    // never happens
+    loop {
+        std::thread::sleep(Duration::from_secs(1));
+    }
 }
 
 impl DataDeliveryPolicy for () {}
