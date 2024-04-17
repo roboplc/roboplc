@@ -71,6 +71,7 @@ impl Worker<Message, ()> for DataGenerator {
     }
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     let mut controller = Controller::<Message, ()>::new();
     controller.spawn_worker(DataGenerator {})?;

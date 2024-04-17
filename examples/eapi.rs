@@ -77,6 +77,7 @@ impl Worker<Message, Variables> for EAPIConnector {
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     let eapi_config: EAPIConfig<Message, Variables> = EAPIConfig::new("/opt/eva4/var/bus.ipc")
         .action_handler("unit:tests/fan".parse().unwrap(), |action, context| {

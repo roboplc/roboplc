@@ -148,6 +148,7 @@ impl Worker<Message, Variables> for ModbusRelays1 {
 
 // Main function, to start the controller and workers
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     // sets the simulated mode for the real-time module, do not set any thread real-time parameters
     roboplc::thread_rt::set_simulated();

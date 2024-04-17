@@ -95,6 +95,7 @@ impl Worker<Message, ()> for PrintEnv {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     // creates a controller instance
     let mut controller = Controller::<Message, ()>::new();

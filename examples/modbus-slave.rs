@@ -93,6 +93,7 @@ impl Worker<Message, Variables> for ModbusSrv {
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     // for TCP
     let addr = "0.0.0.0:5552";
