@@ -7,6 +7,9 @@ use bma_ts::Monotonic;
 pub trait DurationRT {
     /// Returns true if all provided [`Monotonic`] times fit the duration
     fn fits(&self, t: &[Monotonic]) -> bool;
+    /// Returns the absolute difference between two durations (provided until abs_diff become
+    /// stable)
+    fn diff_abs(&self, other: Self) -> Duration;
 }
 
 impl DurationRT for Duration {
@@ -17,6 +20,13 @@ impl DurationRT for Duration {
             let min_ts = t.iter().min().unwrap();
             let max_ts = t.iter().max().unwrap();
             max_ts.as_duration() - min_ts.as_duration() <= *self
+        }
+    }
+    fn diff_abs(&self, other: Self) -> Duration {
+        if *self > other {
+            *self - other
+        } else {
+            other - *self
         }
     }
 }
