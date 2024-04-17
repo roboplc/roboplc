@@ -115,8 +115,10 @@ buses.
 
 Currently supported:
 
-* Modbus (RTU/TCP) via [`io::modbus`] ([Modbus PLC
-  example](https://github.com/roboplc/roboplc/blob/main/examples/plc-modbus.rs)),
+* Modbus (RTU/TCP) via [`io::modbus`] ([Modbus client/master
+  example](https://github.com/roboplc/roboplc/blob/main/examples/modbus-master.rs),
+  [Modbus server/slave
+  example](https://github.com/roboplc/roboplc/blob/main/examples/modbus-slave.rs)),
   requires `modbus` crate feature.
 
 * Raw UDP in/out via [`io::raw_udp`]
