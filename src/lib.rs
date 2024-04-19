@@ -254,6 +254,7 @@ pub fn suicide(delay: Duration, warn: bool) {
     };
 }
 
+/// Sets up Prometheus metrics exporter
 #[cfg(feature = "metrics")]
 pub fn setup_metrics_exporter() -> Result<()> {
     let builder = metrics_exporter_prometheus::PrometheusBuilder::new();
