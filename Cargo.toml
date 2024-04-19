@@ -1,6 +1,6 @@
 [package]
 name = "roboplc"
-version = "0.1.41"
+version = "0.1.42"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -18,7 +18,7 @@ features = ["full", "eva-common/openssl-no-fips"]
 
 [dependencies]
 binrw = "0.13.3"
-bma-ts = { version = "0.1.8", features = ["serde"] }
+bma-ts = { version = "0.1.11", features = ["serde"] }
 colored = "2.1.0"
 libc = "0.2.153"
 nix = { version = "0.28.0", features = ["signal"] }
