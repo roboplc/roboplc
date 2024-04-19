@@ -10,6 +10,9 @@ use thread_rt::{RTParams, Scheduling};
 pub use log::LevelFilter;
 pub use roboplc_derive::DataPolicy;
 
+#[cfg(feature = "metrics")]
+pub use metrics;
+
 /// Event buffers
 pub mod buf;
 /// Reliable TCP/Serial communications
@@ -249,6 +252,12 @@ pub fn suicide(delay: Duration, warn: bool) {
             thread_rt::suicide_myself(delay, warn);
         });
     };
+}
+
+#[cfg(feature = "metrics")]
+pub fn setup_metrics_exporter() -> Result<()> {
+    let builder = metrics_exporter_prometheus::PrometheusBuilder::new();
+    builder.install().map_err(Error::io)
 }
 
 /// Sets panic handler to immediately kill the process and its childs with SIGKILL
