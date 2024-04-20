@@ -29,11 +29,11 @@ impl<T> Default for Supervisor<T> {
 macro_rules! vacant_entry {
     ($self:ident, $builder:ident) => {{
         let Some(name) = $builder.name.clone() else {
-                    return Err(Error::SupervisorNameNotSpecified);
-                };
+                        return Err(Error::SupervisorNameNotSpecified);
+                    };
         let btree_map::Entry::Vacant(entry) = $self.tasks.entry(name.clone()) else {
-                    return Err(Error::SupervisorDuplicateTask(name));
-                };
+                        return Err(Error::SupervisorDuplicateTask(name));
+                    };
         entry
     }};
 }
