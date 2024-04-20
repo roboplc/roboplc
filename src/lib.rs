@@ -254,11 +254,19 @@ pub fn suicide(delay: Duration, warn: bool) {
     };
 }
 
-/// Sets up Prometheus metrics exporter
+/// Returns [Prometheus metrics exporter
+/// builder](https://docs.rs/metrics-exporter-prometheus/0.14.0/metrics_exporter_prometheus/)
+///
+/// # Example
+///
+/// ```rust,no_run
+/// roboplc::metrics_exporter()
+///   .set_bucket_duration(std::time::Duration::from_secs(300)).unwrap()
+///   .install().unwrap();
+/// ```
 #[cfg(feature = "metrics")]
-pub fn setup_metrics_exporter() -> Result<()> {
-    let builder = metrics_exporter_prometheus::PrometheusBuilder::new();
-    builder.install().map_err(Error::io)
+pub fn metrics_exporter() -> metrics_exporter_prometheus::PrometheusBuilder {
+    metrics_exporter_prometheus::PrometheusBuilder::new()
 }
 
 /// Sets panic handler to immediately kill the process and its childs with SIGKILL
