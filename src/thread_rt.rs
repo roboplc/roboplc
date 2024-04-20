@@ -12,7 +12,7 @@ use std::{
     thread::{self, JoinHandle, Scope, ScopedJoinHandle},
     time::Duration,
 };
-use sysinfo::{Pid, System};
+use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use tracing::warn;
 
 static REALTIME_MODE: AtomicBool = AtomicBool::new(true);

@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: cargo test
-        run: cargo test --verbose --all-features --all-targets --features openssl-vendored
+        run: cargo test --all-features --all-targets --features openssl-vendored
   fmt:
     runs-on: ubuntu-latest
     steps:

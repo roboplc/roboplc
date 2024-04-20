@@ -64,7 +64,7 @@ impl DataDeliveryPolicy for PushPayload {
 }
 
 /// EAPI connection configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct EAPIConfig<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
