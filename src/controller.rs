@@ -8,6 +8,7 @@ use std::{
 };
 
 use crate::{
+    critical,
     hub::Hub,
     suicide,
     supervisor::Supervisor,
@@ -156,6 +157,11 @@ where
         self.supervisor.spawn(builder, move || {
             if let Err(e) = worker.run(&context) {
                 error!(worker=worker.worker_name(), error=%e, "worker terminated");
+                critical(&format!(
+                    "Worker {} terminated: {}",
+                    worker.worker_name(),
+                    e
+                ));
             }
         })?;
         Ok(())
@@ -349,7 +355,8 @@ where
 pub trait Worker<D: DataDeliveryPolicy + Clone + Send + Sync + 'static, V: Send>:
     Send + Sync
 {
-    /// The worker's main function, started by [`Controller::spawn_worker()`]
+    /// The worker's main function, started by [`Controller::spawn_worker()`]. If the function
+    /// returns an error, the process is terminated using [`critical()`].
     fn run(&mut self, context: &Context<D, V>) -> WResult;
 }
 
