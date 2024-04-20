@@ -960,6 +960,8 @@ dependencies = [
 [[package]]
 name = "roboplc"
 version = "0.1.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51c1fa6f46f93ebce2af77dd213c0948708dd319c439afd79a264d060ddb9b20"
 dependencies = [
  "binrw",
  "bma-ts",
@@ -983,7 +985,7 @@ dependencies = [
 
 [[package]]
 name = "roboplc-cli"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "clap",
  "colored",
