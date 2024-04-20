@@ -40,8 +40,7 @@ jobs:
           -A clippy::missing_errors_doc \
           -A clippy::single_match \
           -A clippy::uninlined_format_args \
-          -A clippy::no_effect_underscore_binding \
-          -A clippy::large_futures
+          -A clippy::no_effect_underscore_binding
   derive-test:
     runs-on: ubuntu-latest
     steps:
@@ -69,8 +68,7 @@ jobs:
           -A clippy::missing_errors_doc \
           -A clippy::single_match \
           -A clippy::uninlined_format_args \
-          -A clippy::no_effect_underscore_binding \
-          -A clippy::large_futures
+          -A clippy::no_effect_underscore_binding
   cli-test:
     runs-on: ubuntu-latest
     steps:
@@ -98,5 +96,4 @@ jobs:
           -A clippy::missing_errors_doc \
           -A clippy::single_match \
           -A clippy::uninlined_format_args \
-          -A clippy::no_effect_underscore_binding \
-          -A clippy::large_futures
+          -A clippy::no_effect_underscore_binding

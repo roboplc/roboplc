@@ -360,14 +360,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             url = value
                 .get("remote")
                 .and_then(|v| v.get("url"))
-                .and_then(|v| v.as_str())
+                .and_then(toml::Value::as_str)
                 .map(String::from);
         }
         if key.is_none() {
             key = value
                 .get("remote")
                 .and_then(|v| v.get("key"))
-                .and_then(|v| v.as_str())
+                .and_then(toml::Value::as_str)
                 .map(String::from);
         }
         if timeout.is_none() {

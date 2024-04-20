@@ -51,7 +51,7 @@ impl<T: DataDeliveryPolicy + Clone> Hub<T> {
     pub async fn send(&self, message: T) {
         macro_rules! send {
             ($sub: expr, $msg: expr) => {
-                let _ = $sub.tx.send($msg).await;
+                let _r = $sub.tx.send($msg).await;
             };
         }
         // clones matching subscribers to keep the internal mutex unlocked and avoid deadlocks

@@ -172,7 +172,7 @@ impl Builder {
                     name
                 )));
             }
-            builder = builder.name(name.to_owned());
+            builder = builder.name(name.clone());
         }
         if let Some(stack_size) = self.stack_size {
             builder = builder.stack_size(stack_size);
@@ -327,7 +327,7 @@ impl<T> Task<T> {
     /// Applies new real-time params
     pub fn apply_rt_params(&mut self, rt_params: RTParams) -> Result<()> {
         if let Err(e) = apply_thread_params(self.tid, &rt_params, false) {
-            let _ = apply_thread_params(self.tid, &self.rt_params, false);
+            let _r = apply_thread_params(self.tid, &self.rt_params, false);
             return Err(e);
         }
         self.rt_params = rt_params;
@@ -388,7 +388,7 @@ impl<'scope, T> ScopedTask<'scope, T> {
     /// Applies new real-time params
     pub fn apply_rt_params(&mut self, rt_params: RTParams) -> Result<()> {
         if let Err(e) = apply_thread_params(self.tid, &rt_params, false) {
-            let _ = apply_thread_params(self.tid, &self.rt_params, false);
+            let _r = apply_thread_params(self.tid, &self.rt_params, false);
             return Err(e);
         }
         self.rt_params = rt_params;
