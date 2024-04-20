@@ -255,7 +255,7 @@ pub fn suicide(delay: Duration, warn: bool) {
 }
 
 /// Returns [Prometheus metrics exporter
-/// builder](https://docs.rs/metrics-exporter-prometheus/0.14.0/metrics_exporter_prometheus/)
+/// builder](https://docs.rs/metrics-exporter-prometheus/)
 ///
 /// # Example
 ///
