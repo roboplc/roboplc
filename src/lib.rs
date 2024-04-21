@@ -314,6 +314,7 @@ pub fn configure_logger(filter: LevelFilter) {
 }
 
 pub mod prelude {
+    #[cfg(target_os = "linux")]
     pub use super::suicide;
     #[cfg(target_os = "linux")]
     pub use crate::controller::*;
