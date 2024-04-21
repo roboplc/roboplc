@@ -127,3 +127,8 @@ Currently supported:
 * [EVA ICS](https://www.eva-ics.com/) EAPI in/out via [`io::eapi`] ([EVA ICS
   example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)),
   requires `eapi` crate feature.
+
+## Using on other platforms
+
+The components [`thread_rt`], [`supervisor`] and [`controller`] can work on
+Linux machines only.
