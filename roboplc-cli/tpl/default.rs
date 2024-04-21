@@ -19,6 +19,9 @@ impl Worker<Message, Variables> for Worker1 {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if !roboplc::is_production() {
+        roboplc::thread_rt::set_simulated();
+    }
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     roboplc::thread_rt::prealloc_heap(10_000_000)?;
     // METRICS
