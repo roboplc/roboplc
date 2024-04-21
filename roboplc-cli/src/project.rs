@@ -15,9 +15,9 @@ pub fn create(
     maybe_timeout: Option<u64>,
     opts: &NewCommand,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Creating new project {}", opts.name.green());
+    println!("Creating new project: {}", opts.name.green().bold());
     let mut cmd = std::process::Command::new("cargo");
-    cmd.arg("new").arg(&opts.name);
+    cmd.arg("-q").arg("new").arg(&opts.name);
     if !opts.extras.is_empty() {
         cmd.args(&opts.extras);
     }
@@ -46,14 +46,14 @@ pub fn create(
     };
     std::fs::write(CONFIG_FILE_NAME, toml::to_string_pretty(&robo_toml)?)?;
     std::fs::write("src/main.rs", prepare_main(TPL_DEFAULT_RS, &robo_features))?;
-    println!("Project created: {}", opts.name.green());
+    println!("Project created: {}", opts.name.green().bold());
     Ok(())
 }
 
 fn add_dependency(name: &str, features: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Adding dependency {}", name.green());
+    println!("Adding dependency: {}", name.green().bold());
     let mut cmd = std::process::Command::new("cargo");
-    cmd.arg("add").arg(name);
+    cmd.arg("-q").arg("add").arg(name);
     for feature in features {
         cmd.arg("--features").arg(feature);
     }
