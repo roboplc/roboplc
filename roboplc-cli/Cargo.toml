@@ -1,6 +1,6 @@
 [package]
 name = "roboplc-cli"
-version = "0.1.13"
+version = "0.1.14"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"

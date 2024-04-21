@@ -53,8 +53,12 @@ pub struct FlashCommand {
     pub cargo_args: Option<String>,
     #[clap(long, help = "Do not compile a Rust project, use a file instead")]
     pub file: Option<PathBuf>,
-    #[clap(long, help = "Force flash (automatically put remote in CONFIG mode)")]
+    #[clap(
+        short = 'f',
+        long,
+        help = "Force flash (automatically put remote in CONFIG mode)"
+    )]
     pub force: bool,
-    #[clap(long, help = "Put remote in RUN mode after flashing")]
+    #[clap(short = 'r', long, help = "Put remote in RUN mode after flashing")]
     pub run: bool,
 }
