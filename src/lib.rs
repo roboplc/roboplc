@@ -275,7 +275,8 @@ pub fn metrics_exporter() -> metrics_exporter_prometheus::PrometheusBuilder {
     metrics_exporter_prometheus::PrometheusBuilder::new()
 }
 
-/// Sets panic handler to immediately kill the process and its childs with SIGKILL
+/// Sets panic handler to immediately kill the process and its childs with SIGKILL. The process is
+/// killed when panic happens in ANY thread
 #[cfg(target_os = "linux")]
 pub fn setup_panic() {
     std::panic::set_hook(Box::new(move |info: &PanicInfo| {
