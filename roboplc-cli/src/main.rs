@@ -20,6 +20,8 @@ mod remote;
 mod ureq_err;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(target_os = "windows")]
+    let _enabled = ansi_term::enable_ansi_support();
     let args = Args::parse();
     let mut maybe_url = args.url;
     let mut maybe_key = args.key;

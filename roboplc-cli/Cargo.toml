@@ -1,6 +1,6 @@
 [package]
 name = "roboplc-cli"
-version = "0.1.16"
+version = "0.1.17"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -23,6 +23,8 @@ toml = "0.5"
 ureq = { version = "2.9.6", features = ["json", "native-certs", "native-tls"] }
 ureq_multipart = "1.1.1"
 which = "3"
+[target.'cfg(windows)'.dependencies]
+ansi_term = "0.12.1"
 
 [profile.release]
 strip = true
