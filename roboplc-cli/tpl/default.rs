@@ -11,7 +11,7 @@ type Variables = ();
 struct Worker1 {}
 
 impl Worker<Message, Variables> for Worker1 {
-    fn run(&mut self, _context: &Context<(), ()>) -> WResult {
+    fn run(&mut self, _context: &Context<Message, Variables>) -> WResult {
         loop {
             std::thread::sleep(Duration::from_secs(1));
         }
