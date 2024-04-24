@@ -2,6 +2,10 @@
 
 ## RoboPLC
 
+### 0.1.48 (2024-04-24)
+
+* Locking primitives have been switched to a real-time fork of `parking_lot`
+
 ### 0.1 (2024-04-15)
 
 * First public release
