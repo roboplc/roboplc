@@ -25,6 +25,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let mut maybe_url = args.url;
     let mut maybe_key = args.key;
+    if let Some(ref u) = maybe_url {
+        if !u.starts_with("http://") && !u.starts_with("https://") {
+            // try to get url from global config
+            if let Some(remote) = config::get_global_remote(u) {
+                maybe_url = remote.url;
+                maybe_key = remote.key;
+            }
+        }
+    }
     let mut maybe_timeout = args.timeout;
     let mut build_config = None;
     if let SubCommand::New(_) = args.subcmd {

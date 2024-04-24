@@ -9,9 +9,19 @@ use clap::Parser;
 pub struct Args {
     #[clap(short = 'T', long, help = "Manager API timeout")]
     pub timeout: Option<u64>,
-    #[clap(short = 'U', long, env = "ROBOPLC_URL", help = "Manager URL")]
+    #[clap(
+        short = 'U',
+        long,
+        env = "ROBOPLC_URL",
+        help = "Manager URL or a system"
+    )]
     pub url: Option<String>,
-    #[clap(short = 'k', long, env = "ROBOPLC_KEY", help = "Management key")]
+    #[clap(
+        short = 'k',
+        long,
+        env = "ROBOPLC_KEY",
+        help = "Management key, if required"
+    )]
     pub key: Option<String>,
     #[clap(subcommand)]
     pub subcmd: SubCommand,

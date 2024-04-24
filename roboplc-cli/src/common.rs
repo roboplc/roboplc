@@ -5,6 +5,11 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 
 pub const CONFIG_FILE_NAME: &str = "robo.toml";
+pub const GLOBAL_CONFIG_FILE_NAME: &str = ".robo-global.toml";
+
+pub fn print_err(msg: &str) {
+    eprintln!("{}", msg.red());
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct State {
