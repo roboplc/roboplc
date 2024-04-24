@@ -29,8 +29,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if !u.starts_with("http://") && !u.starts_with("https://") {
             // try to get url from global config
             if let Some(remote) = config::get_global_remote(u) {
-                maybe_url = remote.url;
-                maybe_key = remote.key;
+                if let Some(url) = remote.url {
+                    maybe_url = Some(url);
+                }
+                if let Some(key) = remote.key {
+                    maybe_key = Some(key);
+                }
             }
         }
     }
