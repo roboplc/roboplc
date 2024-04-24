@@ -1,4 +1,4 @@
-use parking_lot::MutexGuard;
+use parking_lot_rt::MutexGuard;
 use std::{
     io::{Read, Write},
     net::SocketAddr,

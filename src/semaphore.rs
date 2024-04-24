@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use parking_lot::{Condvar, Mutex};
+use parking_lot_rt::{Condvar, Mutex};
 
 /// A lightweight real-time safe semaphore
 pub struct Semaphore {

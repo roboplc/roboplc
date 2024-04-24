@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use parking_lot::Mutex;
+use parking_lot_rt::Mutex;
 
 use crate::pchannel::{self, Receiver, Sender};
 use crate::{DataDeliveryPolicy, Error, Result};

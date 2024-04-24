@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use crate::{pdeque::Deque, DataDeliveryPolicy, Error, Result};
 use object_id::UniqueId;
-use parking_lot::{Condvar, Mutex};
+use parking_lot_rt::{Condvar, Mutex};
 
 /// An abstract trait for data channels and hubs
 pub trait DataChannel<T: DataDeliveryPolicy> {

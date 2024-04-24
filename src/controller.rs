@@ -15,7 +15,7 @@ use crate::{
     thread_rt::{Builder, RTParams, Scheduling},
     DataDeliveryPolicy, Error, Result,
 };
-use parking_lot::RwLock;
+use parking_lot_rt::RwLock;
 pub use roboplc_derive::WorkerOpts;
 use signal_hook::{
     consts::{SIGINT, SIGTERM},

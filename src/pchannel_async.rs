@@ -12,7 +12,7 @@ use std::{
 
 use crate::{pdeque::Deque, DataDeliveryPolicy, Error, Result};
 use object_id::UniqueId;
-use parking_lot::{Condvar, Mutex};
+use parking_lot_rt::{Condvar, Mutex};
 use pin_project::{pin_project, pinned_drop};
 
 type ClientId = usize;

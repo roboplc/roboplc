@@ -5,7 +5,7 @@ use super::{
     ChatFn, Client, CommReader, Communicator, ConnectionOptions, Protocol, Stream, Timeouts,
 };
 use core::fmt;
-use parking_lot::{Mutex, MutexGuard};
+use parking_lot_rt::{Mutex, MutexGuard};
 use std::io::{Read, Write};
 use std::net::{self, TcpStream};
 use std::net::{SocketAddr, ToSocketAddrs};
