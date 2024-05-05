@@ -12,6 +12,10 @@ pub mod eapi;
 #[cfg(feature = "modbus")]
 /// Modbus communication
 pub mod modbus;
+/// Linux process communication
+#[cfg(feature = "pipe")]
+/// Subprocess pipes
+pub mod pipe;
 /// Raw UDP communication
 pub mod raw_udp;
 

@@ -124,6 +124,9 @@ Currently supported:
 * Raw UDP in/out via [`io::raw_udp`]
   ([Raw UDP in/out example](https://github.com/roboplc/roboplc/blob/main/examples/raw-udp.rs))
 
+* Subprocess pipes via [`io::pipe`]
+  ([Subprocess pipe example](https://github.com/roboplc/roboplc/blob/main/examples/pipe.rs))
+
 * [EVA ICS](https://www.eva-ics.com/) EAPI in/out via [`io::eapi`] ([EVA ICS
   example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)),
   requires `eapi` crate feature.

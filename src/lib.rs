@@ -298,6 +298,8 @@ fn panic(info: &PanicInfo) -> ! {
 
 impl DataDeliveryPolicy for () {}
 impl DataDeliveryPolicy for usize {}
+impl DataDeliveryPolicy for String {}
+impl<T> DataDeliveryPolicy for Vec<T> {}
 
 /// Returns true if started in production mode (as a systemd unit)
 pub fn is_production() -> bool {

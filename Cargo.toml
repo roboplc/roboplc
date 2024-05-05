@@ -46,10 +46,11 @@ parking_lot_rt = "0.12.1"
 
 [features]
 eapi = ["eva-common", "eva-sdk", "busrt", "tokio", "hostname"]
+pipe = ["tokio/process", "tokio/io-util", "tokio/macros", "tokio/rt", "tokio/time"]
 modbus = ["rmodbus"]
 openssl-vendored = ["busrt/openssl-vendored", "eva-common/openssl-vendored"]
 metrics = ["dep:metrics", "metrics-exporter-prometheus"]
-full = ["eapi", "modbus", "metrics"]
+full = ["eapi", "modbus", "metrics", "pipe"]
 
 [dev-dependencies]
 insta = "1.36.1"
@@ -78,6 +79,11 @@ path = "examples/shutdown.rs"
 [[example]]
 name = "shutdown-custom"
 path = "examples/shutdown-custom.rs"
+
+[[example]]
+name = "pipe"
+path = "examples/pipe.rs"
+required-features = ["pipe"]
 
 [[example]]
 name = "eapi"
