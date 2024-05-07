@@ -151,7 +151,7 @@ fn command_pipe<P, I, S>(
     program: P,
     args: I,
     opts: &Options,
-) -> std::result::Result<Receiver<CommandPipeOutput>, io::Error>
+) -> io::Result<Receiver<CommandPipeOutput>>
 where
     P: AsRef<OsStr>,
     I: IntoIterator<Item = S>,
