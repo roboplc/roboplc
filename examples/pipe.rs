@@ -45,10 +45,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if !roboplc::is_production() {
         roboplc::thread_rt::set_simulated();
     }
-    let _sys = roboplc::thread_rt::SystemConfig::new()
-        .set("kernel/sched_rt_runtime_us", -1)
-        .apply()
-        .expect("Unable to set system config");
     roboplc::thread_rt::prealloc_heap(10_000_000)?;
     let mut controller = Controller::<Message, Variables>::new();
     let (pipe, reader) = Pipe::new("/path/to/subprogram");
