@@ -135,3 +135,4 @@ Currently supported:
 
 The components [`thread_rt`], [`supervisor`] and [`controller`] can work on
 Linux machines only.
+
