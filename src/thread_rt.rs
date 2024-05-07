@@ -7,7 +7,9 @@ use nix::{sys::signal, unistd};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs, mem,
+    fs,
+    io::BufRead,
+    mem,
     sync::atomic::{AtomicBool, Ordering},
     thread::{self, JoinHandle, Scope, ScopedJoinHandle},
     time::Duration,
@@ -692,4 +694,25 @@ impl Drop for SystemConfigGuard {
             }
         }
     }
+}
+
+/// Get absolute number of CPUs, including isolated
+pub fn num_cpus() -> Result<usize> {
+    let f = std::fs::File::open("/proc/cpuinfo")?;
+    let reader = std::io::BufReader::new(f);
+    let lines = reader.lines();
+    let mut count = 0;
+    for line in lines {
+        let line = line?;
+        if line
+            .split(':')
+            .next()
+            .ok_or_else(|| Error::failed("invalid line"))?
+            .trim_end()
+            == "processor"
+        {
+            count += 1;
+        }
+    }
+    Ok(count)
 }
