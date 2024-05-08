@@ -12,7 +12,7 @@ use roboplc::io::modbus::{prelude::*, ModbusServerWritePermission};
 use roboplc::locking::Mutex;
 use roboplc::prelude::*;
 use roboplc::time::interval;
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 
 const MODBUS_TIMEOUT: Duration = Duration::from_secs(1);
 const MODBUS_LISTEN: &str = "0.0.0.0:5502";
@@ -126,7 +126,7 @@ impl Worker<Message, Variables> for Relay {
                     self.port_mapping.write(relays)?;
                     if relay_down {
                         self.state_mapping.write(1u8)?;
-                        tracing::info!("Relay back online");
+                        info!("Relay back online");
                         relay_down = false;
                     }
                 }
