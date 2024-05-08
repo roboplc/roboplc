@@ -5,7 +5,7 @@ use crate::{
     Error, Result,
 };
 use binrw::{BinRead, BinWrite};
-use parking_lot_rt::Mutex;
+use parking_lot_rt::{Mutex, MutexGuard};
 use rmodbus::{
     server::{context::ModbusContext, storage::ModbusStorage, ModbusFrame},
     ModbusFrameBuf, ModbusProto,
@@ -38,6 +38,7 @@ fn handle_client<
     unit: u8,
     storage: Arc<Mutex<ModbusStorage<C, D, I, H>>>,
     modbus_proto: ModbusProto,
+    allow_write: &AllowFn,
 ) -> Result<()> {
     let mut buf: ModbusFrameBuf = [0; 256];
     let mut response = Vec::with_capacity(256);
@@ -52,9 +53,30 @@ fn handle_client<
             if frame.readonly {
                 frame.process_read(&*storage.lock()).map_err(Error::io)?;
             } else {
-                frame
-                    .process_write(&mut *storage.lock())
-                    .map_err(Error::io)?;
+                let (process, _guard) = if let Some(changes) = frame.changes() {
+                    let (kind, range) = match changes {
+                        rmodbus::server::Changes::Coils { reg, count } => {
+                            (ModbusRegisterKind::Coil, reg..reg + count)
+                        }
+                        rmodbus::server::Changes::Holdings { reg, count } => {
+                            (ModbusRegisterKind::Holding, reg..reg + count)
+                        }
+                    };
+                    match allow_write(kind, range) {
+                        WritePermission::Allow => (true, None),
+                        WritePermission::AllowLock(guard) => (true, Some(guard)),
+                        WritePermission::Deny => (false, None),
+                    }
+                } else {
+                    (true, None)
+                };
+                if process {
+                    frame
+                        .process_write(&mut *storage.lock())
+                        .map_err(Error::io)?;
+                } else {
+                    frame.set_modbus_error_if_unset(&rmodbus::ErrorKind::NegativeAcknowledge)?;
+                }
             }
         }
         if frame.response_required {
@@ -65,6 +87,33 @@ fn handle_client<
     Ok(())
 }
 
+pub type AllowFn = fn(ModbusRegisterKind, std::ops::Range<u16>) -> WritePermission;
+
+pub enum WritePermission {
+    /// Write is allowed.
+    Allow,
+    /// Write is allowed with a lock, the lock is released after the write operation.
+    AllowLock(MutexGuard<'static, ()>),
+    /// Write is forbidden.
+    Deny,
+}
+
+impl From<bool> for WritePermission {
+    fn from(value: bool) -> Self {
+        if value {
+            Self::Allow
+        } else {
+            Self::Deny
+        }
+    }
+}
+
+impl From<MutexGuard<'static, ()>> for WritePermission {
+    fn from(guard: MutexGuard<'static, ()>) -> Self {
+        Self::AllowLock(guard)
+    }
+}
+
 /// Modbus server. Requires to be run in a separate thread manually.
 #[allow(clippy::module_name_repetitions)]
 pub struct ModbusServer<const C: usize, const D: usize, const I: usize, const H: usize> {
@@ -73,6 +122,7 @@ pub struct ModbusServer<const C: usize, const D: usize, const I: usize, const H:
     server: Server,
     timeout: Duration,
     semaphore: Semaphore,
+    allow_external_write_fn: Arc<AllowFn>,
 }
 impl<const C: usize, const D: usize, const I: usize, const H: usize> ModbusServer<C, D, I, H> {
     pub fn bind(
@@ -92,7 +142,14 @@ impl<const C: usize, const D: usize, const I: usize, const H: usize> ModbusServe
             server,
             timeout,
             semaphore: Semaphore::new(max_workers),
+            allow_external_write_fn: Arc::new(|_, _| WritePermission::Allow),
         })
+    }
+    /// Set a function which checks if an external client write operation is allowed.
+    /// The function allows to block a client until a certain storage context range is processed by
+    /// an internal task.
+    pub fn set_allow_external_write_fn(&mut self, f: AllowFn) {
+        self.allow_external_write_fn = f.into();
     }
     pub fn mapping(&self, register: ModbusRegister, count: u16) -> ModbusServerMapping<C, D, I, H> {
         let buf_capacity = match register.kind {
@@ -121,17 +178,24 @@ impl<const C: usize, const D: usize, const I: usize, const H: usize> ModbusServe
                     continue;
                 }
                 let storage = self.storage.clone();
+                let allow_write = self.allow_external_write_fn.clone();
                 thread::spawn(move || {
                     let _permission = permission;
-                    if let Err(error) = handle_client(stream, unit, storage, ModbusProto::TcpUdp) {
+                    if let Err(error) =
+                        handle_client(stream, unit, storage, ModbusProto::TcpUdp, &allow_write)
+                    {
                         error!(%addr, %error, "error handling Modbus client");
                     }
                 });
             },
             Server::Serial(ref mut serial) => loop {
-                if let Err(e) =
-                    handle_client(&mut *serial, unit, self.storage.clone(), ModbusProto::Rtu)
-                {
+                if let Err(e) = handle_client(
+                    &mut *serial,
+                    unit,
+                    self.storage.clone(),
+                    ModbusProto::Rtu,
+                    &self.allow_external_write_fn,
+                ) {
                     error!(%e, "error handling Modbus client");
                 }
             },

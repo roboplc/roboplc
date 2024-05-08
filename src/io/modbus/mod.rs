@@ -14,7 +14,10 @@ pub use regs::{Kind as ModbusRegisterKind, Register as ModbusRegister};
 use rmodbus::guess_response_frame_len;
 use rmodbus::{client::ModbusRequest as RModbusRequest, ModbusProto};
 #[allow(clippy::module_name_repetitions)]
-pub use server::{ModbusServer, ModbusServerMapping};
+pub use server::{
+    AllowFn as ModbusServerAllowFn, ModbusServer, ModbusServerMapping,
+    WritePermission as ModbusServerWritePermission,
+};
 
 use super::IoMapping;
 

@@ -1,6 +1,6 @@
 [package]
 name = "roboplc"
-version = "0.1.50"
+version = "0.2.0"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -43,6 +43,7 @@ log = "0.4.21"
 metrics-exporter-prometheus = { version = "0.14.0", optional = true, default-features = false, features = ["http-listener"] }
 metrics = { version = "0.22.3", optional = true }
 parking_lot_rt = "0.12.1"
+snmp = { version = "0.2.2", optional = true }
 
 [features]
 eapi = ["eva-common", "eva-sdk", "busrt", "tokio", "hostname"]
@@ -51,6 +52,7 @@ modbus = ["rmodbus"]
 openssl-vendored = ["busrt/openssl-vendored", "eva-common/openssl-vendored"]
 metrics = ["dep:metrics", "metrics-exporter-prometheus"]
 full = ["eapi", "modbus", "metrics", "pipe"]
+#default = ["modbus"]
 
 [dev-dependencies]
 insta = "1.36.1"
@@ -89,3 +91,8 @@ required-features = ["pipe"]
 name = "eapi"
 path = "examples/eapi.rs"
 required-features = ["eapi"]
+
+[[example]]
+name = "snmp-modbus"
+path = "examples/snmp-modbus.rs"
+required-features = ["modbus", "snmp"]

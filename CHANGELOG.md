@@ -2,6 +2,12 @@
 
 ## RoboPLC
 
+### 0.2.0 (2024-05-09)
+
+* Re-exported locking primitives are re-exported as `locking`
+
+* Modbus server write access control
+
 ### 0.1.49 (2024-05-07)
 
 * Added subprocess pipe I/O

@@ -11,7 +11,7 @@ use thread_rt::{RTParams, Scheduling};
 pub use log::LevelFilter;
 pub use roboplc_derive::DataPolicy;
 
-pub use parking_lot_rt::{Condvar, Mutex, Once, RwLock};
+pub use parking_lot_rt as locking;
 
 #[cfg(feature = "metrics")]
 pub use metrics;
