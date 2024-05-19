@@ -671,9 +671,10 @@ impl SystemConfig {
     pub fn apply(mut self) -> Result<SystemConfigGuard> {
         if is_realtime() {
             for (key, value) in &self.values {
-                let prev_value = fs::read_to_string(format!("/proc/sys/{}", key))?;
+                let fname = format!("/proc/sys/{}", key);
+                let prev_value = fs::read_to_string(&fname)?;
                 self.prev_values.insert(key, prev_value);
-                fs::write(format!("/proc/sys/{}", key), value)?;
+                fs::write(fname, value)?;
             }
         }
         Ok(SystemConfigGuard { config: self })
@@ -691,6 +692,56 @@ impl Drop for SystemConfigGuard {
                 if let Err(error) = fs::write(format!("/proc/sys/{}", key), value) {
                     warn!(key, value, %error, "Failed to restore system config");
                 }
+            }
+        }
+    }
+}
+
+/// Configure CPU governors for the given CPUs
+pub struct CpuGovernor {
+    prev_governor: BTreeMap<usize, String>,
+}
+
+impl CpuGovernor {
+    /// Set performance governor for the given CPUs. This sets the maximum frequency for the CPUs,
+    /// increasing the power consumption but lowering their latency. It is enough to specify a
+    /// single logical core number per physical core. The governor is restored when the returned
+    /// guard object is dropped.
+    pub fn performance<I>(performance_cpus: I) -> Result<CpuGovernor>
+    where
+        I: IntoIterator<Item = usize>,
+    {
+        let mut prev_governor = BTreeMap::new();
+        for cpu in performance_cpus {
+            let fname = format!(
+                "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor",
+                cpu
+            );
+            let prev_value = fs::read_to_string(fname)?;
+            prev_governor.insert(cpu, prev_value.trim().to_string());
+        }
+        for cpu in prev_governor.keys() {
+            let fname = format!(
+                "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor",
+                cpu
+            );
+            fs::write(fname, "performance")?;
+        }
+        Ok(CpuGovernor { prev_governor })
+    }
+}
+
+impl Drop for CpuGovernor {
+    fn drop(&mut self) {
+        for (cpu, governor) in &self.prev_governor {
+            if let Err(error) = fs::write(
+                format!(
+                    "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor",
+                    cpu
+                ),
+                governor,
+            ) {
+                warn!(cpu, %error, "Failed to restore governor");
             }
         }
     }
