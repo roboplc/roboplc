@@ -117,7 +117,9 @@ impl Pipe {
                                     line.trim_end());
                             }
                             CommandPipeOutput::Terminated(code) => {
-                                error!(program=%self.program.to_string_lossy(), "Command terminated with code {}", code);
+                                if code != 0 {
+                                    error!(program=%self.program.to_string_lossy(), "Command terminated with code {}", code);
+                                }
                                 break;
                             }
                         }
@@ -241,7 +243,7 @@ where
             }
         });
 
-        let mut exit_code = -99;
+        let mut exit_code = 0;
         if let Ok(x) = child.wait().await {
             if let Some(code) = x.code() {
                 exit_code = code;
