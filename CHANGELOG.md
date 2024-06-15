@@ -2,6 +2,11 @@
 
 ## RoboPLC
 
+### 0.3.0 (2024-06-16)
+
+* Real-time-safe data synchronization components moved to
+  [RTSC](https://crates.io/crates/rtsc) crate.
+
 ### 0.2.0 (2024-05-09)
 
 * Re-exported locking primitives are re-exported as `locking`
