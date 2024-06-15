@@ -91,8 +91,9 @@ impl<T: DataDeliveryPolicy + Clone> Hub<T> {
         macro_rules! send_checked {
             ($sub: expr, $msg: expr) => {
                 if let Err(e) = $sub.tx.send($msg).await {
-                    if !error_handler(&$sub.name, &e) {
-                        return Err(Error::HubSend(e.into()));
+                    let err = e.into();
+                    if !error_handler(&$sub.name, &err) {
+                        return Err(Error::HubSend(err.into()));
                     }
                 }
             };
@@ -216,11 +217,11 @@ impl<T: DataDeliveryPolicy + Clone> Client<T> {
         self.hub.send_checked(message, error_handler)
     }
     /// Receives a message from the hub (blocking)
-    pub fn recv(&self) -> impl Future<Output = Result<T>> + '_ {
+    pub fn recv(&self) -> impl Future<Output = rtsc::Result<T>> + '_ {
         self.rx.recv()
     }
     /// Receives a message from the hub (non-blocking)
-    pub fn try_recv(&self) -> Result<T> {
+    pub fn try_recv(&self) -> rtsc::Result<T> {
         self.rx.try_recv()
     }
 }

@@ -18,6 +18,7 @@ pub use metrics;
 
 pub use rtsc::buf;
 pub use rtsc::pchannel;
+pub use rtsc::pchannel_async;
 pub use rtsc::time;
 
 pub use rtsc::data_policy::{DataDeliveryPolicy, DeliveryPolicy};
@@ -33,8 +34,6 @@ pub mod hub;
 pub mod hub_async;
 /// I/O
 pub mod io;
-/// Async policy channel
-pub mod pchannel_async;
 /// Task supervisor to manage real-time threads
 #[cfg(target_os = "linux")]
 pub mod supervisor;
