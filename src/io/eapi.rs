@@ -473,24 +473,36 @@ where
     {
         let mut data = Cursor::new(vec![]);
         value.write_le(&mut data)?;
-        self.inner.tx.try_send(PushPayload::DObj {
-            name: name.clone(),
-            data: data.into_inner(),
-        })
+        self.inner
+            .tx
+            .try_send(PushPayload::DObj {
+                name: name.clone(),
+                data: data.into_inner(),
+            })
+            .map_err(Into::into)
     }
     pub fn dobj_error(&self, name: Arc<String>) -> Result<()> {
-        self.inner.tx.try_send(PushPayload::DObjError(name))
+        self.inner
+            .tx
+            .try_send(PushPayload::DObjError(name))
+            .map_err(Into::into)
     }
     pub fn state_push<T: Serialize>(&self, oid: Arc<OID>, value: T) -> Result<()> {
-        self.inner.tx.try_send(PushPayload::State {
-            oid,
-            event: RawStateEventOwned::new(1, to_value(value).map_err(Error::invalid_data)?),
-        })
+        self.inner
+            .tx
+            .try_send(PushPayload::State {
+                oid,
+                event: RawStateEventOwned::new(1, to_value(value).map_err(Error::invalid_data)?),
+            })
+            .map_err(Into::into)
     }
     pub fn state_error(&self, oid: Arc<OID>) -> Result<()> {
-        self.inner.tx.try_send(PushPayload::State {
-            oid,
-            event: RawStateEventOwned::new0(eva_common::ITEM_STATUS_ERROR),
-        })
+        self.inner
+            .tx
+            .try_send(PushPayload::State {
+                oid,
+                event: RawStateEventOwned::new0(eva_common::ITEM_STATUS_ERROR),
+            })
+            .map_err(Into::into)
     }
 }

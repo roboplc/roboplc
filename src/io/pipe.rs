@@ -23,7 +23,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn line(&self) -> Result<String> {
-        self.rx.recv_blocking()
+        self.rx.recv_blocking().map_err(Into::into)
     }
 }
 
