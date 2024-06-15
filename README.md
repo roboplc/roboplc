@@ -17,6 +17,10 @@ together.
 RoboPLC is a part of [EVA ICS](https://www.eva-ics.com/) industrial
 automation platform.
 
+Real-time-safe data synchronization primitives are re-exported from the
+[RTSC](https://docs.rs/rtsc) crate which is a part of RoboPLC project and can
+be used directly, with no requirement to use RoboPLC.
+
 ## Technical documentation
 
 Available at <https://info.bma.ai/en/actual/roboplc/index.html>
@@ -65,7 +69,7 @@ width="550" />
 
 ## pdeque and pchannel
 
-A policy-based deque [`pdeque::Deque`] is a component to build policy-based
+A policy-based deque [`rtsc::pdeque::Deque`] is a component to build policy-based
 channels.
 
 [`pchannel`] is a channel module, based on the policy-based deque.

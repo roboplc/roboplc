@@ -1,7 +1,6 @@
 use crate::io::{modbus::ModbusRegister, IoMapping};
 use crate::{
     comm::{self, Protocol},
-    semaphore::Semaphore,
     Error, Result,
 };
 use binrw::{BinRead, BinWrite};
@@ -10,6 +9,7 @@ use rmodbus::{
     server::{context::ModbusContext, storage::ModbusStorage, ModbusFrame},
     ModbusFrameBuf, ModbusProto,
 };
+use rtsc::semaphore::Semaphore;
 use serial::SystemPort;
 use std::time::Duration;
 use std::{

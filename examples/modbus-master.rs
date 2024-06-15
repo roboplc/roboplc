@@ -3,6 +3,7 @@ use roboplc::{
     time::interval,
 };
 use roboplc::{io::modbus::prelude::*, prelude::*};
+use rtsc::cell::TtlCell;
 use tracing::{error, info, warn};
 
 const MODBUS_TIMEOUT: Duration = Duration::from_secs(1);
