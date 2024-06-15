@@ -31,10 +31,10 @@ pub mod controller;
 pub mod hub;
 /// In-process data communication pub/sub hub, asynchronous edition
 pub mod hub_async;
-/// Async policy channel
-pub mod pchannel_async;
 /// I/O
 pub mod io;
+/// Async policy channel
+pub mod pchannel_async;
 /// Task supervisor to manage real-time threads
 #[cfg(target_os = "linux")]
 pub mod supervisor;
