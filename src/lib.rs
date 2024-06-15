@@ -2,22 +2,26 @@
 use core::{fmt, num};
 use std::io::Write;
 use std::panic::PanicInfo;
-use std::{env, mem, str::FromStr, sync::Arc, time::Duration};
+use std::{env, sync::Arc, time::Duration};
 
 use colored::Colorize as _;
 #[cfg(target_os = "linux")]
 use thread_rt::{RTParams, Scheduling};
 
 pub use log::LevelFilter;
-pub use roboplc_derive::DataPolicy;
+pub use rtsc::{DataChannel, DataPolicy};
 
 pub use parking_lot_rt as locking;
 
 #[cfg(feature = "metrics")]
 pub use metrics;
 
-/// Event buffers
-pub mod buf;
+pub use rtsc::buf;
+pub use rtsc::pchannel;
+pub use rtsc::time;
+
+pub use rtsc::data_policy::{DataDeliveryPolicy, DeliveryPolicy};
+
 /// Reliable TCP/Serial communications
 pub mod comm;
 /// Controller and workers
@@ -27,26 +31,16 @@ pub mod controller;
 pub mod hub;
 /// In-process data communication pub/sub hub, asynchronous edition
 pub mod hub_async;
+/// Async policy channel
+pub mod pchannel_async;
 /// I/O
 pub mod io;
-/// Policy-based channels, synchronous edition
-pub mod pchannel;
-/// Policy-based channels, asynchronous edition
-pub mod pchannel_async;
-/// Policy-based data storages
-pub mod pdeque;
-/// A lighweight real-time safe semaphore
-pub mod semaphore;
 /// Task supervisor to manage real-time threads
 #[cfg(target_os = "linux")]
 pub mod supervisor;
 /// Real-time thread functions to work with [`supervisor::Supervisor`] and standalone
 #[cfg(target_os = "linux")]
 pub mod thread_rt;
-/// Various time tools for real-time applications
-pub mod time;
-/// A memory cell with an expiring value
-pub mod ttlcell;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -116,6 +110,36 @@ pub enum Error {
     Failed(String),
 }
 
+impl From<rtsc::Error> for Error {
+    fn from(err: rtsc::Error) -> Self {
+        match err {
+            rtsc::Error::ChannelFull => Error::ChannelFull,
+            rtsc::Error::ChannelSkipped => Error::ChannelSkipped,
+            rtsc::Error::ChannelClosed => Error::ChannelClosed,
+            rtsc::Error::ChannelEmpty => Error::ChannelEmpty,
+            rtsc::Error::Unimplemented => Error::Unimplemented,
+            rtsc::Error::Timeout => Error::Timeout,
+            rtsc::Error::InvalidData(msg) => Error::InvalidData(msg),
+            rtsc::Error::Failed(msg) => Error::Failed(msg),
+        }
+    }
+}
+
+impl From<Error> for rtsc::Error {
+    fn from(err: Error) -> Self {
+        match err {
+            Error::ChannelFull => rtsc::Error::ChannelFull,
+            Error::ChannelSkipped => rtsc::Error::ChannelSkipped,
+            Error::ChannelClosed => rtsc::Error::ChannelClosed,
+            Error::ChannelEmpty => rtsc::Error::ChannelEmpty,
+            Error::Unimplemented => rtsc::Error::Unimplemented,
+            Error::Timeout => rtsc::Error::Timeout,
+            Error::InvalidData(msg) => rtsc::Error::InvalidData(msg),
+            _ => rtsc::Error::Failed(err.to_string()),
+        }
+    }
+}
+
 macro_rules! impl_error {
     ($t: ty, $key: ident) => {
         impl From<$t> for Error {
@@ -146,87 +170,6 @@ impl Error {
     }
     pub fn failed<S: fmt::Display>(msg: S) -> Self {
         Error::Failed(msg.to_string())
-    }
-}
-
-/// Data delivery policies, used by [`hub::Hub`], [`pchannel::Receiver`] and [`pdeque::Deque`]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
-pub enum DeliveryPolicy {
-    #[default]
-    /// always deliver, fail if no room (default)
-    Always,
-    /// always deliver, drop the previous if no room (act as a ring-buffer)
-    Latest,
-    /// skip delivery if no room
-    Optional,
-    /// always deliver the frame but always in a single copy (latest)
-    Single,
-    /// deliver a single latest copy, skip if no room
-    SingleOptional,
-}
-
-impl FromStr for DeliveryPolicy {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        match s.to_lowercase().as_str() {
-            "always" => Ok(DeliveryPolicy::Always),
-            "optional" => Ok(DeliveryPolicy::Optional),
-            "single" => Ok(DeliveryPolicy::Single),
-            "single-optional" => Ok(DeliveryPolicy::SingleOptional),
-            _ => Err(Error::invalid_data(s)),
-        }
-    }
-}
-
-impl fmt::Display for DeliveryPolicy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                DeliveryPolicy::Always => "always",
-                DeliveryPolicy::Latest => "latest",
-                DeliveryPolicy::Optional => "optional",
-                DeliveryPolicy::Single => "single",
-                DeliveryPolicy::SingleOptional => "single-optional",
-            }
-        )
-    }
-}
-
-/// Implements delivery policies for own data types
-pub trait DataDeliveryPolicy
-where
-    Self: Sized,
-{
-    /// Delivery policy, the default is [`DeliveryPolicy::Always`]
-    fn delivery_policy(&self) -> DeliveryPolicy {
-        DeliveryPolicy::Always
-    }
-    /// Priority, for ordered, lower is better, the default is 100
-    fn priority(&self) -> usize {
-        100
-    }
-    /// Has equal kind with other
-    ///
-    /// (default: check enum discriminant)
-    fn eq_kind(&self, other: &Self) -> bool {
-        mem::discriminant(self) == mem::discriminant(other)
-    }
-    /// If a frame expires during storing/delivering, it is not delivered
-    fn is_expired(&self) -> bool {
-        false
-    }
-    #[doc(hidden)]
-    fn is_delivery_policy_single(&self) -> bool {
-        let dp = self.delivery_policy();
-        dp == DeliveryPolicy::Single || dp == DeliveryPolicy::SingleOptional
-    }
-    #[doc(hidden)]
-    fn is_delivery_policy_optional(&self) -> bool {
-        let dp = self.delivery_policy();
-        dp == DeliveryPolicy::Optional || dp == DeliveryPolicy::SingleOptional
     }
 }
 
@@ -296,11 +239,6 @@ fn panic(info: &PanicInfo) -> ! {
     }
 }
 
-impl DataDeliveryPolicy for () {}
-impl DataDeliveryPolicy for usize {}
-impl DataDeliveryPolicy for String {}
-impl<T> DataDeliveryPolicy for Vec<T> {}
-
 /// Returns true if started in production mode (as a systemd unit)
 pub fn is_production() -> bool {
     env::var("INVOCATION_ID").map_or(false, |v| !v.is_empty())
@@ -328,8 +266,7 @@ pub mod prelude {
     #[cfg(target_os = "linux")]
     pub use crate::supervisor::prelude::*;
     pub use crate::time::DurationRT;
-    pub use crate::ttlcell::TtlCell;
     pub use bma_ts::{Monotonic, Timestamp};
-    pub use roboplc_derive::DataPolicy;
+    pub use rtsc::DataPolicy;
     pub use std::time::Duration;
 }

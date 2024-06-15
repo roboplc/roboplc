@@ -10,10 +10,11 @@ use std::{
     task::{Context, Poll, Waker},
 };
 
-use crate::{pdeque::Deque, DataDeliveryPolicy, Error, Result};
+use crate::{DataDeliveryPolicy, Error, Result};
 use object_id::UniqueId;
 use parking_lot_rt::{Condvar, Mutex};
 use pin_project::{pin_project, pinned_drop};
+use rtsc::{data_policy::StorageTryPushOutput, pdeque::Deque};
 
 type ClientId = usize;
 
@@ -250,15 +251,15 @@ where
         }
         if pc.send_fut_wakers.is_empty() || self.queued {
             let push_result = pc.queue.try_push(self.value.take().unwrap());
-            if let Some(val) = push_result.value {
+            if let StorageTryPushOutput::Full(val) = push_result {
                 self.value = Some(val);
             } else {
                 self.queued = false;
                 pc.notify_data_sent();
-                return Poll::Ready(if push_result.pushed {
-                    Ok(())
-                } else {
-                    Err(Error::ChannelSkipped)
+                return Poll::Ready(match push_result {
+                    StorageTryPushOutput::Pushed => Ok(()),
+                    StorageTryPushOutput::Skipped => Err(Error::ChannelSkipped),
+                    StorageTryPushOutput::Full(_) => unreachable!(),
                 });
             }
         }
@@ -294,16 +295,13 @@ where
         if pc.receivers == 0 {
             return Err(Error::ChannelClosed);
         }
-        let push_result = pc.queue.try_push(value);
-        if push_result.value.is_none() {
-            pc.notify_data_sent();
-            if push_result.pushed {
+        match pc.queue.try_push(value) {
+            StorageTryPushOutput::Pushed => {
+                pc.notify_data_sent();
                 Ok(())
-            } else {
-                Err(Error::ChannelSkipped)
             }
-        } else {
-            Err(Error::ChannelFull)
+            StorageTryPushOutput::Skipped => Err(Error::ChannelSkipped),
+            StorageTryPushOutput::Full(_) => Err(Error::ChannelFull),
         }
     }
     pub fn send_blocking(&self, mut value: T) -> Result<()> {
@@ -313,18 +311,18 @@ where
                 return Err(Error::ChannelClosed);
             }
             let push_result = pc.queue.try_push(value);
-            let Some(val) = push_result.value else {
-                break push_result.pushed;
+            let StorageTryPushOutput::Full(val) = push_result else {
+                break push_result;
             };
             value = val;
             pc.append_send_sync_waker();
             self.channel.0.space_available.wait(&mut pc);
         };
         pc.wake_next_recv();
-        if pushed {
-            Ok(())
-        } else {
-            Err(Error::ChannelSkipped)
+        match pushed {
+            StorageTryPushOutput::Pushed => Ok(()),
+            StorageTryPushOutput::Skipped => Err(Error::ChannelSkipped),
+            StorageTryPushOutput::Full(_) => unreachable!(),
         }
     }
     #[inline]

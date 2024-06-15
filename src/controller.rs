@@ -13,10 +13,11 @@ use crate::{
     suicide,
     supervisor::Supervisor,
     thread_rt::{Builder, RTParams, Scheduling},
-    DataDeliveryPolicy, Error, Result,
+    Error, Result,
 };
 use parking_lot_rt::RwLock;
 pub use roboplc_derive::WorkerOpts;
+use rtsc::data_policy::DataDeliveryPolicy;
 use signal_hook::{
     consts::{SIGINT, SIGTERM},
     iterator::Signals,

@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use parking_lot_rt::Mutex;
+use rtsc::data_policy::DataDeliveryPolicy;
 
 use crate::pchannel::{self, Receiver, Sender};
-use crate::{DataDeliveryPolicy, Error, Result};
+use crate::{Error, Result};
 
 use self::prelude::DataChannel;
 
@@ -12,8 +13,8 @@ type ConditionFunction<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;
 pub mod prelude {
     pub use super::Hub;
     pub use crate::event_matches;
-    pub use crate::pchannel::DataChannel;
-    pub use crate::{DataDeliveryPolicy, DeliveryPolicy};
+    pub use rtsc::data_policy::{DataDeliveryPolicy, DeliveryPolicy};
+    pub use rtsc::DataChannel;
 }
 
 pub const DEFAULT_PRIORITY: usize = 100;
@@ -99,8 +100,9 @@ impl<T: DataDeliveryPolicy + Clone> Hub<T> {
         macro_rules! send_checked {
             ($sub: expr, $msg: expr) => {
                 if let Err(e) = $sub.tx.send($msg) {
-                    if !error_handler(&$sub.name, &e) {
-                        return Err(Error::HubSend(e.into()));
+                    let err = e.into();
+                    if !error_handler(&$sub.name, &err) {
+                        return Err(Error::HubSend(err.into()));
                     }
                 }
             };
@@ -202,18 +204,18 @@ impl<T> DataChannel<T> for Hub<T>
 where
     T: DataDeliveryPolicy + Clone,
 {
-    fn send(&self, message: T) -> Result<()> {
+    fn send(&self, message: T) -> rtsc::Result<()> {
         self.send(message);
         Ok(())
     }
-    fn recv(&self) -> Result<T> {
-        Err(Error::Unimplemented)
+    fn recv(&self) -> rtsc::Result<T> {
+        Err(rtsc::Error::Unimplemented)
     }
-    fn try_recv(&self) -> Result<T> {
-        Err(Error::Unimplemented)
+    fn try_recv(&self) -> rtsc::Result<T> {
+        Err(rtsc::Error::Unimplemented)
     }
-    fn try_send(&self, _message: T) -> Result<()> {
-        Err(Error::Unimplemented)
+    fn try_send(&self, _message: T) -> rtsc::Result<()> {
+        Err(rtsc::Error::Unimplemented)
     }
 }
 
@@ -221,18 +223,18 @@ impl<T> DataChannel<T> for Client<T>
 where
     T: DataDeliveryPolicy + Clone,
 {
-    fn send(&self, message: T) -> Result<()> {
+    fn send(&self, message: T) -> rtsc::Result<()> {
         self.send(message);
         Ok(())
     }
-    fn recv(&self) -> Result<T> {
-        self.recv()
+    fn recv(&self) -> rtsc::Result<T> {
+        self.recv().map_err(Into::into)
     }
-    fn try_recv(&self) -> Result<T> {
-        self.try_recv()
+    fn try_recv(&self) -> rtsc::Result<T> {
+        self.try_recv().map_err(Into::into)
     }
-    fn try_send(&self, _message: T) -> Result<()> {
-        Err(Error::Unimplemented)
+    fn try_send(&self, _message: T) -> rtsc::Result<()> {
+        Err(rtsc::Error::Unimplemented)
     }
 }
 
@@ -269,11 +271,11 @@ impl<T: DataDeliveryPolicy + Clone> Client<T> {
     }
     /// Receives a message from the hub (blocking)
     pub fn recv(&self) -> Result<T> {
-        self.rx.recv()
+        self.rx.recv().map_err(Into::into)
     }
     /// Receives a message from the hub (non-blocking)
     pub fn try_recv(&self) -> Result<T> {
-        self.rx.try_recv()
+        self.rx.try_recv().map_err(Into::into)
     }
 }
 
@@ -360,7 +362,9 @@ struct Subscription<T: DataDeliveryPolicy + Clone> {
 
 #[cfg(test)]
 mod test {
-    use crate::{event_matches, DataDeliveryPolicy};
+    use rtsc::data_policy::DataDeliveryPolicy;
+
+    use crate::event_matches;
 
     use super::Hub;
 

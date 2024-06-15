@@ -1,4 +1,5 @@
 use parking_lot_rt::MutexGuard;
+use rtsc::data_policy::DataDeliveryPolicy;
 use std::{
     io::{Read, Write},
     net::SocketAddr,
@@ -6,7 +7,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{DataDeliveryPolicy, Result};
+use crate::Result;
 
 pub mod serial; // Serial communications
 pub mod tcp; // TCP communications
