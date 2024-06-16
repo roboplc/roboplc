@@ -17,7 +17,7 @@ together.
 RoboPLC is a part of [EVA ICS](https://www.eva-ics.com/) industrial
 automation platform.
 
-Real-time-safe data synchronization primitives are re-exported from the
+Real-time-safe data synchronization components are re-exported from the
 [RTSC](https://docs.rs/rtsc) crate which is a part of RoboPLC project and can
 be used directly, with no requirement to use RoboPLC.
 
