@@ -82,10 +82,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             remote::stat(&url, &key, agent)?;
         }
         SubCommand::Config => {
-            remote::set_mode(&url, &key, agent, Mode::Config)?;
+            remote::set_mode(&url, &key, &agent, Mode::Config, true)?;
         }
         SubCommand::Run => {
-            remote::set_mode(&url, &key, agent, Mode::Run)?;
+            remote::set_mode(&url, &key, &agent, Mode::Run, true)?;
+        }
+        SubCommand::Restart => {
+            remote::set_mode(&url, &key, &agent, Mode::Config, false)?;
+            remote::set_mode(&url, &key, &agent, Mode::Run, true)?;
         }
         SubCommand::Flash(opts) => {
             flashing::flash(&url, &key, agent, opts, build_config.unwrap_or_default())?;

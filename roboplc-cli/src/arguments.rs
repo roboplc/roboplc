@@ -37,6 +37,11 @@ pub enum SubCommand {
     Config,
     #[clap(name = "run", about = "Switch remote into RUN mode")]
     Run,
+    #[clap(
+        name = "restart",
+        about = "Restart program (switch to CONFIG and back to RUN)"
+    )]
+    Restart,
     #[clap(name = "flash", about = "Flash program")]
     Flash(FlashCommand),
     #[clap(name = "purge", about = "Purge program data directory")]

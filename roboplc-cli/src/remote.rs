@@ -20,8 +20,9 @@ pub fn stat(url: &str, key: &str, agent: Agent) -> Result<(), Box<dyn std::error
 pub fn set_mode(
     url: &str,
     key: &str,
-    agent: Agent,
+    agent: &Agent,
     mode: Mode,
+    report: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     agent
         .post(&format!("{}{}/set.program.mode", url, API_PREFIX))
@@ -30,7 +31,10 @@ pub fn set_mode(
              "mode": mode,
         }))
         .process_error()?;
-    report_ok()
+    if report {
+        report_ok()?;
+    }
+    Ok(())
 }
 
 pub fn purge(url: &str, key: &str, agent: Agent) -> Result<(), Box<dyn std::error::Error>> {
