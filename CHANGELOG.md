@@ -27,6 +27,11 @@
 
 ## RoboPLC CLI
 
+### 0.1.21 (2024-06-18)
+
+* Added `restart` command
+* Added `build-custom` configuration section
+
 ### 0.1 (2024-04-15)
 
 * First public release
