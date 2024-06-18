@@ -21,10 +21,13 @@ fn flash_file(
     url: &str,
     key: &str,
     agent: Agent,
-    file: PathBuf,
+    file: &Path,
     force: bool,
     run: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    if !file.exists() {
+        return Err(format!("File not found: {}", file.display()).into());
+    }
     let (content_type, data) = MultipartBuilder::new()
         .add_file("file", file)?
         .add_text(
@@ -47,15 +50,55 @@ fn flash_file(
     Ok(())
 }
 
+fn run_build_custom(
+    url: &str,
+    key: &str,
+    agent: Agent,
+    force: bool,
+    run: bool,
+    cmd: &str,
+    file: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Remote: {}", url.yellow());
+    println!("Build command line: {}", cmd.yellow());
+    println!("Binary: {}", file.display().to_string().yellow());
+    println!("Compiling...");
+    let result = std::process::Command::new("sh")
+        .args(["-c", cmd])
+        .status()?;
+    if !result.success() {
+        return Err("Compilation failed".into());
+    }
+    println!("Flashing...");
+    if !file.exists() {
+        return Err(format!("File not found: {}", file.display()).into());
+    }
+    flash_file(url, key, agent, file, force, run)?;
+    Ok(())
+}
+
 pub fn flash(
     url: &str,
     key: &str,
     agent: Agent,
     opts: FlashCommand,
     build_config: config::Build,
+    build_custom: config::BuildCustom,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(file) = opts.file {
-        flash_file(url, key, agent, file, opts.force, opts.run)?;
+        flash_file(url, key, agent, &file, opts.force, opts.run)?;
+    } else if let Some(custom_cmd) = build_custom.command {
+        run_build_custom(
+            url,
+            key,
+            agent,
+            opts.force,
+            opts.run,
+            &custom_cmd,
+            &build_custom
+                .file
+                .ok_or("Custom build command requires a file")?,
+        )?;
     } else {
         let mut cargo_target: Option<String> = None;
         if let Some(c) = opts.cargo_target {
@@ -120,7 +163,7 @@ pub fn flash(
             return Err("Compilation failed".into());
         }
         println!("Flashing...");
-        flash_file(url, key, agent, binary_name, opts.force, opts.run)?;
+        flash_file(url, key, agent, &binary_name, opts.force, opts.run)?;
     }
     report_ok()
 }

@@ -10,6 +10,8 @@ pub struct Config {
     pub remote: Remote,
     #[serde(default)]
     pub build: Build,
+    #[serde(default, rename = "build-custom")]
+    pub build_custom: BuildCustom,
 }
 
 #[derive(Deserialize, Serialize, Default, Debug)]
@@ -30,6 +32,14 @@ pub struct Build {
     pub target: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cargo_args: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Default, Debug)]
+pub struct BuildCustom {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub command: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file: Option<PathBuf>,
 }
 
 #[derive(Deserialize, Debug)]

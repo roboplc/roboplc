@@ -81,6 +81,10 @@ pub fn find_robo_toml() -> Option<PathBuf> {
             }
         }
         if !current_dir.pop() {
+            let local_path = PathBuf::from(CONFIG_FILE_NAME);
+            if local_path.exists() {
+                return Some(local_path);
+            }
             break;
         }
     }

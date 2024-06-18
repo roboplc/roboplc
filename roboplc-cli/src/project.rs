@@ -43,6 +43,7 @@ pub fn create(
             timeout: maybe_timeout,
         },
         build: <_>::default(),
+        build_custom: <_>::default(),
     };
     std::fs::write(CONFIG_FILE_NAME, toml::to_string_pretty(&robo_toml)?)?;
     std::fs::write("src/main.rs", prepare_main(TPL_DEFAULT_RS, &robo_features))?;

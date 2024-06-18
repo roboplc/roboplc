@@ -40,6 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let mut maybe_timeout = args.timeout;
     let mut build_config = None;
+    let mut build_custom = None;
     if let SubCommand::New(_) = args.subcmd {
         // do not parse robo.toml for `new` command
     } else if let Some(robo_toml_path) = find_robo_toml() {
@@ -55,6 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             maybe_timeout = robo_toml.remote.timeout;
         }
         build_config = Some(robo_toml.build);
+        build_custom = Some(robo_toml.build_custom);
     }
     maybe_url = maybe_url.map(|v| {
         let mut u = v.trim_end_matches('/').to_owned();
@@ -92,7 +94,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             remote::set_mode(&url, &key, &agent, Mode::Run, true)?;
         }
         SubCommand::Flash(opts) => {
-            flashing::flash(&url, &key, agent, opts, build_config.unwrap_or_default())?;
+            flashing::flash(
+                &url,
+                &key,
+                agent,
+                opts,
+                build_config.unwrap_or_default(),
+                build_custom.unwrap_or_default(),
+            )?;
         }
         SubCommand::Purge => {
             remote::purge(&url, &key, agent)?;
