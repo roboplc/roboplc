@@ -67,7 +67,7 @@ fn add_dependency(name: &str, features: &[&str]) -> Result<(), Box<dyn std::erro
 
 #[allow(clippy::let_and_return)]
 fn prepare_main(tpl: &str, features: &[&str]) -> String {
-    let out = if features.contains(&"metrics") {
+    let mut out = if features.contains(&"metrics") {
         tpl.replace(
             "    // METRICS",
             r"    roboplc::metrics_exporter()
@@ -76,6 +76,28 @@ fn prepare_main(tpl: &str, features: &[&str]) -> String {
         )
     } else {
         tpl.replace("    // METRICS\n", "")
+    };
+    out = if features.contains(&"rvideo") {
+        out.replace(
+            "// RVIDEO-SERVE",
+            r#"#[derive(WorkerOpts)]
+#[worker_opts(cpu = 0, priority = 50, scheduling = "fifo", blocking = true)]
+struct RvideoSrv {}
+
+impl Worker<Message, Variables> for RvideoSrv {
+    fn run(&mut self, _context: &Context<Message, Variables>) -> WResult {
+        roboplc::serve_rvideo().map_err(Into::into)
+    }
+}
+"#,
+        )
+        .replace(
+            "    // RVIDEO-SPAWN",
+            "    controller.spawn_worker(RvideoSrv {})?;",
+        )
+    } else {
+        out.replace("// RVIDEO-SERVE\n", "")
+            .replace("    // RVIDEO-SPAWN\n", "")
     };
     out
 }
