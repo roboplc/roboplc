@@ -204,6 +204,14 @@ pub fn suicide(delay: Duration, warn: bool) {
     };
 }
 
+#[cfg(feature = "rvideo")]
+pub use rvideo;
+
+#[cfg(feature = "rvideo")]
+pub fn serve_rvideo() -> std::result::Result<(), rvideo::Error> {
+    rvideo::serve("0.0.0.0:3001").map_err(Into::into)
+}
+
 /// Returns [Prometheus metrics exporter
 /// builder](https://docs.rs/metrics-exporter-prometheus/)
 ///

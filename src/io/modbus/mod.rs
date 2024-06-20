@@ -9,11 +9,13 @@ use std::io::Cursor;
 use crate::comm::{Client, Protocol};
 use crate::{Error, Result};
 use binrw::{BinRead, BinWrite};
-#[allow(clippy::module_name_repetitions)]
+
+#[allow(clippy::module_name_repetitions, clippy::useless_attribute)]
 pub use regs::{Kind as ModbusRegisterKind, Register as ModbusRegister};
 use rmodbus::guess_response_frame_len;
 use rmodbus::{client::ModbusRequest as RModbusRequest, ModbusProto};
-#[allow(clippy::module_name_repetitions)]
+
+#[allow(clippy::module_name_repetitions, clippy::useless_attribute)]
 pub use server::{
     AllowFn as ModbusServerAllowFn, ModbusServer, ModbusServerMapping,
     WritePermission as ModbusServerWritePermission,

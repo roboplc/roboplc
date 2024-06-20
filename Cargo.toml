@@ -1,6 +1,6 @@
 [package]
 name = "roboplc"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -27,7 +27,7 @@ oneshot = { version = "0.1.6", default-features = false, features = ["std"] }
 pin-project = "1.1.5"
 rmodbus = { version = "0.9.4", optional = true }
 roboplc-derive = { version = "0.3" }
-serde = { version = "1.0.197", features = ["derive", "rc"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
 serial = "0.4.0"
 sysinfo = "0.29"
 thiserror = "1.0.57"
@@ -45,14 +45,16 @@ metrics = { version = "0.22.3", optional = true }
 parking_lot_rt = "0.12.1"
 snmp = { version = "0.2.2", optional = true }
 rtsc = "0.1.6"
+rvideo = { version = "0.4", optional = true }
 
 [features]
 eapi = ["eva-common", "eva-sdk", "busrt", "tokio", "hostname"]
 pipe = ["tokio/process", "tokio/io-util", "tokio/macros", "tokio/rt", "tokio/time"]
+rvideo = ["dep:rvideo"]
 modbus = ["rmodbus"]
 openssl-vendored = ["busrt/openssl-vendored", "eva-common/openssl-vendored"]
 metrics = ["dep:metrics", "metrics-exporter-prometheus"]
-full = ["eapi", "modbus", "metrics", "pipe"]
+full = ["eapi", "modbus", "metrics", "pipe", "rvideo"]
 #default = ["modbus"]
 
 [dev-dependencies]

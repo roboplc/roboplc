@@ -27,6 +27,7 @@ enum Server {
     Serial(SystemPort),
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn handle_client<
     T: Read + Write,
     const C: usize,

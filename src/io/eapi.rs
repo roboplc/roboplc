@@ -158,7 +158,6 @@ pub type ActionResult = std::result::Result<(), Box<dyn std::error::Error>>;
 type ActionHandlers<D, V> = Arc<BTreeMap<OID, ActionHandlerFn<D, V>>>;
 type BulkActionHandlers<D, V> = Arc<Vec<(OIDMask, ActionHandlerFn<D, V>)>>;
 
-#[allow(clippy::struct_field_names)]
 struct Handlers<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,
@@ -185,7 +184,8 @@ where
     macro_rules! notify_running {
         () => {
             if let Ok(payload) = pack(&action.event_running()) {
-                let _ = tx.try_send(PushPayload::ActionState { topic, payload });
+                tx.try_send(PushPayload::ActionState { topic, payload })
+                    .ok();
             }
         };
     }
@@ -476,7 +476,7 @@ where
         self.inner
             .tx
             .try_send(PushPayload::DObj {
-                name: name.clone(),
+                name,
                 data: data.into_inner(),
             })
             .map_err(Into::into)
