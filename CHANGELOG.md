@@ -35,3 +35,17 @@
 ### 0.1 (2024-04-15)
 
 * First public release
+
+## RoboPLC manager
+
+### 0.2 (2024-06-22)
+
+* The default configuration file has been switched to TOML format.
+* [RVideo](https://crates.io/crates/rvideo) video streams preview.
+* Minor improvements and bug fixes.
+
+* First public release
+
+### 0.1 (2024-04-15)
+
+* First public release
