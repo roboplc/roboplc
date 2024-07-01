@@ -18,7 +18,7 @@ features = ["full", "eva-common/openssl-no-fips"]
 
 [dependencies]
 binrw = "0.13.3"
-bma-ts = { version = "0.1.12", features = ["serde"] }
+bma-ts = { version = "0.1", features = ["serde"] }
 colored = "1"
 libc = "0.2.153"
 nix = { version = "0.27", features = ["signal"] }
@@ -42,9 +42,9 @@ env_logger = "0.10"
 log = "0.4.21"
 metrics-exporter-prometheus = { version = "0.14.0", optional = true, default-features = false, features = ["http-listener"] }
 metrics = { version = "0.22.3", optional = true }
-parking_lot_rt = "0.12.1"
+parking_lot_rt = "0.12"
 snmp = { version = "0.2.2", optional = true }
-rtsc = "0.1.6"
+rtsc = "0.1"
 rvideo = { version = "0.4", optional = true }
 
 [features]
