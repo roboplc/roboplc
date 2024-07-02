@@ -21,6 +21,11 @@ impl Client {
     pub fn lock(&self) -> MutexGuard<()> {
         self.0.lock()
     }
+    /// Connect the client. Does not need to be called for request/response protocols as the client
+    /// is automatically connected when the first request is made.
+    pub fn connect(&self) -> Result<()> {
+        self.0.connect()
+    }
     /// Reconnect the client in case of read/write problems
     pub fn reconnect(&self) {
         self.0.reconnect();
@@ -81,6 +86,7 @@ pub trait Stream: Read + Write + Send {}
 
 trait Communicator {
     fn lock(&self) -> MutexGuard<()>;
+    fn connect(&self) -> Result<()>;
     fn reconnect(&self);
     fn write(&self, buf: &[u8]) -> Result<()>;
     fn read_exact(&self, buf: &mut [u8]) -> Result<()>;
@@ -130,14 +136,18 @@ impl Timeouts {
     }
 }
 
-pub type ChatFn = dyn Fn(&mut dyn Stream) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
-    + Send
-    + Sync;
+pub trait ConnectionHandler {
+    /// called right after the connection is established
+    fn on_connect(
+        &self,
+        stream: &mut dyn Stream,
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>;
+}
 
 /// Connection Options
 pub struct ConnectionOptions {
     with_reader: bool,
-    chat: Option<Box<ChatFn>>,
+    connection_handler: Option<Box<dyn ConnectionHandler + Send + Sync>>,
     timeouts: Timeouts,
 }
 
@@ -146,7 +156,7 @@ impl ConnectionOptions {
     pub fn new(timeout: Duration) -> Self {
         Self {
             with_reader: false,
-            chat: None,
+            connection_handler: None,
             timeouts: Timeouts {
                 connect: timeout,
                 read: timeout,
@@ -161,16 +171,13 @@ impl ConnectionOptions {
         self.with_reader = true;
         self
     }
-    /// Set the chat function. The chat function is called after the connection is established. The
-    /// chat function can be used to implement custom protocols that require additional setup.
-    pub fn chat<F>(mut self, chat: F) -> Self
+    /// Set the connection handler. The connection handler is used to implement custom protocols
+    /// that require additional setup/handling. Replaces "chat" function.
+    pub fn connection_handler<T>(mut self, connection_handler: T) -> Self
     where
-        F: Fn(&mut dyn Stream) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
-            + Send
-            + Sync
-            + 'static,
+        T: ConnectionHandler + Send + Sync + 'static,
     {
-        self.chat = Some(Box::new(chat));
+        self.connection_handler = Some(Box::new(connection_handler));
         self
     }
     /// Set timeouts

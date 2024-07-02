@@ -153,6 +153,9 @@ impl Communicator for Serial {
     fn session_id(&self) -> usize {
         self.session_id.load(Ordering::Acquire)
     }
+    fn connect(&self) -> Result<()> {
+        self.get_port().map(|_| ())
+    }
     fn reconnect(&self) {
         let mut port = self.port.lock();
         port.system_port.take();

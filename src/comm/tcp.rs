@@ -2,7 +2,8 @@ use crate::pchannel;
 use crate::{Error, Result};
 
 use super::{
-    ChatFn, Client, CommReader, Communicator, ConnectionOptions, Protocol, Stream, Timeouts,
+    Client, CommReader, Communicator, ConnectionHandler, ConnectionOptions, Protocol, Stream,
+    Timeouts,
 };
 use core::fmt;
 use parking_lot_rt::{Mutex, MutexGuard};
@@ -46,7 +47,7 @@ pub struct Tcp {
     session_id: AtomicUsize,
     allow_reconnect: AtomicBool,
     reader_tx: Option<pchannel::Sender<CommReader>>,
-    chat: Option<Box<ChatFn>>,
+    connection_handler: Option<Box<dyn ConnectionHandler + Send + Sync>>,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -67,6 +68,9 @@ impl Communicator for Tcp {
     }
     fn session_id(&self) -> usize {
         self.session_id.load(Ordering::Acquire)
+    }
+    fn connect(&self) -> Result<()> {
+        self.get_stream().map(|_| ())
     }
     fn reconnect(&self) {
         self.stream
@@ -136,7 +140,7 @@ impl Tcp {
             session_id: <_>::default(),
             allow_reconnect: AtomicBool::new(true),
             reader_tx: tx,
-            chat: options.chat,
+            connection_handler: options.connection_handler,
         };
         Ok((client.into(), rx))
     }
@@ -160,9 +164,11 @@ impl Tcp {
                 stream.set_write_timeout(Some(self.timeouts.write))?;
             }
             stream.set_nodelay(true)?;
-            if let Some(ref chat) = self.chat {
-                trace!("chatting with the server");
-                chat(&mut stream).map_err(Error::io)?;
+            if let Some(ref connection_handler) = self.connection_handler {
+                trace!("starting connection handler");
+                connection_handler
+                    .on_connect(&mut stream)
+                    .map_err(Error::io)?;
             }
             self.session_id.fetch_add(1, Ordering::Release);
             trace!(addr=%self.addr, session_id=self.session_id(), "TCP session started");
