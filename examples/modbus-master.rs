@@ -1,3 +1,4 @@
+use roboplc::locking::Mutex;
 use roboplc::{
     comm::{tcp, Client},
     time::interval,
@@ -11,9 +12,11 @@ const MODBUS_TIMEOUT: Duration = Duration::from_secs(1);
 // Do not make any decision if the sensor is older than this
 const ENV_DATA_TTL: Duration = Duration::from_millis(1);
 
+type Variables = Mutex<VariablesData>;
+
 // A shared traditional PLC context, does not used for logic here but provided as an example
 #[derive(Default)]
-struct Variables {
+struct VariablesData {
     temperature: f32,
 }
 
@@ -66,7 +69,7 @@ impl Worker<Message, Variables> for ModbusPuller1 {
         for _ in interval(Duration::from_millis(500)) {
             match self.sensor_mapping.read::<EnvironmentSensors>() {
                 Ok(v) => {
-                    context.variables().write().temperature = v.temperature;
+                    context.variables().lock().temperature = v.temperature;
                     hub.send(Message::EnvSensorData(TtlCell::new_with_value(
                         ENV_DATA_TTL,
                         v,

@@ -15,7 +15,6 @@ use crate::{
     thread_rt::{Builder, RTParams, Scheduling},
     Error, Result,
 };
-use parking_lot_rt::RwLock;
 pub use roboplc_derive::WorkerOpts;
 use rtsc::data_policy::DataDeliveryPolicy;
 use signal_hook::{
@@ -106,7 +105,7 @@ where
     supervisor: Supervisor<()>,
     hub: Hub<D>,
     state: State,
-    variables: Arc<RwLock<V>>,
+    variables: Arc<V>,
 }
 
 impl<D, V> Controller<D, V>
@@ -132,7 +131,7 @@ where
             supervisor: <_>::default(),
             hub: <_>::default(),
             state: State::new(),
-            variables: Arc::new(RwLock::new(variables)),
+            variables: Arc::new(variables),
         }
     }
     /// Spawns a worker
@@ -280,7 +279,7 @@ where
         &self.supervisor
     }
     /// Controller shared variables
-    pub fn variables(&self) -> &Arc<RwLock<V>> {
+    pub fn variables(&self) -> &Arc<V> {
         &self.variables
     }
 }
@@ -304,7 +303,7 @@ where
 {
     hub: Hub<D>,
     state: State,
-    variables: Arc<RwLock<V>>,
+    variables: Arc<V>,
 }
 
 impl<D, V> Clone for Context<D, V>
@@ -331,7 +330,7 @@ where
         &self.hub
     }
     /// Controller's shared variables (locked)
-    pub fn variables(&self) -> &Arc<RwLock<V>> {
+    pub fn variables(&self) -> &Arc<V> {
         &self.variables
     }
     /// Controller's state

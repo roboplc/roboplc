@@ -5,7 +5,10 @@ use roboplc::{
     time::interval,
 };
 use serde::Deserialize;
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use tracing::info;
 
 #[derive(Clone, Debug)]
@@ -18,7 +21,7 @@ struct Env {
 
 #[derive(Default)]
 struct Variables {
-    fan: bool,
+    fan: AtomicBool,
 }
 
 #[derive(DataPolicy, Clone)]
@@ -51,8 +54,10 @@ impl Worker<Message, Variables> for Worker1 {
                     pressure: temp as f64 / 3.0,
                 },
             )?;
-            self.eapi
-                .state_push(oid.clone(), u8::from(context.variables().read().fan))?;
+            self.eapi.state_push(
+                oid.clone(),
+                u8::from(context.variables().fan.load(Ordering::Acquire)),
+            )?;
             //self.eapi.dobj_error(dobj_name.clone())?;
             if !context.is_online() {
                 break;
@@ -83,7 +88,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .action_handler("unit:tests/fan".parse().unwrap(), |action, context| {
             let params = action.take_unit_params()?;
             let val = u8::deserialize(params.value)?;
-            context.variables().write().fan = val != 0;
+            context.variables().fan.store(val != 0, Ordering::Release);
             Ok(())
         });
     // this creates a connector instance with the name `fieldbus.HOSTNAME.plc`. To use a custom

@@ -1,5 +1,6 @@
 use roboplc::comm::Protocol;
 use roboplc::io::modbus::prelude::*;
+use roboplc::locking::Mutex;
 use roboplc::{prelude::*, time::interval};
 use tracing::info;
 
@@ -35,10 +36,11 @@ struct Input {
 
 // This example does not use controller's data hub
 type Message = ();
+type Variables = Mutex<VariableData>;
 
 // Controller's shared variables
 #[derive(Default)]
-struct Variables {
+struct VariableData {
     data: Data,
     relays: Relays,
     input: Input,
@@ -58,7 +60,7 @@ struct Worker1 {
 impl Worker<Message, Variables> for Worker1 {
     fn run(&mut self, context: &Context<Message, Variables>) -> WResult {
         for _ in interval(Duration::from_secs(2)) {
-            let mut vars = context.variables().write();
+            let mut vars = context.variables().lock();
             vars.data.counter += 1;
             vars.relays.relay1 = u8::from(vars.data.counter % 2 == 0);
             vars.relays.relay2 = u8::from(vars.data.counter % 2 != 0);
