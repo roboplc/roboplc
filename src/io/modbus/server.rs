@@ -1,10 +1,10 @@
 use crate::io::{modbus::ModbusRegister, IoMapping};
+use crate::locking::{Mutex, MutexGuard};
 use crate::{
     comm::{self, Protocol},
     Error, Result,
 };
 use binrw::{BinRead, BinWrite};
-use parking_lot_rt::{Mutex, MutexGuard};
 use rmodbus::{
     server::{context::ModbusContext, storage::ModbusStorage, ModbusFrame},
     ModbusFrameBuf, ModbusProto,

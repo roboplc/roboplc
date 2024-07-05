@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::sync::Arc;
 
-use parking_lot_rt::Mutex;
+use crate::locking::Mutex;
 
 use crate::pchannel_async::{self, Receiver, Sender};
 use crate::{DataDeliveryPolicy, Error, Result};

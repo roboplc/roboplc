@@ -1,4 +1,4 @@
-use parking_lot_rt::MutexGuard;
+use crate::locking::MutexGuard;
 use rtsc::data_policy::DataDeliveryPolicy;
 use std::{
     io::{Read, Write},

@@ -11,7 +11,7 @@ use thread_rt::{RTParams, Scheduling};
 pub use log::LevelFilter;
 pub use rtsc::{DataChannel, DataPolicy};
 
-pub use parking_lot_rt as locking;
+pub use rtsc::locking;
 
 #[cfg(feature = "metrics")]
 pub use metrics;

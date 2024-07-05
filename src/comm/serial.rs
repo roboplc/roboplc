@@ -3,7 +3,7 @@ use crate::{Error, Result};
 use super::Client;
 use super::Communicator;
 use super::Protocol;
-use parking_lot_rt::{Mutex, MutexGuard};
+use crate::locking::{Mutex, MutexGuard};
 use serial::prelude::*;
 use serial::SystemPort;
 use std::io;

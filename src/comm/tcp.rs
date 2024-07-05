@@ -5,8 +5,8 @@ use super::{
     Client, CommReader, Communicator, ConnectionHandler, ConnectionOptions, Protocol, Stream,
     Timeouts,
 };
+use crate::locking::{Mutex, MutexGuard};
 use core::fmt;
-use parking_lot_rt::{Mutex, MutexGuard};
 use std::io::{Read, Write};
 use std::net::{self, TcpStream};
 use std::net::{SocketAddr, ToSocketAddrs};
