@@ -112,11 +112,19 @@ impl CommReader {
 
 impl DataDeliveryPolicy for CommReader {}
 
-#[derive(Default, Clone)]
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(1);
+
+#[derive(Clone)]
 pub struct Timeouts {
     pub connect: Duration,
     pub read: Duration,
     pub write: Duration,
+}
+
+impl Default for Timeouts {
+    fn default() -> Self {
+        Self::new(DEFAULT_TIMEOUT)
+    }
 }
 
 impl Timeouts {
