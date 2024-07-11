@@ -1,4 +1,4 @@
-use crate::locking::MutexGuard;
+use crate::{locking::MutexGuard, Error};
 use rtsc::data_policy::DataDeliveryPolicy;
 use std::{
     io::{Read, Write},
@@ -57,6 +57,29 @@ impl Client {
             client: self.clone(),
             session_id,
         })
+    }
+}
+
+impl Read for Client {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self.0.read_exact(buf) {
+            Ok(()) => Ok(buf.len()),
+            Err(Error::IO(e)) => Err(e),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+        }
+    }
+}
+
+impl Write for Client {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        match self.0.write(buf) {
+            Ok(()) => Ok(buf.len()),
+            Err(Error::IO(e)) => Err(e),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+        }
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
     }
 }
 

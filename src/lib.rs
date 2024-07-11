@@ -44,7 +44,7 @@ pub mod thread_rt;
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// The crate error type
-#[derive(thiserror::Error, Debug, PartialEq, Eq)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// the channel is full and the value can not be sent
     #[error("channel full")]
@@ -68,9 +68,12 @@ pub enum Error {
     /// Timeouts
     #[error("timed out")]
     Timeout,
-    /// I/O and threading errors
+    /// Standard I/O errors
     #[error("I/O error: {0}")]
-    IO(String),
+    IO(#[from] std::io::Error),
+    // Non-standard I/O errors
+    #[error("Communication error: {0}")]
+    Comm(String),
     /// 3rd party API errors
     #[error("API error {0}: {1}")]
     API(String, i64),
@@ -149,10 +152,9 @@ macro_rules! impl_error {
     };
 }
 
-impl_error!(std::io::Error, IO);
 #[cfg(feature = "modbus")]
-impl_error!(rmodbus::ErrorKind, IO);
-impl_error!(oneshot::RecvError, IO);
+impl_error!(rmodbus::ErrorKind, Comm);
+impl_error!(oneshot::RecvError, Comm);
 impl_error!(num::ParseIntError, InvalidData);
 impl_error!(num::ParseFloatError, InvalidData);
 impl_error!(binrw::Error, BinRw);
@@ -165,7 +167,7 @@ impl Error {
         Error::InvalidData(msg.to_string())
     }
     pub fn io<S: fmt::Display>(msg: S) -> Self {
-        Error::IO(msg.to_string())
+        Error::Comm(msg.to_string())
     }
     pub fn failed<S: fmt::Display>(msg: S) -> Self {
         Error::Failed(msg.to_string())

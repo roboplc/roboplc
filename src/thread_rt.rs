@@ -496,14 +496,14 @@ fn thread_init_external(
 ) -> Result<libc::c_int> {
     let (tid, tx_ok) = rx_tid.recv()?;
     if tid < 0 {
-        tx_ok.send(false).map_err(|e| Error::IO(e.to_string()))?;
+        tx_ok.send(false).map_err(|e| Error::Comm(e.to_string()))?;
         return Err(Error::RTGetTId(tid));
     }
     if let Err(e) = apply_thread_params(tid, params, quiet) {
-        tx_ok.send(false).map_err(|e| Error::IO(e.to_string()))?;
+        tx_ok.send(false).map_err(|e| Error::Comm(e.to_string()))?;
         return Err(e);
     }
-    tx_ok.send(true).map_err(|e| Error::IO(e.to_string()))?;
+    tx_ok.send(true).map_err(|e| Error::Comm(e.to_string()))?;
     Ok(tid)
 }
 
