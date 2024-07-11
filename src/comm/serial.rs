@@ -18,6 +18,8 @@ use tracing::trace;
 
 /// Create a new serial client. The client will attempt to connect to the given address at the time
 /// of the first request. The client will automatically reconnect if the connection is lost.
+///
+/// Path syntax: `port_dev:baud_rate:char_size:parity:stop_bits`, e.g. `/dev/ttyS0:9600:8:N:1`
 pub fn connect(path: &str, timeout: Duration, frame_delay: Duration) -> Result<Client> {
     Ok(Client(Serial::create(path, timeout, frame_delay)?))
 }
