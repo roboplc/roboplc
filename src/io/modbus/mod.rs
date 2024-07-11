@@ -215,7 +215,7 @@ impl IoMapping for ModbusMapping {
                     )?;
                 }
                 ModbusRegisterKind::Discrete | ModbusRegisterKind::Input => {
-                    return Err(Error::IO(
+                    return Err(Error::Comm(
                         "unsupported modbus register kind for writing".to_owned(),
                     ));
                 }
@@ -243,7 +243,7 @@ impl IoMapping for ModbusMapping {
                         i += 2;
                     }
                     ModbusRegisterKind::Discrete | ModbusRegisterKind::Input => {
-                        return Err(Error::IO(
+                        return Err(Error::Comm(
                             "unsupported modbus register kind for writing".to_owned(),
                         ));
                     }
