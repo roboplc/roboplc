@@ -1,4 +1,5 @@
 #![ doc = include_str!( concat!( env!( "CARGO_MANIFEST_DIR" ), "/", "README.md" ) ) ]
+#![deny(missing_docs)]
 use core::{fmt, num};
 use std::io::Write;
 use std::panic::PanicInfo;
@@ -41,6 +42,7 @@ pub mod supervisor;
 #[cfg(target_os = "linux")]
 pub mod thread_rt;
 
+/// The crate result type
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// The crate error type
@@ -71,7 +73,7 @@ pub enum Error {
     /// Standard I/O errors
     #[error("I/O error: {0}")]
     IO(#[from] std::io::Error),
-    // Non-standard I/O errors
+    /// Non-standard I/O errors
     #[error("Communication error: {0}")]
     Comm(String),
     /// 3rd party API errors
@@ -160,15 +162,19 @@ impl_error!(num::ParseFloatError, InvalidData);
 impl_error!(binrw::Error, BinRw);
 
 impl Error {
+    /// Returns true if the data is skipped
     pub fn is_data_skipped(&self) -> bool {
         matches!(self, Error::ChannelSkipped)
     }
+    /// Creates new invalid data error
     pub fn invalid_data<S: fmt::Display>(msg: S) -> Self {
         Error::InvalidData(msg.to_string())
     }
+    /// Creates new I/O error (for non-standard I/O)
     pub fn io<S: fmt::Display>(msg: S) -> Self {
         Error::Comm(msg.to_string())
     }
+    /// Creates new function failed error
     pub fn failed<S: fmt::Display>(msg: S) -> Self {
         Error::Failed(msg.to_string())
     }
@@ -266,6 +272,7 @@ pub fn configure_logger(filter: LevelFilter) {
     builder.init();
 }
 
+/// Prelude module
 pub mod prelude {
     #[cfg(target_os = "linux")]
     pub use super::suicide;

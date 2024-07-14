@@ -7,6 +7,7 @@ use crate::thread_rt::{Builder, ScopedTask, Task};
 use crate::time::Interval;
 use crate::{Error, Result};
 
+/// The supervisor prelude
 pub mod prelude {
     pub use super::Supervisor;
     pub use crate::thread_rt::{Builder, Scheduling};
@@ -35,6 +36,7 @@ macro_rules! vacant_entry {
 }
 
 impl<T> Supervisor<T> {
+    /// Creates a new supervisor object
     pub fn new() -> Self {
         Self::default()
     }
@@ -101,6 +103,7 @@ impl<T> Supervisor<T> {
     }
 }
 
+/// A scoped supervisor object
 #[allow(clippy::module_name_repetitions)]
 #[derive(Serialize)]
 pub struct ScopedSupervisor<'a, 'env: 'a, T> {
@@ -110,6 +113,7 @@ pub struct ScopedSupervisor<'a, 'env: 'a, T> {
 }
 
 impl<'a, 'env, T> ScopedSupervisor<'a, 'env, T> {
+    /// Creates a new scoped supervisor object
     pub fn new(scope: &'a thread::Scope<'a, 'env>) -> Self {
         Self {
             tasks: <_>::default(),

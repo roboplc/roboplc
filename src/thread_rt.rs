@@ -85,12 +85,18 @@ pub struct Builder {
 #[serde(rename_all = "UPPERCASE")]
 pub enum Scheduling {
     #[serde(rename = "RR")]
+    /// Round-robin
     RoundRobin,
+    /// First in, first out
     FIFO,
+    /// Idle
     Idle,
+    /// Batch
     Batch,
+    /// Deadline
     DeadLine,
     #[default]
+    /// Other
     Other,
 }
 
@@ -134,6 +140,7 @@ impl_builder_from!(&str);
 impl_builder_from!(String);
 
 impl Builder {
+    /// Creates a new thread builder
     pub fn new() -> Self {
         Self::default()
     }
@@ -316,9 +323,11 @@ pub struct Task<T> {
 }
 
 impl<T> Task<T> {
+    /// Returns the task name
     pub fn name(&self) -> &str {
         &self.name
     }
+    /// Returns the task handle
     pub fn handle(&self) -> &JoinHandle<T> {
         &self.handle
     }
@@ -335,12 +344,15 @@ impl<T> Task<T> {
         self.rt_params = rt_params;
         Ok(())
     }
+    /// Returns true if the task is finished
     pub fn is_finished(&self) -> bool {
         self.handle.is_finished()
     }
+    /// Joins the task
     pub fn join(self) -> thread::Result<T> {
         self.handle.join()
     }
+    /// Converts the task into a standard [`JoinHandle`]
     pub fn into_join_handle(self) -> JoinHandle<T> {
         self.into()
     }
@@ -348,6 +360,7 @@ impl<T> Task<T> {
     pub fn elapsed(&self) -> Duration {
         self.info.started_mt.elapsed()
     }
+    /// Returns true if the task is blocking
     pub fn is_blocking(&self) -> bool {
         self.blocking
     }
@@ -377,9 +390,11 @@ pub struct ScopedTask<'scope, T> {
 }
 
 impl<'scope, T> ScopedTask<'scope, T> {
+    /// Returns the task name
     pub fn name(&self) -> &str {
         &self.name
     }
+    /// Returns the task handle
     pub fn handle(&self) -> &ScopedJoinHandle<T> {
         &self.handle
     }
@@ -396,12 +411,15 @@ impl<'scope, T> ScopedTask<'scope, T> {
         self.rt_params = rt_params;
         Ok(())
     }
+    /// Returns true if the task is finished
     pub fn is_finished(&self) -> bool {
         self.handle.is_finished()
     }
+    /// Joins the task
     pub fn join(self) -> thread::Result<T> {
         self.handle.join()
     }
+    /// Converts the task into a standard [`ScopedJoinHandle`]
     pub fn into_join_handle(self) -> ScopedJoinHandle<'scope, T> {
         self.into()
     }
@@ -409,6 +427,7 @@ impl<'scope, T> ScopedTask<'scope, T> {
     pub fn elapsed(&self) -> Duration {
         self.info.started_mt.elapsed()
     }
+    /// Returns true if the task is blocking
     pub fn is_blocking(&self) -> bool {
         self.blocking
     }
@@ -429,6 +448,7 @@ pub struct RTParams {
 }
 
 impl RTParams {
+    /// Creates a new real-time parameters object
     pub fn new() -> Self {
         Self::default()
     }
@@ -659,6 +679,7 @@ pub struct SystemConfig {
 }
 
 impl SystemConfig {
+    /// Creates a new system config object
     pub fn new() -> Self {
         Self::default()
     }
@@ -681,6 +702,7 @@ impl SystemConfig {
     }
 }
 
+/// A guard object to restore system parameters when dropped
 pub struct SystemConfigGuard {
     config: SystemConfig,
 }

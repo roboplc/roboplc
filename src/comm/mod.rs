@@ -9,8 +9,10 @@ use std::{
 
 use crate::Result;
 
-pub mod serial; // Serial communications
-pub mod tcp; // TCP communications
+/// Serial communications
+pub mod serial;
+/// TCP communications
+pub mod tcp;
 
 /// A versatile (TCP/serial) client
 #[derive(Clone)]
@@ -83,12 +85,14 @@ impl Write for Client {
     }
 }
 
+/// A guard for the session lock
 pub struct SessionGuard {
     client: Client,
     session_id: usize,
 }
 
 impl SessionGuard {
+    /// Get the session id
     pub fn session_id(&self) -> usize {
         self.session_id
     }
@@ -100,11 +104,15 @@ impl Drop for SessionGuard {
     }
 }
 
+/// Communication protocol
 pub enum Protocol {
+    /// TCP
     Tcp,
+    /// Serial
     Serial,
 }
 
+/// Stream trait
 pub trait Stream: Read + Write + Send {}
 
 trait Communicator {
@@ -122,12 +130,14 @@ trait Communicator {
     fn unlock_session(&self);
 }
 
+/// A communication reader container (used to pass the reader via policy channels)
 #[allow(clippy::module_name_repetitions)]
 pub struct CommReader {
     reader: Option<Box<dyn Read + Send + 'static>>,
 }
 
 impl CommReader {
+    /// Take reader from the container
     pub fn take(&mut self) -> Option<Box<dyn Read + Send + 'static>> {
         self.reader.take()
     }
@@ -137,10 +147,14 @@ impl DataDeliveryPolicy for CommReader {}
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(1);
 
+/// Timeouts
 #[derive(Clone)]
 pub struct Timeouts {
+    /// Connect timeout
     pub connect: Duration,
+    /// Read timeout
     pub read: Duration,
+    /// Write timeout
     pub write: Duration,
 }
 
@@ -151,6 +165,7 @@ impl Default for Timeouts {
 }
 
 impl Timeouts {
+    /// Create new timeouts with the default value
     pub fn new(default: Duration) -> Self {
         Self {
             connect: default,
@@ -158,6 +173,7 @@ impl Timeouts {
             write: default,
         }
     }
+    /// Create new timeouts with zero values
     pub fn none() -> Self {
         Self {
             connect: Duration::from_secs(0),
@@ -167,6 +183,7 @@ impl Timeouts {
     }
 }
 
+/// Connection handler object, used to perform initial chat in custom protocols
 pub trait ConnectionHandler {
     /// called right after the connection is established
     fn on_connect(

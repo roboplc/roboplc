@@ -38,6 +38,7 @@ pub fn connect_with_options<A: ToSocketAddrs + fmt::Debug>(
 
 impl Stream for TcpStream {}
 
+/// A TCP client structure
 #[allow(clippy::module_name_repetitions)]
 pub struct Tcp {
     addr: SocketAddr,
@@ -50,6 +51,7 @@ pub struct Tcp {
     connection_handler: Option<Box<dyn ConnectionHandler + Send + Sync>>,
 }
 
+/// A TCP client type
 #[allow(clippy::module_name_repetitions)]
 pub type TcpClient = Arc<Tcp>;
 

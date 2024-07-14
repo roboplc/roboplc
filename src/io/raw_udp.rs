@@ -26,6 +26,7 @@ impl<T> UdpReceiver<T>
 where
     T: for<'a> BinRead<Args<'a> = ()>,
 {
+    /// Binds to the specified address and creates a new receiver
     pub fn bind<A: ToSocketAddrs>(addr: A, buf_size: usize) -> Result<Self> {
         let server = UdpSocket::bind(addr)?;
         Ok(Self {
@@ -70,6 +71,7 @@ impl<T> UdpSender<T>
 where
     T: for<'a> BinWrite<Args<'a> = ()>,
 {
+    /// Connects to the specified address and creates a new sender
     pub fn connect<A: ToSocketAddrs>(addr: A) -> Result<Self> {
         let socket = UdpSocket::bind(("0.0.0.0", 0))?;
         let target = addr
@@ -84,6 +86,7 @@ where
         })
     }
 
+    /// Sends a value to the target address
     pub fn send(&mut self, value: T) -> Result<()> {
         let mut buf = Cursor::new(&mut self.data_buf);
         value.write_le(&mut buf)?;

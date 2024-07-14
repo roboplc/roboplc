@@ -103,6 +103,7 @@ where
         }
         config
     }
+    /// Creates a new EAPI connection configuration with the given path
     pub fn new(path: &str) -> Self {
         Self {
             path: path.to_owned(),
@@ -140,10 +141,12 @@ where
         self.reconnect_delay = reconnect_delay;
         self
     }
+    /// Set action handler for the given OID
     pub fn action_handler(mut self, oid: OID, handler: ActionHandlerFn<D, V>) -> Self {
         self.action_handlers.insert(oid, handler);
         self
     }
+    /// Set bulk action handler for the given OID mask
     pub fn bulk_action_handler(mut self, mask: OIDMask, handler: ActionHandlerFn<D, V>) -> Self {
         self.bulk_action_handlers.push((mask, handler));
         self
@@ -467,6 +470,7 @@ where
         warn!(client = self.inner.name, "disconnected from EAPI bus");
         Ok(())
     }
+    /// Pushes a data object to the EVA ICS node core
     pub fn dobj_push<T>(&self, name: Arc<String>, value: T) -> Result<()>
     where
         T: for<'a> BinWrite<Args<'a> = ()>,
@@ -481,12 +485,14 @@ where
             })
             .map_err(Into::into)
     }
+    /// Pushes a data object error to the EVA ICS node core
     pub fn dobj_error(&self, name: Arc<String>) -> Result<()> {
         self.inner
             .tx
             .try_send(PushPayload::DObjError(name))
             .map_err(Into::into)
     }
+    /// Pushes a state event to the EVA ICS node core
     pub fn state_push<T: Serialize>(&self, oid: Arc<OID>, value: T) -> Result<()> {
         self.inner
             .tx
@@ -496,12 +502,14 @@ where
             })
             .map_err(Into::into)
     }
+    /// Pushes a custom (raw) state event to the EVA ICS node core
     pub fn raw_state_push(&self, oid: Arc<OID>, event: RawStateEventOwned) -> Result<()> {
         self.inner
             .tx
             .try_send(PushPayload::State { oid, event })
             .map_err(Into::into)
     }
+    /// Pushes a state error event to the EVA ICS node core
     pub fn state_error(&self, oid: Arc<OID>) -> Result<()> {
         self.inner
             .tx

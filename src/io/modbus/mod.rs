@@ -26,6 +26,7 @@ use super::IoMapping;
 mod regs;
 mod server;
 
+/// Modbus prelude
 pub mod prelude {
     pub use super::{
         ModbusMapping, ModbusMappingOptions, ModbusRegister, ModbusRegisterKind, ModbusServer,
@@ -35,6 +36,7 @@ pub mod prelude {
 
 /// Swaps endianess of floating point numbers in case of non-standard IEEE 754 layout.
 pub trait SwapModbusEndianess {
+    /// Swaps endianess of floating point numbers in case of non-standard IEEE 754 layout.
     fn to_swapped_modbus_endianness(&self) -> Self;
 }
 
@@ -69,9 +71,11 @@ pub struct ModbusMappingOptions {
 }
 
 impl ModbusMappingOptions {
+    /// Creates new options for Modbus value mapping
     pub fn new() -> Self {
         Self { bulk_write: true }
     }
+    /// Enables or disables bulk writes
     pub fn bulk_write(mut self, value: bool) -> Self {
         self.bulk_write = value;
         self
@@ -99,6 +103,7 @@ pub struct ModbusMapping {
 }
 
 impl ModbusMapping {
+    /// Creates new Modbus value mapping
     pub fn create<R>(client: &Client, unit_id: u8, register: R, count: u16) -> Result<Self>
     where
         R: TryInto<ModbusRegister>,
@@ -117,6 +122,7 @@ impl ModbusMapping {
             options: <_>::default(),
         })
     }
+    /// Sets options for Modbus value mapping
     pub fn with_options(mut self, options: ModbusMappingOptions) -> Self {
         self.options = options;
         self

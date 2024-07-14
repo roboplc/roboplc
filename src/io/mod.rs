@@ -19,17 +19,22 @@ pub mod pipe;
 /// Raw UDP communication
 pub mod raw_udp;
 
+/// Generic I/O mapping trait
 #[allow(clippy::module_name_repetitions)]
 pub trait IoMapping {
+    /// Options for the mapping
     type Options;
+    /// Read data from the raw buffer
     fn read<T>(&mut self) -> Result<T>
     where
         T: for<'a> BinRead<Args<'a> = ()>;
+    /// Write data to the raw buffer
     fn write<T>(&mut self, value: T) -> Result<()>
     where
         T: for<'a> BinWrite<Args<'a> = ()>;
 }
 
+/// I/O mapping prelude
 pub mod prelude {
     pub use super::IoMapping as _;
     pub use binrw::prelude::*;

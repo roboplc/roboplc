@@ -8,8 +8,10 @@ use crate::{DataDeliveryPolicy, Error, Result};
 
 type ConditionFunction<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;
 
+/// The default priority for the client channel
 pub const DEFAULT_PRIORITY: usize = 100;
 
+/// The default client channel capacity
 pub const DEFAULT_CHANNEL_CAPACITY: usize = 1024;
 
 /// Async data communcation hub to implement in-process pub/sub model for thread workers
@@ -34,6 +36,7 @@ impl<T: DataDeliveryPolicy + Clone> Default for Hub<T> {
 }
 
 impl<T: DataDeliveryPolicy + Clone> Hub<T> {
+    /// Creates a new hub instance
     pub fn new() -> Self {
         Self::default()
     }
@@ -191,6 +194,7 @@ where
     }
 }
 
+/// A client for the hub
 pub struct Client<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
     hub: Hub<T>,
@@ -232,6 +236,7 @@ impl<T: DataDeliveryPolicy + Clone> Drop for Client<T> {
     }
 }
 
+/// Client options
 pub struct ClientOptions<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
     priority: usize,
@@ -241,6 +246,7 @@ pub struct ClientOptions<T: DataDeliveryPolicy + Clone> {
 }
 
 impl<T: DataDeliveryPolicy + Clone> ClientOptions<T> {
+    /// Creates a new client options object
     pub fn new<F>(name: &str, condition: F) -> Self
     where
         F: Fn(&T) -> bool + Send + Sync + 'static,

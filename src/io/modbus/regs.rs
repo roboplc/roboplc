@@ -5,20 +5,27 @@ use crate::{Error, Result};
 /// A Modbus register kind.
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum Kind {
+    /// Coil register (boolean)
     Coil,
+    /// Discrete register (boolean)
     Discrete,
+    /// Input register (16-bit)
     Input,
+    /// Holding register (16-bit)
     Holding,
 }
 
 /// A Modbus register type, contains the kind and the offset.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Register {
+    /// The register kind.
     pub kind: Kind,
+    /// The register offset.
     pub offset: u16,
 }
 
 impl Register {
+    /// Creates a new register.
     pub fn new(kind: Kind, offset: u16) -> Self {
         Self { kind, offset }
     }

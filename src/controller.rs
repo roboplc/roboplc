@@ -23,6 +23,7 @@ use signal_hook::{
 };
 use tracing::error;
 
+/// Controller prelude
 pub mod prelude {
     pub use super::{Context, Controller, WResult, Worker, WorkerOptions};
     pub use roboplc_derive::WorkerOpts;
@@ -31,6 +32,7 @@ pub mod prelude {
 /// Result type, which must be returned by workers' `run` method
 pub type WResult = std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>;
 
+/// Sleep step (used in blocking)
 pub const SLEEP_STEP: Duration = Duration::from_millis(100);
 
 /// Controller state beacon. Can be cloned and shared with no limitations.
@@ -40,7 +42,7 @@ pub struct State {
 }
 
 impl State {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             state: AtomicI8::new(ControllerStateKind::Starting as i8).into(),
         }
@@ -71,11 +73,17 @@ impl Default for State {
 #[allow(clippy::module_name_repetitions)]
 pub enum ControllerStateKind {
     #[default]
+    /// The controller is starting
     Starting = 0,
+    /// The controller is active (accepting tasks)
     Active = 1,
+    /// The controller is running (tasks are being executed)
     Running = 2,
+    /// The controller is stopping
     Stopping = -1,
+    /// The controller is stopped
     Stopped = -100,
+    /// The controller state is unknown
     Unknown = -128,
 }
 

@@ -88,8 +88,10 @@ fn handle_client<
     Ok(())
 }
 
+/// Function to block certain context storage
 pub type AllowFn = fn(ModbusRegisterKind, std::ops::Range<u16>) -> WritePermission;
 
+/// Context storage write permission
 pub enum WritePermission {
     /// Write is allowed.
     Allow,
@@ -126,6 +128,7 @@ pub struct ModbusServer<const C: usize, const D: usize, const I: usize, const H:
     allow_external_write_fn: Arc<AllowFn>,
 }
 impl<const C: usize, const D: usize, const I: usize, const H: usize> ModbusServer<C, D, I, H> {
+    /// Creates new Modbus server
     pub fn bind(
         protocol: Protocol,
         unit: u8,
@@ -152,6 +155,7 @@ impl<const C: usize, const D: usize, const I: usize, const H: usize> ModbusServe
     pub fn set_allow_external_write_fn(&mut self, f: AllowFn) {
         self.allow_external_write_fn = f.into();
     }
+    /// Creates a new mapping for the server storage context.
     pub fn mapping(&self, register: ModbusRegister, count: u16) -> ModbusServerMapping<C, D, I, H> {
         let buf_capacity = match register.kind {
             ModbusRegisterKind::Coil | ModbusRegisterKind::Discrete => usize::from(count),
@@ -164,9 +168,11 @@ impl<const C: usize, const D: usize, const I: usize, const H: usize> ModbusServe
             data_buf: Vec::with_capacity(buf_capacity),
         }
     }
+    /// Returns a reference to the internal storage.
     pub fn storage(&self) -> Arc<Mutex<ModbusStorage<C, D, I, H>>> {
         self.storage.clone()
     }
+    /// Runs the server. This function blocks the current thread.
     pub fn serve(&mut self) -> Result<()> {
         let timeout = self.timeout;
         let unit = self.unit;

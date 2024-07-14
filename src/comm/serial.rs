@@ -24,12 +24,18 @@ pub fn connect(path: &str, timeout: Duration, frame_delay: Duration) -> Result<C
     Ok(Client(Serial::create(path, timeout, frame_delay)?))
 }
 
+/// Serial port parameters
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Parameters {
+    /// Serial port device path
     pub port_dev: String,
+    /// Baud rate
     pub baud_rate: serial::BaudRate,
+    /// Character size
     pub char_size: serial::CharSize,
+    /// Parity
     pub parity: serial::Parity,
+    /// Stop bits
     pub stop_bits: serial::StopBits,
 }
 
@@ -111,6 +117,7 @@ fn parse_path(path: &str) -> Result<Parameters> {
     })
 }
 
+/// Open a serial port
 pub fn open(params: &Parameters, timeout: Duration) -> Result<SystemPort> {
     let mut port = serial::open(&params.port_dev).map_err(Error::io)?;
     port.reconfigure(&|settings| {
@@ -128,6 +135,7 @@ pub fn open(params: &Parameters, timeout: Duration) -> Result<SystemPort> {
     Ok(port)
 }
 
+/// Serial port client
 #[allow(clippy::module_name_repetitions)]
 pub struct Serial {
     port: Mutex<SPort>,
@@ -145,6 +153,7 @@ struct SPort {
     last_frame: Option<Instant>,
 }
 
+/// Serial port client type
 #[allow(clippy::module_name_repetitions)]
 pub type SerialClient = Arc<Serial>;
 
@@ -218,6 +227,7 @@ impl Communicator for Serial {
 }
 
 impl Serial {
+    /// Create a new serial client
     pub fn create(path: &str, timeout: Duration, frame_delay: Duration) -> Result<Arc<Self>> {
         let params = parse_path(path)?;
         Ok(Self {

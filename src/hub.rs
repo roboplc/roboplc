@@ -10,6 +10,7 @@ use self::prelude::DataChannel;
 
 type ConditionFunction<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;
 
+/// The hub prelude
 pub mod prelude {
     pub use super::Hub;
     pub use crate::event_matches;
@@ -17,8 +18,10 @@ pub mod prelude {
     pub use rtsc::DataChannel;
 }
 
+/// The default priority for the client channel
 pub const DEFAULT_PRIORITY: usize = 100;
 
+/// The default client channel capacity
 pub const DEFAULT_CHANNEL_CAPACITY: usize = 1024;
 
 /// Sync data communcation hub to implement in-process pub/sub model for thread workers
@@ -43,6 +46,7 @@ impl<T: DataDeliveryPolicy + Clone> Default for Hub<T> {
 }
 
 impl<T: DataDeliveryPolicy + Clone> Hub<T> {
+    /// Creates a new hub with default settings
     pub fn new() -> Self {
         Self::default()
     }
@@ -238,6 +242,7 @@ where
     }
 }
 
+/// A client for the hub
 pub struct Client<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
     hub: Hub<T>,
@@ -285,6 +290,7 @@ impl<T: DataDeliveryPolicy + Clone> Drop for Client<T> {
     }
 }
 
+/// Client options
 pub struct ClientOptions<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
     priority: usize,
@@ -294,6 +300,7 @@ pub struct ClientOptions<T: DataDeliveryPolicy + Clone> {
 }
 
 impl<T: DataDeliveryPolicy + Clone> ClientOptions<T> {
+    /// Creates a new client options object
     pub fn new<F>(name: &str, condition: F) -> Self
     where
         F: Fn(&T) -> bool + Send + Sync + 'static,

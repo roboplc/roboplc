@@ -1,3 +1,4 @@
+//! Data processing with subprocesses
 use std::{
     collections::BTreeMap,
     ffi::{OsStr, OsString},
@@ -17,16 +18,19 @@ use crate::{
     DataDeliveryPolicy, Result,
 };
 
+/// Pipe reader
 pub struct Reader {
     rx: Receiver<String>,
 }
 
 impl Reader {
+    /// Reads a line from the pipe. Blocks until a line is available.
     pub fn line(&self) -> Result<String> {
         self.rx.recv_blocking().map_err(Into::into)
     }
 }
 
+/// Data pipe with a subprocess
 pub struct Pipe {
     program: OsString,
     args: Vec<OsString>,
@@ -37,6 +41,7 @@ pub struct Pipe {
 }
 
 impl Pipe {
+    /// Creates a new pipe with a subprocess
     pub fn new<P: AsRef<OsStr>>(program: P) -> (Self, Reader) {
         let (tx, rx) = pchannel_async::bounded(10);
         (
@@ -51,19 +56,23 @@ impl Pipe {
             Reader { rx },
         )
     }
+    /// Adds a command line argument
     pub fn arg(&mut self, arg: impl AsRef<OsStr>) -> &mut Self {
         self.args.push(arg.as_ref().to_owned());
         self
     }
+    /// Adds multiple command line arguments
     pub fn args(&mut self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> &mut Self {
         self.args
             .extend(args.into_iter().map(|x| x.as_ref().to_owned()));
         self
     }
+    /// Adds an environment variable
     pub fn env(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.environment.insert(key.into(), value.into());
         self
     }
+    /// Adds multiple environment variables
     pub fn envs(
         &mut self,
         envs: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>,
@@ -77,6 +86,7 @@ impl Pipe {
         self.input_data = Some(data.into());
         self
     }
+    /// Delay before restarting the subprocess after it terminates
     pub fn restart_delay(&mut self, delay: Duration) -> &mut Self {
         self.restart_delay = delay;
         self
