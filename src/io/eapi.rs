@@ -496,6 +496,12 @@ where
             })
             .map_err(Into::into)
     }
+    pub fn raw_state_push(&self, oid: Arc<OID>, event: RawStateEventOwned) -> Result<()> {
+        self.inner
+            .tx
+            .try_send(PushPayload::State { oid, event })
+            .map_err(Into::into)
+    }
     pub fn state_error(&self, oid: Arc<OID>) -> Result<()> {
         self.inner
             .tx
