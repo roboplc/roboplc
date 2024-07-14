@@ -215,10 +215,19 @@ pub fn suicide(delay: Duration, warn: bool) {
 #[cfg(feature = "rvideo")]
 pub use rvideo;
 
+#[cfg(feature = "rflow")]
+pub use rflow;
+
 #[cfg(feature = "rvideo")]
 /// Serves the default [`rvideo`] server at TCP port `0.0.0.0:3001`
 pub fn serve_rvideo() -> std::result::Result<(), rvideo::Error> {
     rvideo::serve("0.0.0.0:3001").map_err(Into::into)
+}
+
+#[cfg(feature = "rflow")]
+/// Serves the default [`rflow`] server at TCP port `0.0.0.0:4001`
+pub fn serve_rflow() -> std::result::Result<(), rflow::Error> {
+    rflow::serve("0.0.0.0:4001").map_err(Into::into)
 }
 
 /// Returns [Prometheus metrics exporter
