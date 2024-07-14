@@ -533,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "roboplc-cli"
-version = "0.1.22"
+version = "0.1.23"
 dependencies = [
  "ansi_term",
  "clap",
