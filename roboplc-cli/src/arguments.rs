@@ -52,7 +52,7 @@ pub enum SubCommand {
 pub struct NewCommand {
     #[clap(help = "Project name")]
     pub name: String,
-    #[clap(long, help = "RoboPLC crate features")]
+    #[clap(short = 'F', long, help = "RoboPLC crate features")]
     pub features: Vec<String>,
     #[clap(last(true), help = "extra cargo arguments")]
     pub extras: Vec<String>,

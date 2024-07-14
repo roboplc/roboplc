@@ -34,8 +34,8 @@ pub fn create(
             robo_features.push(feature);
         }
     }
-    add_dependency("roboplc", &robo_features)?;
-    add_dependency("tracing", &["log"])?;
+    add_dependency("roboplc", &robo_features, env::var("ROBOPLC_PATH").ok())?;
+    add_dependency("tracing", &["log"], None)?;
     let robo_toml = Config {
         remote: config::Remote {
             key: maybe_key,
@@ -51,10 +51,17 @@ pub fn create(
     Ok(())
 }
 
-fn add_dependency(name: &str, features: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
+fn add_dependency(
+    name: &str,
+    features: &[&str],
+    path: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("Adding dependency: {}", name.green().bold());
     let mut cmd = std::process::Command::new("cargo");
     cmd.arg("-q").arg("add").arg(name);
+    if let Some(path) = path {
+        cmd.arg("--path").arg(path);
+    }
     for feature in features {
         cmd.arg("--features").arg(feature);
     }
@@ -67,7 +74,7 @@ fn add_dependency(name: &str, features: &[&str]) -> Result<(), Box<dyn std::erro
 
 #[allow(clippy::let_and_return)]
 fn prepare_main(tpl: &str, features: &[&str]) -> String {
-    /// METRICS
+    // METRICS
     let mut out = if features.contains(&"metrics") {
         tpl.replace(
             "    // METRICS",
@@ -78,7 +85,7 @@ fn prepare_main(tpl: &str, features: &[&str]) -> String {
     } else {
         tpl.replace("    // METRICS\n", "")
     };
-    /// RVIDEO
+    // RVIDEO
     out = if features.contains(&"rvideo") {
         out.replace(
             "// RVIDEO-SERVE",
@@ -109,7 +116,7 @@ impl Worker<Message, Variables> for RvideoSrv {
 #[worker_opts(cpu = 0, priority = 50, scheduling = "fifo", blocking = true)]
 struct RflowSrv {}
 
-impl Worker<Message, Variables> for RvideoSrv {
+impl Worker<Message, Variables> for RflowSrv {
     fn run(&mut self, _context: &Context<Message, Variables>) -> WResult {
         roboplc::serve_rflow().map_err(Into::into)
     }
