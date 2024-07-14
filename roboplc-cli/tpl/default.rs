@@ -19,6 +19,7 @@ impl Worker<Message, Variables> for Worker1 {
 }
 
 // RVIDEO-SERVE
+// RFLOW-SERVE
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
@@ -29,6 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // METRICS
     let mut controller = Controller::<Message, Variables>::new();
     // RVIDEO-SPAWN
+    // RFLOW-SPAWN
     controller.spawn_worker(Worker1 {})?;
     controller.register_signals(SHUTDOWN_TIMEOUT)?;
     controller.block();

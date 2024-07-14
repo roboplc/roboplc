@@ -67,6 +67,7 @@ fn add_dependency(name: &str, features: &[&str]) -> Result<(), Box<dyn std::erro
 
 #[allow(clippy::let_and_return)]
 fn prepare_main(tpl: &str, features: &[&str]) -> String {
+    /// METRICS
     let mut out = if features.contains(&"metrics") {
         tpl.replace(
             "    // METRICS",
@@ -77,6 +78,7 @@ fn prepare_main(tpl: &str, features: &[&str]) -> String {
     } else {
         tpl.replace("    // METRICS\n", "")
     };
+    /// RVIDEO
     out = if features.contains(&"rvideo") {
         out.replace(
             "// RVIDEO-SERVE",
@@ -98,6 +100,29 @@ impl Worker<Message, Variables> for RvideoSrv {
     } else {
         out.replace("// RVIDEO-SERVE\n", "")
             .replace("    // RVIDEO-SPAWN\n", "")
+    };
+    // RFLOW
+    out = if features.contains(&"rflow") {
+        out.replace(
+            "// RFLOW-SERVE",
+            r#"#[derive(WorkerOpts)]
+#[worker_opts(cpu = 0, priority = 50, scheduling = "fifo", blocking = true)]
+struct RflowSrv {}
+
+impl Worker<Message, Variables> for RvideoSrv {
+    fn run(&mut self, _context: &Context<Message, Variables>) -> WResult {
+        roboplc::serve_rflow().map_err(Into::into)
+    }
+}
+"#,
+        )
+        .replace(
+            "    // RFLOW-SPAWN",
+            "    controller.spawn_worker(RflowSrv {})?;",
+        )
+    } else {
+        out.replace("// RFLOW-SERVE\n", "")
+            .replace("    // RFLOW-SPAWN\n", "")
     };
     out
 }
