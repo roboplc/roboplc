@@ -92,6 +92,11 @@ path = "examples/pipe.rs"
 required-features = ["pipe"]
 
 [[example]]
+name = "rflow"
+path = "examples/rflow.rs"
+required-features = ["rflow"]
+
+[[example]]
 name = "eapi"
 path = "examples/eapi.rs"
 required-features = ["eapi"]
