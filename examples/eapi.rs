@@ -82,6 +82,9 @@ impl Worker<Message, Variables> for EAPIConnector {
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // This macro call copies AUTHOR, VERSION and DESCRIPTION from program's Cargo.toml to the EAPI
+    // I/O module.
+    roboplc::init_eapi!();
     roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     let eapi_config: EAPIConfig<Message, Variables> = EAPIConfig::new("/opt/eva4/var/bus.ipc")

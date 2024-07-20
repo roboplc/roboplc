@@ -19,6 +19,34 @@ use std::mem;
 use std::sync::Arc;
 use std::time::Duration;
 
+use once_cell::sync::OnceCell;
+
+// Filled from the main program values
+static CARGO_PKG_AUTHORS: OnceCell<String> = OnceCell::new();
+static CARGO_PKG_DESCRIPTION: OnceCell<String> = OnceCell::new();
+static CARGO_PKG_VERSION: OnceCell<String> = OnceCell::new();
+
+/// Sets the EAPI module information. Must be called only once. Usually not needed to be called
+/// directly, as executed by the `init_eapi!` macro.
+pub fn set_program_info(authors: &str, description: &str, version: &str) {
+    CARGO_PKG_AUTHORS.set(authors.to_owned()).unwrap();
+    CARGO_PKG_DESCRIPTION.set(description.to_owned()).unwrap();
+    CARGO_PKG_VERSION.set(version.to_owned()).unwrap();
+}
+
+#[macro_export]
+/// Initializes the EAPI module
+#[allow(clippy::module_name_repetitions)]
+macro_rules! init_eapi {
+    () => {
+        $crate::io::eapi::set_program_info(
+            env!("CARGO_PKG_AUTHORS"),
+            env!("CARGO_PKG_DESCRIPTION"),
+            env!("CARGO_PKG_VERSION"),
+        );
+    };
+}
+
 use crate::controller::{Context, SLEEP_STEP};
 use crate::{pchannel_async, DataDeliveryPolicy, DeliveryPolicy};
 use crate::{
@@ -231,15 +259,15 @@ where
             "info" => {
                 if payload.is_empty() {
                     #[derive(Serialize)]
-                    struct Payload {
-                        author: &'static str,
-                        description: &'static str,
-                        version: &'static str,
+                    struct Payload<'a> {
+                        author: &'a str,
+                        description: &'a str,
+                        version: &'a str,
                     }
                     let payload = Payload {
-                        author: env!("CARGO_PKG_AUTHORS"),
-                        description: env!("CARGO_PKG_DESCRIPTION"),
-                        version: env!("CARGO_PKG_VERSION"),
+                        author: CARGO_PKG_AUTHORS.get().map_or("", |s| s.as_str()),
+                        description: CARGO_PKG_DESCRIPTION.get().map_or("", |s| s.as_str()),
+                        version: CARGO_PKG_VERSION.get().map_or("", |s| s.as_str()),
                     };
                     Ok(Some(pack(&payload)?))
                 } else {

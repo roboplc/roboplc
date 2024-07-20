@@ -46,9 +46,10 @@ snmp = { version = "0.2.2", optional = true }
 rtsc = "0.2"
 rvideo = { version = "0.4", optional = true }
 rflow = { version = "0", optional = true }
+once_cell = { version = "1.19.0", optional = true }
 
 [features]
-eapi = ["eva-common", "eva-sdk", "busrt", "tokio", "hostname"]
+eapi = ["eva-common", "eva-sdk", "busrt", "tokio", "hostname", "once_cell"]
 pipe = ["tokio/process", "tokio/io-util", "tokio/macros", "tokio/rt", "tokio/time"]
 rvideo = ["dep:rvideo"]
 rflow = ["dep:rflow"]
