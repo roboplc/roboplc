@@ -80,6 +80,7 @@ where
     action_handlers: BTreeMap<OID, ActionHandlerFn<D, V>>,
     #[serde(skip)]
     bulk_action_handlers: Vec<(OIDMask, ActionHandlerFn<D, V>)>,
+    name: Option<String>,
 }
 
 impl<D, V> EAPIConfig<D, V>
@@ -114,7 +115,13 @@ where
             reconnect_delay: 2.0,
             action_handlers: <_>::default(),
             bulk_action_handlers: <_>::default(),
+            name: None,
         }
+    }
+    /// Override the client host name
+    pub fn name(mut self, name: impl AsRef<str>) -> Self {
+        self.name = Some(name.as_ref().to_owned());
+        self
     }
     /// Set timeout in seconds
     pub fn timeout(mut self, timeout: f64) -> Self {
@@ -330,13 +337,11 @@ where
     ///
     /// Will panic if failed to get the hostname
     pub fn new_program(config: EAPIConfig<D, V>) -> Self {
-        Self::new(
-            format!(
-                "fieldbus.{}.program",
-                hostname::get().unwrap().to_string_lossy()
-            ),
-            config,
-        )
+        let host_name = config.name.as_ref().map_or_else(
+            || hostname::get().unwrap().to_string_lossy().to_string(),
+            Clone::clone,
+        );
+        Self::new(format!("fieldbus.{}.program", host_name,), config)
     }
     /// creates a new EAPI connector instance with the given name
     pub fn new<N: fmt::Display>(name: N, mut config: EAPIConfig<D, V>) -> Self {
