@@ -542,6 +542,16 @@ where
             .try_send(PushPayload::State { oid, event })
             .map_err(Into::into)
     }
+    /// Pushes a state ok event to the EVA ICS node core, keeping item value unchanged
+    pub fn state_ok(&self, oid: Arc<OID>) -> Result<()> {
+        self.inner
+            .tx
+            .try_send(PushPayload::State {
+                oid,
+                event: RawStateEventOwned::new0(1),
+            })
+            .map_err(Into::into)
+    }
     /// Pushes a state error event to the EVA ICS node core
     pub fn state_error(&self, oid: Arc<OID>) -> Result<()> {
         self.inner
