@@ -680,6 +680,7 @@ pub struct SystemConfig {
 
 impl SystemConfig {
     /// Creates a new system config object
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
