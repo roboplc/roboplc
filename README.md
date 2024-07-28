@@ -123,7 +123,7 @@ Note: to switch locking policy, disable the crate default features.
 The locking policy can be also selected in CLI when creating a new project:
 
 ```shell
-robo new --locking rt-safe # the default in CLI is rt-safe
+robo new --locking rt-safe # the default for CLI-created projects is rt-safe
 ```
 
 ## Controller
