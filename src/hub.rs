@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::locking::Mutex;
 use rtsc::data_policy::DataDeliveryPolicy;
 
-use crate::pchannel::{self, Receiver, Sender};
+use crate::policy_channel::{self as pchannel, Receiver, Sender};
 use crate::{Error, Result};
 
 use self::prelude::DataChannel;

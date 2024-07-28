@@ -12,15 +12,78 @@ use thread_rt::{RTParams, Scheduling};
 pub use log::LevelFilter;
 pub use rtsc::{DataChannel, DataPolicy};
 
-pub use rtsc::locking;
+#[cfg(feature = "locking-default")]
+pub use parking_lot as locking;
+
+#[cfg(feature = "locking-rt")]
+pub use parking_lot_rt as locking;
+
+#[cfg(feature = "locking-rt-safe")]
+pub use rtsc::pi as locking;
 
 #[cfg(feature = "metrics")]
 pub use metrics;
 
-pub use rtsc::buf;
-pub use rtsc::pchannel;
-pub use rtsc::pchannel_async;
+pub use rtsc::policy_channel_async;
 pub use rtsc::time;
+
+/// Wrapper around [`rtsc::buf`] with the chosen locking policy
+pub mod buf {
+    /// Type alias for [`rtsc::buf::DataBuffer`] with the chosen locking policy
+    pub type DataBuffer = rtsc::buf::DataBuffer<crate::locking::RawMutex>;
+}
+
+/// Wrapper around [`rtsc::channel`] with the chosen locking policy
+pub mod channel {
+
+    /// Type alias for [`rtsc::channel::Sender`] with the chosen locking policy
+    pub type Sender<T> =
+        rtsc::channel::Sender<T, crate::locking::RawMutex, crate::locking::Condvar>;
+    /// Type alias for [`rtsc::channel::Receiver`] with the chosen locking policy
+    pub type Receiver<T> =
+        rtsc::channel::Receiver<T, crate::locking::RawMutex, crate::locking::Condvar>;
+
+    /// Function alias for [`rtsc::channel::bounded`] with the chosen locking policy
+    #[inline]
+    pub fn bounded<T>(capacity: usize) -> (Sender<T>, Receiver<T>) {
+        rtsc::channel::bounded(capacity)
+    }
+}
+
+/// Wrapper around [`rtsc::policy_channel`] with the chosen locking policy
+pub mod policy_channel {
+    use crate::DataDeliveryPolicy;
+
+    /// Type alias for [`rtsc::policy_channel::Sender`] with the chosen locking policy
+    pub type Sender<T> =
+        rtsc::policy_channel::Sender<T, crate::locking::RawMutex, crate::locking::Condvar>;
+    /// Type alias for [`rtsc::policy_channel::Receiver`] with the chosen locking policy
+    pub type Receiver<T> =
+        rtsc::policy_channel::Receiver<T, crate::locking::RawMutex, crate::locking::Condvar>;
+
+    /// Function alias for [`rtsc::policy_channel::bounded`] with the chosen locking policy
+    #[inline]
+    pub fn bounded<T: DataDeliveryPolicy>(capacity: usize) -> (Sender<T>, Receiver<T>) {
+        rtsc::policy_channel::bounded(capacity)
+    }
+
+    /// Function alias for [`rtsc::policy_channel::ordered`] with the chosen locking policy
+    #[inline]
+    pub fn ordered<T: DataDeliveryPolicy>(capacity: usize) -> (Sender<T>, Receiver<T>) {
+        rtsc::policy_channel::ordered(capacity)
+    }
+}
+
+/// Wrapper around [`rtsc::semaphore`] with the chosen locking policy
+pub mod semaphore {
+    /// Type alias for [`rtsc::semaphore::Semaphore`] with the chosen locking policy
+    pub type Semaphore =
+        rtsc::semaphore::Semaphore<crate::locking::RawMutex, crate::locking::Condvar>;
+    /// Type alias for [`rtsc::semaphore::SemaphoreGuard`] with the chosen locking policy
+    #[allow(clippy::module_name_repetitions)]
+    pub type SemaphoreGuard =
+        rtsc::semaphore::SemaphoreGuard<crate::locking::RawMutex, crate::locking::Condvar>;
+}
 
 pub use rtsc::data_policy::{DataDeliveryPolicy, DeliveryPolicy};
 
@@ -32,6 +95,7 @@ pub mod controller;
 /// In-process data communication pub/sub hub, synchronous edition
 pub mod hub;
 /// In-process data communication pub/sub hub, asynchronous edition
+#[cfg(feature = "async")]
 pub mod hub_async;
 /// I/O
 pub mod io;

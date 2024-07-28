@@ -17,8 +17,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: cargo test
-        run: cargo test --all-features --all-targets --features openssl-vendored
+      - name: cargo test default
+        run: cargo test --all-targets
+      - name: cargo test locking-rt
+        run: cargo test --no-default-features --all-targets -F locking-rt
+      - name: cargo test locking-rt-safe
+        run: cargo test --no-default-features --all-targets -F locking-rt-safe
+      - name: cargo test default full
+        run: cargo test --all-targets -F full,openssl-vendored
+      - name: cargo test locking-rt full
+        run: cargo test --no-default-features --all-targets -F locking-rt,full,openssl-vendored
+      - name: cargo test locking-rt-safe full
+        run: cargo test --no-default-features --all-targets -F locking-rt-safe,full,openssl-vendored
+
   fmt:
     runs-on: ubuntu-latest
     steps:
@@ -31,7 +42,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: cargo clippy
         run: |
-          cargo clippy --all-targets -- -W clippy::all -W clippy::pedantic \
+          cargo clippy -F full,openssl-vendored --all-targets -- \
+          -W clippy::all -W clippy::pedantic \
           -A clippy::used-underscore-binding \
           -A clippy::doc_markdown \
           -A clippy::needless_pass_by_value \

@@ -1,9 +1,9 @@
 use std::future::Future;
 use std::sync::Arc;
 
-use crate::locking::Mutex;
+use parking_lot_rt::Mutex;
 
-use crate::pchannel_async::{self, Receiver, Sender};
+use crate::policy_channel_async::{self as pchannel_async, Receiver, Sender};
 use crate::{DataDeliveryPolicy, Error, Result};
 
 type ConditionFunction<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;

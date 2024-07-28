@@ -1,5 +1,6 @@
 use crate::io::{modbus::ModbusRegister, IoMapping};
 use crate::locking::{Mutex, MutexGuard};
+use crate::semaphore::Semaphore;
 use crate::{
     comm::{self, Protocol},
     Error, Result,
@@ -9,7 +10,6 @@ use rmodbus::{
     server::{context::ModbusContext, storage::ModbusStorage, ModbusFrame},
     ModbusFrameBuf, ModbusProto,
 };
-use rtsc::semaphore::Semaphore;
 use serial::SystemPort;
 use std::time::Duration;
 use std::{

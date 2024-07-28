@@ -1,4 +1,4 @@
-use crate::pchannel;
+use crate::policy_channel as pchannel;
 use crate::{Error, Result};
 
 use super::{

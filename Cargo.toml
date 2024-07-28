@@ -43,10 +43,12 @@ log = "0.4.21"
 metrics-exporter-prometheus = { version = "0.14.0", optional = true, default-features = false, features = ["http-listener"] }
 metrics = { version = "0.22.3", optional = true }
 snmp = { version = "0.2.2", optional = true }
-rtsc = "0.2"
-rvideo = { version = "0.4", optional = true }
-rflow = { version = "0", optional = true }
+rtsc = "0.3"
+rvideo = { version = "0.5", optional = true }
+rflow = { version = "0.1", optional = true }
 once_cell = { version = "1.19.0", optional = true }
+parking_lot = { version = "0.12.3", optional = true }
+parking_lot_rt = { version = "0.12.1", optional = true }
 
 [features]
 eapi = ["eva-common", "eva-sdk", "busrt", "tokio", "hostname", "once_cell"]
@@ -56,8 +58,14 @@ rflow = ["dep:rflow"]
 modbus = ["rmodbus"]
 openssl-vendored = ["busrt/openssl-vendored", "eva-common/openssl-vendored"]
 metrics = ["dep:metrics", "metrics-exporter-prometheus"]
-full = ["eapi", "modbus", "metrics", "pipe", "rvideo", "rflow"]
-#default = ["modbus"]
+async = ["dep:parking_lot_rt"]
+full = ["eapi", "modbus", "metrics", "pipe", "rvideo", "rflow", "async"]
+
+locking-default = ["dep:parking_lot", "rtsc/parking_lot"]
+locking-rt = ["dep:parking_lot_rt"]
+locking-rt-safe = []
+
+default = ["locking-default"]
 
 [dev-dependencies]
 insta = "1.36.1"

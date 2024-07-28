@@ -28,6 +28,10 @@ static CARGO_PKG_VERSION: OnceCell<String> = OnceCell::new();
 
 /// Sets the EAPI module information. Must be called only once. Usually not needed to be called
 /// directly, as executed by the `init_eapi!` macro.
+///
+/// # Panics
+///
+/// Will panic if called more than once
 pub fn set_program_info(authors: &str, description: &str, version: &str) {
     CARGO_PKG_AUTHORS.set(authors.to_owned()).unwrap();
     CARGO_PKG_DESCRIPTION.set(description.to_owned()).unwrap();
@@ -48,9 +52,9 @@ macro_rules! init_eapi {
 }
 
 use crate::controller::{Context, SLEEP_STEP};
-use crate::{pchannel_async, DataDeliveryPolicy, DeliveryPolicy};
+use crate::{policy_channel_async as pchannel_async, DataDeliveryPolicy, DeliveryPolicy};
 use crate::{
-    pchannel_async::{Receiver as ReceiverAsync, Sender as SenderAsync},
+    policy_channel_async::{Receiver as ReceiverAsync, Sender as SenderAsync},
     Error, Result,
 };
 use busrt::{

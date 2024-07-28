@@ -2,6 +2,16 @@
 
 ## RoboPLC
 
+### 0.4.0 (2024-07-29)
+
+* Custom real-time locking policies
+
+* Stability and architecture improvements
+
+* [RFlow](https://crates.io/crates/rflow) integration
+
+* Docker support
+
 ### 0.3.0 (2024-06-16)
 
 * Real-time-safe data synchronization components moved to

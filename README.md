@@ -103,6 +103,23 @@ affinity (Linux only).
 [`supervisor::Supervisor`] provides a lightweight task supervisor to manage
 launched threads.
 
+## Locking safety
+
+Note: the asynchronous components uses `parking_lot_rt` locking only.
+
+By default, the crate (both the server and the client modules) uses
+[parking_lot](https://crates.io/crates/parking_lot) for locking. For real-time
+applications, the following features are available:
+
+* `locking-rt` - use [parking_lot_rt](https://crates.io/crates/parking_lot_rt)
+  crate which is a spin-free fork of parking_lot.
+
+* `locking-rt-safe` - use [RTSC](https://crates.io/crates/rtsc)
+  priority-inheritance locking, which is not affected by priority inversion
+  (Linux only).
+
+Note: to switch locking policy, disable the crate default features.
+
 ## Controller
 
 [`controller::Controller`] is the primary component of mixing up all the
@@ -140,3 +157,20 @@ Currently supported:
 The components [`thread_rt`], [`supervisor`] and [`controller`] can work on
 Linux machines only.
 
+## Migration from 0.3.x
+
+* [`roboplc::pchannel`] and [`roboplc::pchannel_async`] have been renamed to
+  [`roboplc::policy_channel`] and [`roboplc::policy_channel_async`]
+  respectively.
+
+* By default, the crate uses `parking_lot` for locking. To switch to more safe
+  real-time locking, disable the crate default features and enable either
+  `locking-rt` or `locking-rt-safe`. THIS IS IMPORTANT FOR REAL-TIME
+  APPLICATIONS AND MUST BE ENABLED MANUALLY.
+
+* As [RTSC](https://crates.io/crates/rtsc) components are lock-agnostic, which
+  requires to specify generic locking types, the modules [`roboplc::channel`],
+  [`roboplc::policy_channel`], [`roboplc::buf`] and [`roboplc::semaphore`] are
+  now wrappers around RTSC modules with the chosen locking policy.
+
+* [`roboplc::hub_async`] now requires `async` feature to be enabled.

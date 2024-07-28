@@ -14,7 +14,7 @@ use tokio::{
 use tracing::error;
 
 use crate::{
-    pchannel_async::{self, Receiver},
+    policy_channel_async::{self as pchannel_async, Receiver},
     DataDeliveryPolicy, Result,
 };
 
