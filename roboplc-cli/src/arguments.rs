@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 #[derive(Parser)]
 #[clap(author = "Bohemia Automation (https://bma.ai)",
@@ -56,6 +56,28 @@ pub struct NewCommand {
     pub features: Vec<String>,
     #[clap(last(true), help = "extra cargo arguments")]
     pub extras: Vec<String>,
+    #[clap(short = 'L', long, help = "Locking policy)", default_value = "rt-safe")]
+    pub locking: LockingPolicy,
+}
+
+#[derive(ValueEnum, Copy, Clone)]
+pub enum LockingPolicy {
+    #[clap(name = "default", help = "Default locking policy")]
+    Default,
+    #[clap(name = "rt", help = "Real-time locking policy")]
+    Rt,
+    #[clap(name = "rt-safe", help = "Real-time safe locking policy")]
+    RtSafe,
+}
+
+impl LockingPolicy {
+    pub fn as_feature_str(self) -> &'static str {
+        match self {
+            LockingPolicy::Default => "locking-default",
+            LockingPolicy::Rt => "locking-rt",
+            LockingPolicy::RtSafe => "locking-rt-safe",
+        }
+    }
 }
 
 #[derive(Parser)]

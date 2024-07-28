@@ -28,14 +28,20 @@ pub fn create(
     let mut current_dir = env::current_dir()?;
     current_dir.push(&opts.name);
     env::set_current_dir(&current_dir)?;
-    let mut robo_features: Vec<&str> = Vec::new();
+    let locking_features = vec![opts.locking.as_feature_str()];
+    let mut robo_features: Vec<&str> = locking_features.clone();
     for feature in &opts.features {
         for feature in feature.split(',') {
             robo_features.push(feature);
         }
     }
-    add_dependency("roboplc", &robo_features, env::var("ROBOPLC_PATH").ok())?;
-    add_dependency("tracing", &["log"], None)?;
+    add_dependency(
+        "roboplc",
+        &robo_features,
+        env::var("ROBOPLC_PATH").ok(),
+        true,
+    )?;
+    add_dependency("tracing", &["log"], None, false)?;
     let robo_toml = Config {
         remote: config::Remote {
             key: maybe_key,
@@ -55,6 +61,7 @@ fn add_dependency(
     name: &str,
     features: &[&str],
     path: Option<String>,
+    disable_defaults: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("Adding dependency: {}", name.green().bold());
     let mut cmd = std::process::Command::new("cargo");
@@ -64,6 +71,9 @@ fn add_dependency(
     }
     for feature in features {
         cmd.arg("--features").arg(feature);
+    }
+    if disable_defaults {
+        cmd.arg("--no-default-features");
     }
     let result = cmd.status()?;
     if !result.success() {
