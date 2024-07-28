@@ -62,17 +62,17 @@ width="550" />
 
 * classic pub/sub patterns with no data serialization overhead
 
-* based on [`pchannel`] which allows to mix different kinds of data and apply
-  additional policies if required
+* based on [`policy_channel`] which allows to mix different kinds of data and
+  apply additional policies if required
 
 * a fully passive model with no "server" thread.
 
-## pdeque and pchannel
+## pdeque and policy_channel
 
 A policy-based deque [`rtsc::pdeque::Deque`] is a component to build policy-based
 channels.
 
-[`pchannel`] is a channel module, based on the policy-based deque.
+[`policy_channel`] is a channel module, based on the policy-based deque.
 
 Data policies supported:
 
@@ -88,11 +88,11 @@ Additionally, components support ordering by data priority and automatically
 drop expired data if the data type has got an expiration marker method
 implemented.
 
-[`pchannel`] is a real-time safe channel, mean it may be not so fast as popular
-channel implementations (it may be even slower than channels provided by
-[`std::sync::mpsc`]). But it is **completely safe for real-time applications**,
-mean there are no spin loops, data is always delivered with minimal latency and
-threads do not block each other.
+[`policy_channel`] is a real-time safe channel, mean it may be not so fast as
+popular channel implementations (it may be even slower than channels provided
+by [`std::sync::mpsc`]). But it is **completely safe for real-time
+applications**, mean there are no spin loops, data is always delivered with
+minimal latency and threads do not block each other.
 
 ## Real-time
 
@@ -159,18 +159,18 @@ Linux machines only.
 
 ## Migration from 0.3.x
 
-* [`roboplc::pchannel`] and [`roboplc::pchannel_async`] have been renamed to
-  [`roboplc::policy_channel`] and [`roboplc::policy_channel_async`]
-  respectively.
+* `pchannel` and `pchannel_async` have been renamed to [`policy_channel`] and
+  [`policy_channel_async`] respectively.
 
-* By default, the crate uses `parking_lot` for locking. To switch to more safe
-  real-time locking, disable the crate default features and enable either
-  `locking-rt` or `locking-rt-safe`. THIS IS IMPORTANT FOR REAL-TIME
-  APPLICATIONS AND MUST BE ENABLED MANUALLY.
+* By default, the crate uses
+  [parking_lot](https://crates.io/crates/parking_lot) for locking. To switch to
+  more safe real-time locking, disable the crate default features and enable
+  either `locking-rt` or `locking-rt-safe`. **This is important for real-time
+  applications and must be enabled manually**.
 
 * As [RTSC](https://crates.io/crates/rtsc) components are lock-agnostic, which
-  requires to specify generic locking types, the modules [`roboplc::channel`],
-  [`roboplc::policy_channel`], [`roboplc::buf`] and [`roboplc::semaphore`] are
-  now wrappers around RTSC modules with the chosen locking policy.
+  requires to specify generic locking types, the modules [`channel`],
+  [`policy_channel`], [`buf`] and [`semaphore`] are now wrappers around RTSC
+  modules with the chosen locking policy.
 
-* [`roboplc::hub_async`] now requires `async` feature to be enabled.
+* [`hub_async`] now requires `async` feature to be enabled.

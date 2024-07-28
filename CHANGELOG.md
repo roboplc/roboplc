@@ -6,6 +6,8 @@
 
 * Custom real-time locking policies
 
+* [RTSC](https://crates.io/crates/rtsc) 0.3 integration
+
 * Stability and architecture improvements
 
 * [RFlow](https://crates.io/crates/rflow) integration
