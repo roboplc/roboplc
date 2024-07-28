@@ -168,6 +168,12 @@ Linux machines only.
   either `locking-rt` or `locking-rt-safe`. **This is important for real-time
   applications and must be enabled manually**.
 
+* If [RVideo](https://crates.io/crates/rvideo) is used, the crate locking policy
+  must be manually adjusted.
+
+* If [RFlow](https://crates.io/crates/rflow) is used, the crate locking policy
+  must be manually adjusted.
+
 * As [RTSC](https://crates.io/crates/rtsc) components are lock-agnostic, which
   requires to specify generic locking types, the modules [`channel`],
   [`policy_channel`], [`buf`] and [`semaphore`] are now wrappers around RTSC
