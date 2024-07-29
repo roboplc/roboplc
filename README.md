@@ -105,7 +105,7 @@ launched threads.
 
 ## Locking safety
 
-Note: the asynchronous components uses `parking_lot_rt` locking only.
+Note: the asynchronous components use `parking_lot_rt` locking only.
 
 By default, the crate (both the server and the client modules) uses
 [parking_lot](https://crates.io/crates/parking_lot) for locking. For real-time
