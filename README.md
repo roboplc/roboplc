@@ -103,29 +103,6 @@ affinity (Linux only).
 [`supervisor::Supervisor`] provides a lightweight task supervisor to manage
 launched threads.
 
-## Locking safety
-
-Note: the asynchronous components use `parking_lot_rt` locking only.
-
-By default, the crate (both the server and the client modules) uses
-[parking_lot](https://crates.io/crates/parking_lot) for locking. For real-time
-applications, the following features are available:
-
-* `locking-rt` - use [parking_lot_rt](https://crates.io/crates/parking_lot_rt)
-  crate which is a spin-free fork of parking_lot.
-
-* `locking-rt-safe` - use [RTSC](https://crates.io/crates/rtsc)
-  priority-inheritance locking, which is not affected by priority inversion
-  (Linux only).
-
-Note: to switch locking policy, disable the crate default features.
-
-The locking policy can be also selected in CLI when creating a new project:
-
-```shell
-robo new --locking rt-safe # the default for CLI-created projects is rt-safe
-```
-
 ## Controller
 
 [`controller::Controller`] is the primary component of mixing up all the
@@ -157,6 +134,29 @@ Currently supported:
 * [EVA ICS](https://www.eva-ics.com/) EAPI in/out via [`io::eapi`] ([EVA ICS
   example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)),
   requires `eapi` crate feature.
+
+## Locking safety
+
+Note: the asynchronous components use `parking_lot_rt` locking only.
+
+By default, the crate (both the server and the client modules) uses
+[parking_lot](https://crates.io/crates/parking_lot) for locking. For real-time
+applications, the following features are available:
+
+* `locking-rt` - use [parking_lot_rt](https://crates.io/crates/parking_lot_rt)
+  crate which is a spin-free fork of parking_lot.
+
+* `locking-rt-safe` - use [RTSC](https://crates.io/crates/rtsc)
+  priority-inheritance locking, which is not affected by priority inversion
+  (Linux only).
+
+Note: to switch locking policy, disable the crate default features.
+
+The locking policy can be also selected in CLI when creating a new project:
+
+```shell
+robo new --locking rt-safe # the default for CLI-created projects is rt-safe
+```
 
 ## Using on other platforms
 
