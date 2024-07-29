@@ -37,18 +37,15 @@
 
 * First public release
 
-## RoboPLC CLI
-
-### 0.1.21 (2024-06-18)
-
-* Added `restart` command
-* Added `build-custom` configuration section
-
-### 0.1 (2024-04-15)
-
-* First public release
-
 ## RoboPLC manager
+
+### 0.4 (2024-07-29)
+
+* Added [RFlow](https://crates.io/crates/rflow) support
+
+* Added Docker support
+
+* Added remote command execution
 
 ### 0.2 (2024-06-22)
 
@@ -57,6 +54,26 @@
 * [RVideo](https://crates.io/crates/rvideo) video streams preview.
 
 * Minor improvements and bug fixes.
+
+### 0.1 (2024-04-15)
+
+* First public release
+
+## RoboPLC CLI
+
+### 0.4 (2024-07-29)
+
+* Added `rflow` support
+
+* Fixed versions
+
+* Starting from the version 0.4, the CLI version is synchronized with the
+  RoboPLC version
+
+### 0.1.21 (2024-06-18)
+
+* Added `restart` command
+* Added `build-custom` configuration section
 
 ### 0.1 (2024-04-15)
 
