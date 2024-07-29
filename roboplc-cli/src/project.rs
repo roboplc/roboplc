@@ -36,12 +36,12 @@ pub fn create(
         }
     }
     add_dependency(
-        "roboplc",
+        "roboplc@0.4",
         &robo_features,
         env::var("ROBOPLC_PATH").ok(),
         true,
     )?;
-    add_dependency("tracing", &["log"], None, false)?;
+    add_dependency("tracing@0.1", &["log"], None, false)?;
     let robo_toml = Config {
         remote: config::Remote {
             key: maybe_key,
