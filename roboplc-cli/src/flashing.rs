@@ -54,7 +54,8 @@ fn flash_file(
         if run {
             println!("Running docker image...");
             let mut args = vec!["run", "--rm", "-it"];
-            let port = std::env::var("ROBOPLC_DOCKER_PORT").unwrap_or_else(|_| "7700".to_owned());
+            let port = std::env::var("ROBOPLC_DOCKER_PORT")
+                .unwrap_or_else(|_| "127.0.0.1:7700".to_owned());
             let port_mapping = if port.is_empty() {
                 None
             } else {
@@ -65,7 +66,7 @@ fn flash_file(
                 args.push(port_mapping);
                 println!(
                     "RoboPLC manager is available at {}",
-                    format!("http://localhost:{}", port).yellow()
+                    format!("http://{}", port).yellow()
                 );
             }
             if force {
