@@ -83,7 +83,12 @@ impl Docker {
         }
     }
     pub fn binary_path_for(self, name: &str) -> PathBuf {
-        PathBuf::from_iter(vec!["target", self.target(), "release", name])
+        PathBuf::from_iter(vec![
+            crate::cargo_target_dir(),
+            self.target(),
+            "release",
+            name,
+        ])
     }
     pub fn docker_image_name(self) -> &'static str {
         match self {

@@ -203,7 +203,7 @@ pub fn flash(
         } else {
             cargo_args = build_config.cargo_args;
         }
-        let binary_name = Path::new("target")
+        let binary_name = Path::new(crate::cargo_target_dir())
             .join(&cargo_target)
             .join("release")
             .join(name);

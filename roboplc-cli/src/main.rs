@@ -16,6 +16,12 @@ const TPL_DEFAULT_RS: &str = include_str!("../tpl/default.rs");
 static TARGET_PACKAGE_NAME: OnceCell<String> = OnceCell::new();
 static TARGET_PACKAGE_VERSION: OnceCell<String> = OnceCell::new();
 
+static CARGO_TARGET_DIR: OnceCell<String> = OnceCell::new();
+
+pub fn cargo_target_dir() -> &'static str {
+    CARGO_TARGET_DIR.get().expect("CARGO_TARGET_DIR not set")
+}
+
 mod arguments;
 mod common;
 mod config;
@@ -30,6 +36,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "windows")]
     let _ansi_enabled = ansi_term::enable_ansi_support();
     let args = Args::parse();
+    CARGO_TARGET_DIR
+        .set(std::env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| "target".to_owned()))
+        .expect("unable to set CARGO_TARGET_DIR");
     let mut maybe_url = args.url;
     let mut maybe_key = args.key;
     if let Some(ref u) = maybe_url {
