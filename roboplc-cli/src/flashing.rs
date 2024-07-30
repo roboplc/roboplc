@@ -35,7 +35,7 @@ fn flash_file(
         return crate::exec::exec(url, key, file, force, program_args);
     }
     if let Some(docker_img) = url.strip_prefix("docker://") {
-        let tag = std::env::var("ROBO_DOCKER_TAG").unwrap_or_else(|_| {
+        let tag = std::env::var("ROBOPLC_DOCKER_TAG").unwrap_or_else(|_| {
             crate::TARGET_PACKAGE_VERSION
                 .get()
                 .cloned()
@@ -54,7 +54,7 @@ fn flash_file(
         if run {
             println!("Running docker image...");
             let mut args = vec!["run", "--rm", "-it"];
-            let port = std::env::var("ROBO_DOCKER_PORT").unwrap_or_else(|_| "7700".to_owned());
+            let port = std::env::var("ROBOPLC_DOCKER_PORT").unwrap_or_else(|_| "7700".to_owned());
             let port_mapping = if port.is_empty() {
                 None
             } else {
