@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, fs::File, io::Write};
 
 use colored::Colorize as _;
 
@@ -42,7 +42,7 @@ pub fn create(
         true,
     )?;
     add_dependency("tracing@0.1", &["log"], None, false)?;
-    let robo_toml = Config {
+    let mut robo_toml = Config {
         remote: config::Remote {
             key: maybe_key,
             url: maybe_url,
@@ -51,6 +51,19 @@ pub fn create(
         build: <_>::default(),
         build_custom: <_>::default(),
     };
+    if let Some(docker_arch) = opts.docker {
+        robo_toml.build.target = Some(docker_arch.target().to_owned());
+        if robo_toml.remote.url.is_none() {
+            robo_toml.remote.url = Some(format!("docker://{}", opts.name));
+        }
+        let mut f = File::create("Dockerfile")?;
+        writeln!(f, "FROM {}", docker_arch.docker_image_name())?;
+        writeln!(
+            f,
+            "COPY ./{} /var/roboplc/program/current",
+            docker_arch.binary_path_for(&opts.name).display()
+        )?;
+    }
     std::fs::write(CONFIG_FILE_NAME, toml::to_string_pretty(&robo_toml)?)?;
     std::fs::write("src/main.rs", prepare_main(TPL_DEFAULT_RS, &robo_features))?;
     println!("Project created: {}", opts.name.green().bold());

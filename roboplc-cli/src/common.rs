@@ -68,15 +68,37 @@ impl fmt::Display for Mode {
     }
 }
 
+#[derive(Deserialize, Debug)]
+struct CargoToml {
+    package: CargoPackage,
+}
+
+#[derive(Deserialize, Debug)]
+struct CargoPackage {
+    name: String,
+    version: String,
+}
+
 pub fn find_robo_toml() -> Option<PathBuf> {
     let mut current_dir = env::current_dir().ok()?;
     loop {
         let mut cargo_toml_path = current_dir.clone();
         cargo_toml_path.push("Cargo.toml");
         if cargo_toml_path.exists() {
+            let contents =
+                std::fs::read_to_string(cargo_toml_path).expect("Failed to read Cargo.toml");
+            let cargo_toml: CargoToml =
+                toml::from_str(&contents).expect("Failed to parse Cargo.toml");
+            crate::TARGET_PACKAGE_NAME
+                .set(cargo_toml.package.name)
+                .expect("Failed to set target package name");
+            crate::TARGET_PACKAGE_VERSION
+                .set(cargo_toml.package.version)
+                .expect("Failed to set target package version");
             let mut roboplc_toml_path = current_dir.clone();
             roboplc_toml_path.push(CONFIG_FILE_NAME);
             if roboplc_toml_path.exists() {
+                std::env::set_current_dir(current_dir).expect("Failed to set current dir");
                 return Some(roboplc_toml_path);
             }
         }

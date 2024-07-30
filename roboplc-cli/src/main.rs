@@ -3,6 +3,7 @@ use std::{fs, time::Duration};
 use arguments::{Args, SubCommand};
 use clap::Parser;
 use common::{find_robo_toml, Mode};
+use once_cell::sync::OnceCell;
 use ureq::Agent;
 
 use crate::config::Config;
@@ -10,6 +11,10 @@ use crate::config::Config;
 const API_PREFIX: &str = "/roboplc/api";
 const DEFAULT_TIMEOUT: u64 = 60;
 const TPL_DEFAULT_RS: &str = include_str!("../tpl/default.rs");
+
+// filled by find_robo_toml if Cargo.toml is found
+static TARGET_PACKAGE_NAME: OnceCell<String> = OnceCell::new();
+static TARGET_PACKAGE_VERSION: OnceCell<String> = OnceCell::new();
 
 mod arguments;
 mod common;
@@ -20,6 +25,7 @@ mod project;
 mod remote;
 mod ureq_err;
 
+#[allow(clippy::too_many_lines)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "windows")]
     let _ansi_enabled = ansi_term::enable_ansi_support();
@@ -61,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     maybe_url = maybe_url.map(|v| {
         let mut u = v.trim_end_matches('/').to_owned();
-        if !u.starts_with("http://") && !u.starts_with("https://") {
+        if !u.starts_with("http://") && !u.starts_with("https://") && !u.starts_with("docker://") {
             u = format!("http://{}", u);
         }
         u
@@ -71,7 +77,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let url = maybe_url.ok_or("URL not specified")?;
-    let key = maybe_key.ok_or("Key not specified")?;
+    let key = if let Some(k) = maybe_key {
+        k
+    } else if url.starts_with("docker://") {
+        String::new()
+    } else {
+        return Err("Key not specified".into());
+    };
     let timeout = maybe_timeout.unwrap_or(DEFAULT_TIMEOUT);
     let agent: Agent = ureq::AgentBuilder::new()
         .timeout_read(Duration::from_secs(timeout))

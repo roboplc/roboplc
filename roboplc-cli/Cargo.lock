@@ -695,13 +695,14 @@ dependencies = [
 
 [[package]]
 name = "roboplc-cli"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "ansi_term",
  "clap",
  "colored",
  "dirs",
  "futures-util",
+ "once_cell",
  "serde",
  "serde_json",
  "shlex",

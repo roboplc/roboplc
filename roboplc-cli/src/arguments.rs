@@ -63,6 +63,34 @@ pub struct NewCommand {
     pub extras: Vec<String>,
     #[clap(short = 'L', long, help = "Locking policy)", default_value = "rt-safe")]
     pub locking: LockingPolicy,
+    #[clap(long, help = "Docker project (specify an architecture)")]
+    pub docker: Option<Docker>,
+}
+
+#[derive(ValueEnum, Copy, Clone)]
+pub enum Docker {
+    #[clap(name = "x86_64", help = "x86_64 architecture")]
+    X86_64,
+    #[clap(name = "aarch64", help = "ARM-64 bit architecture")]
+    Aarch64,
+}
+
+impl Docker {
+    pub fn target(self) -> &'static str {
+        match self {
+            Docker::X86_64 => "x86_64-unknown-linux-gnu",
+            Docker::Aarch64 => "aarch64-unknown-linux-gnu",
+        }
+    }
+    pub fn binary_path_for(self, name: &str) -> PathBuf {
+        PathBuf::from_iter(vec!["target", self.target(), "release", name])
+    }
+    pub fn docker_image_name(self) -> &'static str {
+        match self {
+            Docker::X86_64 => "bmauto/roboplc-x86_64:latest",
+            Docker::Aarch64 => "bmauto/roboplc-aarch64:latest",
+        }
+    }
 }
 
 #[derive(ValueEnum, Copy, Clone)]
@@ -98,10 +126,14 @@ pub struct FlashCommand {
     #[clap(
         short = 'f',
         long,
-        help = "Force flash (automatically put remote in CONFIG mode)"
+        help = "Force flash (automatically put remote in CONFIG mode), for Docker: run privileged"
     )]
     pub force: bool,
-    #[clap(short = 'r', long, help = "Put remote in RUN mode after flashing")]
+    #[clap(
+        short = 'r',
+        long,
+        help = "Put remote in RUN mode after flashing, for Docker: run the container"
+    )]
     pub run: bool,
 }
 

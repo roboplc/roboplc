@@ -34,25 +34,70 @@ fn flash_file(
     if exec_only {
         return crate::exec::exec(url, key, file, force, program_args);
     }
-    let (content_type, data) = MultipartBuilder::new()
-        .add_file("file", file)?
-        .add_text(
-            "params",
-            &serde_json::to_string(&json! {
-                {
-                    "force": force,
-                    "run": run,
-                }
+    if let Some(docker_img) = url.strip_prefix("docker://") {
+        let tag = std::env::var("ROBO_DOCKER_TAG").unwrap_or_else(|_| {
+            crate::TARGET_PACKAGE_VERSION
+                .get()
+                .cloned()
+                .unwrap_or_else(|| "latest".to_owned())
+        });
+        let img_name = format!("{}:{}", docker_img, tag);
+        println!("Building docker image: {}", img_name.yellow());
+        let result = std::process::Command::new("docker")
+            .args(["build", "-t", &img_name, "."])
+            .status()?;
+        if !result.success() {
+            return Err("Compilation failed".into());
+        }
+        println!();
+        println!("Docker image ready: {}", img_name.green());
+        if run {
+            println!("Running docker image...");
+            let mut args = vec!["run", "--rm", "-it"];
+            let port = std::env::var("ROBO_DOCKER_PORT").unwrap_or_else(|_| "7700".to_owned());
+            let port_mapping = if port.is_empty() {
+                None
+            } else {
+                Some(format!("{}:7700", port))
+            };
+            if let Some(ref port_mapping) = port_mapping {
+                args.push("-p");
+                args.push(port_mapping);
+                println!(
+                    "RoboPLC manager is available at {}",
+                    format!("http://localhost:{}", port).yellow()
+                );
+            }
+            if force {
+                args.push("--privileged");
+            }
+            args.push(&img_name);
+            let result = std::process::Command::new("docker").args(args).status()?;
+            if !result.success() {
+                return Err("Execution failed".into());
+            }
+        }
+    } else {
+        let (content_type, data) = MultipartBuilder::new()
+            .add_file("file", file)?
+            .add_text(
+                "params",
+                &serde_json::to_string(&json! {
+                    {
+                        "force": force,
+                        "run": run,
+                    }
 
-            })?,
-        )?
-        .finish()?;
-    agent
-        .post(&format!("{}{}/flash", url, API_PREFIX))
-        .set("x-auth-key", key)
-        .set("content-type", &content_type)
-        .send_bytes(&data)
-        .process_error()?;
+                })?,
+            )?
+            .finish()?;
+        agent
+            .post(&format!("{}{}/flash", url, API_PREFIX))
+            .set("x-auth-key", key)
+            .set("content-type", &content_type)
+            .send_bytes(&data)
+            .process_error()?;
+    }
     Ok(())
 }
 
