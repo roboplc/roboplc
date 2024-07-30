@@ -10,13 +10,14 @@ use ureq_multipart::MultipartBuilder;
 use which::which;
 
 use crate::{
-    arguments::FlashCommand,
+    arguments::FlashExec,
     common::{report_ok, KernelInfo},
     config,
     ureq_err::PrintErr,
     API_PREFIX,
 };
 
+#[allow(clippy::too_many_arguments)]
 fn flash_file(
     url: &str,
     key: &str,
@@ -24,9 +25,14 @@ fn flash_file(
     file: &Path,
     force: bool,
     run: bool,
+    exec_only: bool,
+    program_args: Vec<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if !file.exists() {
         return Err(format!("File not found: {}", file.display()).into());
+    }
+    if exec_only {
+        return crate::exec::exec(url, key, file, force, program_args);
     }
     let (content_type, data) = MultipartBuilder::new()
         .add_file("file", file)?
@@ -50,6 +56,7 @@ fn flash_file(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run_build_custom(
     url: &str,
     key: &str,
@@ -58,6 +65,8 @@ fn run_build_custom(
     run: bool,
     cmd: &str,
     file: &Path,
+    exec_only: bool,
+    program_args: Vec<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("Remote: {}", url.yellow());
     println!("Build command line: {}", cmd.yellow());
@@ -73,20 +82,31 @@ fn run_build_custom(
     if !file.exists() {
         return Err(format!("File not found: {}", file.display()).into());
     }
-    flash_file(url, key, agent, file, force, run)?;
+    flash_file(url, key, agent, file, force, run, exec_only, program_args)?;
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub fn flash(
     url: &str,
     key: &str,
     agent: Agent,
-    opts: FlashCommand,
+    opts: FlashExec,
     build_config: config::Build,
     build_custom: config::BuildCustom,
+    exec_only: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(file) = opts.file {
-        flash_file(url, key, agent, &file, opts.force, opts.run)?;
+        flash_file(
+            url,
+            key,
+            agent,
+            &file,
+            opts.force,
+            opts.run,
+            exec_only,
+            opts.program_args,
+        )?;
     } else if let Some(custom_cmd) = build_custom.command {
         run_build_custom(
             url,
@@ -98,6 +118,8 @@ pub fn flash(
             &build_custom
                 .file
                 .ok_or("Custom build command requires a file")?,
+            exec_only,
+            opts.program_args,
         )?;
     } else {
         let mut cargo_target: Option<String> = None;
@@ -163,7 +185,16 @@ pub fn flash(
             return Err("Compilation failed".into());
         }
         println!("Flashing...");
-        flash_file(url, key, agent, &binary_name, opts.force, opts.run)?;
+        flash_file(
+            url,
+            key,
+            agent,
+            &binary_name,
+            opts.force,
+            opts.run,
+            exec_only,
+            opts.program_args,
+        )?;
     }
     report_ok()
 }

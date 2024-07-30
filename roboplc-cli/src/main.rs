@@ -14,6 +14,7 @@ const TPL_DEFAULT_RS: &str = include_str!("../tpl/default.rs");
 mod arguments;
 mod common;
 mod config;
+mod exec;
 mod flashing;
 mod project;
 mod remote;
@@ -98,9 +99,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &url,
                 &key,
                 agent,
-                opts,
+                opts.into(),
                 build_config.unwrap_or_default(),
                 build_custom.unwrap_or_default(),
+                false,
+            )?;
+        }
+        SubCommand::Exec(opts) => {
+            flashing::flash(
+                &url,
+                &key,
+                agent,
+                opts.into(),
+                build_config.unwrap_or_default(),
+                build_custom.unwrap_or_default(),
+                true,
             )?;
         }
         SubCommand::Purge => {

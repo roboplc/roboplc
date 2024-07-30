@@ -44,6 +44,11 @@ pub enum SubCommand {
     Restart,
     #[clap(name = "flash", about = "Flash program")]
     Flash(FlashCommand),
+    #[clap(
+        name = "x",
+        about = "Execute program on the remote host in a virtual terminal"
+    )]
+    Exec(ExecCommand),
     #[clap(name = "purge", about = "Purge program data directory")]
     Purge,
 }
@@ -98,4 +103,66 @@ pub struct FlashCommand {
     pub force: bool,
     #[clap(short = 'r', long, help = "Put remote in RUN mode after flashing")]
     pub run: bool,
+}
+
+#[derive(Parser)]
+pub struct ExecCommand {
+    #[clap(long, env = "CARGO", help = "cargo/cross binary path")]
+    pub cargo: Option<PathBuf>,
+    #[clap(long, help = "Override remote cargo target")]
+    pub cargo_target: Option<String>,
+    #[clap(long, help = "Extra cargo arguments")]
+    pub cargo_args: Option<String>,
+    #[clap(long, help = "Do not compile a Rust project, use a file instead")]
+    pub file: Option<PathBuf>,
+    #[clap(
+        short = 'f',
+        long,
+        help = "Force execute (ignore if other program is being executed)"
+    )]
+    pub force: bool,
+    #[arg(
+        trailing_var_arg = true,
+        allow_hyphen_values = true,
+        help = "Arguments after -- are passed to the program as-is"
+    )]
+    pub args: Vec<String>,
+}
+
+pub struct FlashExec {
+    pub cargo: Option<PathBuf>,
+    pub cargo_target: Option<String>,
+    pub cargo_args: Option<String>,
+    pub file: Option<PathBuf>,
+    pub force: bool,
+    pub run: bool,
+    pub program_args: Vec<String>,
+}
+
+impl From<FlashCommand> for FlashExec {
+    fn from(cmd: FlashCommand) -> Self {
+        Self {
+            cargo: cmd.cargo,
+            cargo_target: cmd.cargo_target,
+            cargo_args: cmd.cargo_args,
+            file: cmd.file,
+            force: cmd.force,
+            run: cmd.run,
+            program_args: Vec::new(),
+        }
+    }
+}
+
+impl From<ExecCommand> for FlashExec {
+    fn from(cmd: ExecCommand) -> Self {
+        Self {
+            cargo: cmd.cargo,
+            cargo_target: cmd.cargo_target,
+            cargo_args: cmd.cargo_args,
+            file: cmd.file,
+            force: cmd.force,
+            run: false,
+            program_args: cmd.args,
+        }
+    }
 }
