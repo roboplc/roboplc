@@ -1,6 +1,6 @@
 [package]
 name = "roboplc-cli"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -32,8 +32,8 @@ tokio-tungstenite = { version = "0.23.1", features = ["rustls"] }
 [target.'cfg(windows)'.dependencies]
 ansi_term = "0.12.1"
 
-[profile.release]
-strip = true
-
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 termios = "0.3.3"
+
+[profile.release]
+strip = true
