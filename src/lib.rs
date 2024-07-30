@@ -339,7 +339,7 @@ pub fn configure_logger(filter: LevelFilter) {
     let mut builder = env_logger::Builder::new();
     builder.target(env_logger::Target::Stdout);
     builder.filter_level(filter);
-    if is_production() {
+    if is_production() && !env::var("ROBOPLC_MODE").map_or(false, |m| m == "exec") {
         builder.format(|buf, record| writeln!(buf, "{} {}", record.level(), record.args()));
     }
     builder.init();
