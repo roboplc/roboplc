@@ -133,11 +133,11 @@ Currently supported:
 
 * [EVA ICS](https://www.eva-ics.com/) EAPI in/out via [`io::eapi`] ([EVA ICS
   example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)),
-  requires `eapi` crate feature.
+  requires `eapi` crate feature
 
 * [ADS](https://crates.io/crates/roboplc-io-ads) connector for [Beckhoff
   TwinCAT](https://infosys.beckhoff.com/english.php?content=../content/1033/tcinfosys3/11291871243.html&id=),
-  requires a license for commercial use.
+  requires a license for commercial use
 
 ## Locking safety
 
