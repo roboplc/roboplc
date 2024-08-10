@@ -139,6 +139,9 @@ Currently supported:
   TwinCAT](https://infosys.beckhoff.com/english.php?content=../content/1033/tcinfosys3/11291871243.html&id=),
   requires a license for commercial use
 
+* [IEC 60870-5](https://crates.io/crates/roboplc-io-iec60870-5) client,
+  requires a license for commercial use
+
 ## Locking safety
 
 Note: the asynchronous components use `parking_lot_rt` locking only.
