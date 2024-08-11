@@ -57,37 +57,37 @@ impl Pipe {
         )
     }
     /// Adds a command line argument
-    pub fn arg(&mut self, arg: impl AsRef<OsStr>) -> &mut Self {
+    pub fn arg(mut self, arg: impl AsRef<OsStr>) -> Self {
         self.args.push(arg.as_ref().to_owned());
         self
     }
     /// Adds multiple command line arguments
-    pub fn args(&mut self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> &mut Self {
+    pub fn args(mut self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Self {
         self.args
             .extend(args.into_iter().map(|x| x.as_ref().to_owned()));
         self
     }
     /// Adds an environment variable
-    pub fn env(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn env(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.environment.insert(key.into(), value.into());
         self
     }
     /// Adds multiple environment variables
     pub fn envs(
-        &mut self,
+        mut self,
         envs: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>,
-    ) -> &mut Self {
+    ) -> Self {
         self.environment
             .extend(envs.into_iter().map(|(k, v)| (k.into(), v.into())));
         self
     }
     /// STDIN data for the subprocess
-    pub fn input_data(&mut self, data: impl Into<Vec<u8>>) -> &mut Self {
+    pub fn input_data(mut self, data: impl Into<Vec<u8>>) -> Self {
         self.input_data = Some(data.into());
         self
     }
     /// Delay before restarting the subprocess after it terminates
-    pub fn restart_delay(&mut self, delay: Duration) -> &mut Self {
+    pub fn restart_delay(mut self, delay: Duration) -> Self {
         self.restart_delay = delay;
         self
     }
