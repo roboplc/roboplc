@@ -154,7 +154,7 @@ for locking. For real-time applications, the following features are available:
 
 * `locking-rt-safe` - use [RTSC](https://crates.io/crates/rtsc)
   priority-inheritance locking, which is not affected by priority inversion
-  (Linux only).
+  (Linux only, recommended Kernel 5.14+).
 
 Note: to switch locking policy, disable the crate default features.
 
