@@ -146,9 +146,8 @@ Currently supported:
 
 Note: the asynchronous components use `parking_lot_rt` locking only.
 
-By default, the crate (both the server and the client modules) uses
-[parking_lot](https://crates.io/crates/parking_lot) for locking. For real-time
-applications, the following features are available:
+By default, the crate uses [parking_lot](https://crates.io/crates/parking_lot)
+for locking. For real-time applications, the following features are available:
 
 * `locking-rt` - use [parking_lot_rt](https://crates.io/crates/parking_lot_rt)
   crate which is a spin-free fork of parking_lot.
