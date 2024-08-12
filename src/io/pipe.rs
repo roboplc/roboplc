@@ -28,6 +28,10 @@ impl Reader {
     pub fn line(&self) -> Result<String> {
         self.rx.recv_blocking().map_err(Into::into)
     }
+    /// Reads a line from the pipe (non-blocking)
+    pub fn try_line(&self) -> Result<String> {
+        self.rx.try_recv().map_err(Into::into)
+    }
 }
 
 /// Data pipe with a subprocess
