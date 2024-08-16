@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     env, fs,
     path::{Path, PathBuf},
 };
@@ -27,12 +28,13 @@ fn flash_file(
     run: bool,
     exec_only: bool,
     program_args: Vec<String>,
+    program_env: BTreeMap<String, String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if !file.exists() {
         return Err(format!("File not found: {}", file.display()).into());
     }
     if exec_only {
-        return crate::exec::exec(url, key, file, force, program_args);
+        return crate::exec::exec(url, key, file, force, program_args, program_env);
     }
     if let Some(docker_img) = url.strip_prefix("docker://") {
         let tag = std::env::var("ROBOPLC_DOCKER_TAG").unwrap_or_else(|_| {
@@ -113,6 +115,7 @@ fn run_build_custom(
     file: &Path,
     exec_only: bool,
     program_args: Vec<String>,
+    program_env: BTreeMap<String, String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("Remote: {}", url.yellow());
     println!("Build command line: {}", cmd.yellow());
@@ -128,7 +131,17 @@ fn run_build_custom(
     if !file.exists() {
         return Err(format!("File not found: {}", file.display()).into());
     }
-    flash_file(url, key, agent, file, force, run, exec_only, program_args)?;
+    flash_file(
+        url,
+        key,
+        agent,
+        file,
+        force,
+        run,
+        exec_only,
+        program_args,
+        program_env,
+    )?;
     Ok(())
 }
 
@@ -152,6 +165,7 @@ pub fn flash(
             opts.run,
             exec_only,
             opts.program_args,
+            opts.program_env,
         )?;
     } else if let Some(custom_cmd) = build_custom.command {
         run_build_custom(
@@ -166,6 +180,7 @@ pub fn flash(
                 .ok_or("Custom build command requires a file")?,
             exec_only,
             opts.program_args,
+            opts.program_env,
         )?;
     } else {
         let mut cargo_target: Option<String> = None;
@@ -240,6 +255,7 @@ pub fn flash(
             opts.run,
             exec_only,
             opts.program_args,
+            opts.program_env,
         )?;
     }
     report_ok()

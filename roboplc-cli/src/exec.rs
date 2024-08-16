@@ -1,5 +1,5 @@
-use std::io::Write as _;
 use std::path::Path;
+use std::{collections::BTreeMap, io::Write as _};
 
 use colored::Colorize;
 #[cfg(not(target_os = "windows"))]
@@ -7,7 +7,6 @@ use tokio::io::AsyncReadExt as _;
 
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use tokio_tungstenite::tungstenite::Message;
 
 pub fn exec(
@@ -16,11 +15,12 @@ pub fn exec(
     file: &Path,
     force: bool,
     args: Vec<String>,
+    env: BTreeMap<String, String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?
-        .block_on(exec_remote(url, key, file, force, args))?;
+        .block_on(exec_remote(url, key, file, force, args, env))?;
     Ok(())
 }
 
@@ -31,6 +31,24 @@ enum Output {
     Terminated(i32),
 }
 
+#[derive(Serialize)]
+struct ExecPayload<'a> {
+    k: &'a str,
+    force: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    args: Vec<String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    env: BTreeMap<String, String>,
+    term: ExecTerm,
+}
+
+#[derive(Serialize)]
+struct ExecTerm {
+    width: usize,
+    height: usize,
+    name: String,
+}
+
 #[allow(clippy::too_many_lines)]
 async fn exec_remote(
     url: &str,
@@ -38,6 +56,7 @@ async fn exec_remote(
     file: &Path,
     force: bool,
     args: Vec<String>,
+    env: BTreeMap<String, String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let (ws_uri, url_short) = if let Some(u) = url.strip_prefix("http://") {
         (format!("ws://{}/roboplc/api/ws.execute", u), u)
@@ -50,16 +69,17 @@ async fn exec_remote(
     println!();
     let (mut socket, _) = tokio_tungstenite::connect_async(&ws_uri).await?;
     let (width, height) = term_size::dimensions().ok_or("Failed to get terminal size")?;
-    let payload = json!({
-        "k": key,
-        "force": force,
-        "args": args,
-        "term": {
-            "width": width,
-            "height": height,
-            "name": std::env::var("TERM").unwrap_or("xterm-256color".to_string()),
+    let payload = ExecPayload {
+        k: key,
+        force,
+        args,
+        env,
+        term: ExecTerm {
+            width,
+            height,
+            name: std::env::var("TERM").unwrap_or("xterm-256color".to_string()),
         },
-    });
+    };
     socket
         .send(Message::Text(serde_json::to_string(&payload)?))
         .await?;

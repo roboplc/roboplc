@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::BTreeMap, path::PathBuf};
 
 use clap::{Parser, ValueEnum};
 
@@ -158,6 +158,12 @@ pub struct ExecCommand {
         help = "Force execute (ignore if other program is being executed)"
     )]
     pub force: bool,
+    #[clap(
+        short = 'e',
+        long,
+        help = "Environment variable to pass to the program, as NAME=VALUE"
+    )]
+    pub env: Vec<String>,
     #[arg(
         trailing_var_arg = true,
         allow_hyphen_values = true,
@@ -174,6 +180,7 @@ pub struct FlashExec {
     pub force: bool,
     pub run: bool,
     pub program_args: Vec<String>,
+    pub program_env: BTreeMap<String, String>,
 }
 
 impl From<FlashCommand> for FlashExec {
@@ -186,12 +193,26 @@ impl From<FlashCommand> for FlashExec {
             force: cmd.force,
             run: cmd.run,
             program_args: Vec::new(),
+            program_env: BTreeMap::new(),
         }
     }
 }
 
 impl From<ExecCommand> for FlashExec {
     fn from(cmd: ExecCommand) -> Self {
+        let program_env = cmd
+            .env
+            .iter()
+            .map(|s| {
+                let mut parts = s.splitn(2, '=');
+                let key = parts.next().unwrap().to_string();
+                let value = parts
+                    .next()
+                    .expect("No environment variable value set")
+                    .to_string();
+                (key, value)
+            })
+            .collect();
         Self {
             cargo: cmd.cargo,
             cargo_target: cmd.cargo_target,
@@ -200,6 +221,7 @@ impl From<ExecCommand> for FlashExec {
             force: cmd.force,
             run: false,
             program_args: cmd.args,
+            program_env,
         }
     }
 }
