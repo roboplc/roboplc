@@ -18,6 +18,8 @@ features = ["full", "eva-common/openssl-no-fips"]
 
 [dependencies]
 binrw = "0.14.0"
+bytemuck = "1.17.1"
+bytes = "1.7.1"
 bma-ts = { version = "0.1", features = ["serde"] }
 colored = "1"
 libc = "0.2.153"
