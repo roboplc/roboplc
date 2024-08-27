@@ -2,6 +2,10 @@
 
 ## RoboPLC
 
+### 0.4.4 (2024-08-27)
+
+* Added metrics-exporter-scope
+
 ### 0.4.0 (2024-07-29)
 
 * Custom real-time locking policies

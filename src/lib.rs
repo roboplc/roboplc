@@ -309,6 +309,31 @@ pub fn metrics_exporter() -> metrics_exporter_prometheus::PrometheusBuilder {
     metrics_exporter_prometheus::PrometheusBuilder::new()
 }
 
+/// Installs Prometheus metrics exporter together with [Scope
+/// exporter](https://docs.rs/metrics-exporter-scope)
+#[cfg(feature = "metrics")]
+pub fn metrics_exporter_install(
+    builder: metrics_exporter_prometheus::PrometheusBuilder,
+) -> Result<()> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    let (prometheus_exporter, prometheus_exporter_fut) = {
+        let _g = runtime.enter();
+        builder.build().map_err(Error::failed)?
+    };
+    metrics_exporter_scope::ScopeBuilder::new()
+        .with_fallback(Box::new(prometheus_exporter))
+        .install()
+        .map_err(Error::failed)?;
+    std::thread::Builder::new()
+        .name("metrics_exporter".to_owned())
+        .spawn(move || {
+            runtime.block_on(prometheus_exporter_fut).unwrap();
+        })?;
+    Ok(())
+}
+
 /// Sets panic handler to immediately kill the process and its childs with SIGKILL. The process is
 /// killed when panic happens in ANY thread
 #[cfg(target_os = "linux")]

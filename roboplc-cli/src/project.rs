@@ -36,12 +36,13 @@ pub fn create(
         }
     }
     add_dependency(
-        "roboplc@0.4",
+        "roboplc",
+        "0.4",
         &robo_features,
         env::var("ROBOPLC_PATH").ok(),
         true,
     )?;
-    add_dependency("tracing@0.1", &["log"], None, false)?;
+    add_dependency("tracing", "0.1", &["log"], None, false)?;
     let mut robo_toml = Config {
         remote: config::Remote {
             key: maybe_key,
@@ -72,13 +73,19 @@ pub fn create(
 
 fn add_dependency(
     name: &str,
+    version: &str,
     features: &[&str],
     path: Option<String>,
     disable_defaults: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Adding dependency: {}", name.green().bold());
+    let dep = if path.is_some() {
+        name.to_owned()
+    } else {
+        format!("{}@{}", name, version)
+    };
+    println!("Adding dependency: {}", dep.green().bold());
     let mut cmd = std::process::Command::new("cargo");
-    cmd.arg("-q").arg("add").arg(name);
+    cmd.arg("-q").arg("add").arg(dep);
     if let Some(path) = path {
         cmd.arg("--path").arg(path);
     }
@@ -101,9 +108,9 @@ fn prepare_main(tpl: &str, features: &[&str]) -> String {
     let mut out = if features.contains(&"metrics") {
         tpl.replace(
             "    // METRICS",
-            r"    roboplc::metrics_exporter()
-        .set_bucket_duration(Duration::from_secs(600))?
-        .install()?;",
+            r"    roboplc::metrics_exporter_install(
+        roboplc::metrics_exporter().set_bucket_duration(Duration::from_secs(600))?,
+    )?;",
         )
     } else {
         tpl.replace("    // METRICS\n", "")
