@@ -42,6 +42,7 @@ pub fn create(
         env::var("ROBOPLC_PATH").ok(),
         true,
     )?;
+    add_dependency("rtsc", "0.3", &[], None, false)?;
     add_dependency("tracing", "0.1", &["log"], None, false)?;
     let mut robo_toml = Config {
         remote: config::Remote {
