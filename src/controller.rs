@@ -7,16 +7,18 @@ use std::{
     time::Duration,
 };
 
+#[cfg(target_os = "linux")]
+use crate::suicide;
 use crate::{
     critical,
     hub::Hub,
-    suicide,
     supervisor::Supervisor,
     thread_rt::{Builder, RTParams, Scheduling},
     Error, Result,
 };
 pub use roboplc_derive::WorkerOpts;
 use rtsc::data_policy::DataDeliveryPolicy;
+#[cfg(target_os = "linux")]
 use signal_hook::{
     consts::{SIGINT, SIGTERM},
     iterator::Signals,
@@ -203,7 +205,7 @@ where
     pub fn register_signals_with_shutdown_handler<H>(
         &mut self,
         handle_fn: H,
-        shutdown_timeout: Duration,
+        #[allow(unused_variables)] shutdown_timeout: Duration,
     ) -> Result<()>
     where
         H: Fn(&Context<D, V>) + Send + Sync + 'static,
@@ -218,22 +220,30 @@ where
         builder.park_on_errors = true;
         macro_rules! sig_handler {
             ($handler: expr) => {{
-                let context = self.context();
-                let mut signals = Signals::new([SIGTERM, SIGINT])?;
-                move || {
-                    if let Some(sig) = signals.forever().next() {
-                        match sig {
-                            SIGTERM | SIGINT => {
-                                suicide(shutdown_timeout, true);
-                                $handler(&context);
-                                context.terminate();
+                #[cfg(target_os = "linux")]
+                {
+                    let context = self.context();
+                    let mut signals = Signals::new([SIGTERM, SIGINT])?;
+                    move || {
+                        if let Some(sig) = signals.forever().next() {
+                            match sig {
+                                SIGTERM | SIGINT => {
+                                    suicide(shutdown_timeout, true);
+                                    $handler(&context);
+                                    context.terminate();
+                                }
+                                _ => unreachable!(),
                             }
-                            _ => unreachable!(),
                         }
                     }
                 }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    move || {}
+                }
             }};
         }
+        #[allow(unused_variables)]
         let h = handler.clone();
         if let Err(e) = self.supervisor.spawn(builder.clone(), sig_handler!(h)) {
             if !matches!(e, Error::RTSchedSetSchduler(_)) {

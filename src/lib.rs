@@ -6,7 +6,6 @@ use std::panic::PanicInfo;
 use std::{env, sync::Arc, time::Duration};
 
 use colored::Colorize as _;
-#[cfg(target_os = "linux")]
 use thread_rt::{RTParams, Scheduling};
 
 pub use log::LevelFilter;
@@ -90,7 +89,6 @@ pub use rtsc::data_policy::{DataDeliveryPolicy, DeliveryPolicy};
 /// Reliable TCP/Serial communications
 pub mod comm;
 /// Controller and workers
-#[cfg(target_os = "linux")]
 pub mod controller;
 /// In-process data communication pub/sub hub, synchronous edition
 pub mod hub;
@@ -100,10 +98,8 @@ pub mod hub_async;
 /// I/O
 pub mod io;
 /// Task supervisor to manage real-time threads
-#[cfg(target_os = "linux")]
 pub mod supervisor;
-/// Real-time thread functions to work with [`supervisor::Supervisor`] and standalone
-#[cfg(target_os = "linux")]
+/// Real-time thread functions to work with [`supervisor::Supervisor`] and standalone, Linux only
 pub mod thread_rt;
 
 /// The crate result type
@@ -245,7 +241,6 @@ impl Error {
 }
 
 /// Immediately kills the current process and all its subprocesses with a message to stderr
-#[cfg(target_os = "linux")]
 pub fn critical(msg: &str) -> ! {
     eprintln!("{}", msg.red().bold());
     thread_rt::suicide_myself(Duration::from_secs(0), false);
@@ -257,7 +252,6 @@ pub fn critical(msg: &str) -> ! {
 /// period of time.
 ///
 /// Prints warnings to STDOUT if warn is true
-#[cfg(target_os = "linux")]
 pub fn suicide(delay: Duration, warn: bool) {
     let mut builder = thread_rt::Builder::new().name("suicide").rt_params(
         RTParams::new()
@@ -336,14 +330,12 @@ pub fn metrics_exporter_install(
 
 /// Sets panic handler to immediately kill the process and its childs with SIGKILL. The process is
 /// killed when panic happens in ANY thread
-#[cfg(target_os = "linux")]
 pub fn setup_panic() {
     std::panic::set_hook(Box::new(move |info: &PanicInfo| {
         panic(info);
     }));
 }
 
-#[cfg(target_os = "linux")]
 fn panic(info: &PanicInfo) -> ! {
     eprintln!("{}", info.to_string().red().bold());
     thread_rt::suicide_myself(Duration::from_secs(0), false);
@@ -372,13 +364,10 @@ pub fn configure_logger(filter: LevelFilter) {
 
 /// Prelude module
 pub mod prelude {
-    #[cfg(target_os = "linux")]
     pub use super::suicide;
-    #[cfg(target_os = "linux")]
     pub use crate::controller::*;
     pub use crate::hub::prelude::*;
     pub use crate::io::prelude::*;
-    #[cfg(target_os = "linux")]
     pub use crate::supervisor::prelude::*;
     pub use crate::time::DurationRT;
     pub use bma_ts::{Monotonic, Timestamp};

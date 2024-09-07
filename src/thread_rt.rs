@@ -2,19 +2,22 @@ use crate::{time::Interval, Error, Result};
 use bma_ts::{Monotonic, Timestamp};
 use colored::Colorize;
 use core::fmt;
+#[cfg(target_os = "linux")]
 use libc::cpu_set_t;
+#[cfg(target_os = "linux")]
 use nix::{sys::signal, unistd};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
     io::BufRead,
-    mem,
     sync::atomic::{AtomicBool, Ordering},
     thread::{self, JoinHandle, Scope, ScopedJoinHandle},
     time::Duration,
 };
-use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
+#[cfg(target_os = "linux")]
+use sysinfo::PidExt;
+use sysinfo::{Pid, ProcessExt, System, SystemExt};
 use tracing::warn;
 
 static REALTIME_MODE: AtomicBool = AtomicBool::new(true);
@@ -29,6 +32,12 @@ fn is_realtime() -> bool {
     REALTIME_MODE.load(Ordering::Relaxed)
 }
 
+macro_rules! panic_os {
+    () => {
+        panic!("The function is not supported on this OS");
+    };
+}
+
 /// The method preallocates a heap memory region with the given size. The method is useful to
 /// prevent memory fragmentation and speed up memory allocation. It is highly recommended to call
 /// the method at the beginning of the program.
@@ -38,31 +47,39 @@ fn is_realtime() -> bool {
 /// # Panics
 ///
 /// Will panic if the page size is too large (more than usize)
+#[allow(unused_variables)]
 pub fn prealloc_heap(size: usize) -> Result<()> {
     if !is_realtime() {
         return Ok(());
     }
-    let page_size = unsafe {
-        if libc::mallopt(libc::M_MMAP_MAX, 0) != 1 {
-            return Err(Error::failed(
-                "unable to disable mmap for allocation of large mem regions",
-            ));
-        }
-        if libc::mallopt(libc::M_TRIM_THRESHOLD, -1) != 1 {
-            return Err(Error::failed("unable to disable trimming"));
-        }
-        if libc::mlockall(libc::MCL_FUTURE) == -1 {
-            return Err(Error::failed("unable to lock memory pages"));
+    #[cfg(target_os = "linux")]
+    {
+        let page_size = unsafe {
+            if libc::mallopt(libc::M_MMAP_MAX, 0) != 1 {
+                return Err(Error::failed(
+                    "unable to disable mmap for allocation of large mem regions",
+                ));
+            }
+            if libc::mallopt(libc::M_TRIM_THRESHOLD, -1) != 1 {
+                return Err(Error::failed("unable to disable trimming"));
+            }
+            if libc::mlockall(libc::MCL_FUTURE) == -1 {
+                return Err(Error::failed("unable to lock memory pages"));
+            };
+            usize::try_from(libc::sysconf(libc::_SC_PAGESIZE)).expect("Page size too large")
         };
-        usize::try_from(libc::sysconf(libc::_SC_PAGESIZE)).expect("Page size too large")
-    };
-    let mut heap_mem = vec![0_u8; size];
-    std::hint::black_box(move || {
-        for i in (0..size).step_by(page_size) {
-            heap_mem[i] = 0xff;
-        }
-    })();
-    Ok(())
+        let mut heap_mem = vec![0_u8; size];
+        std::hint::black_box(move || {
+            for i in (0..size).step_by(page_size) {
+                heap_mem[i] = 0xff;
+            }
+        })();
+        Ok(())
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        panic_os!();
+    }
 }
 
 /// A thread builder object, similar to [`thread::Builder`] but with real-time capabilities
@@ -100,6 +117,7 @@ pub enum Scheduling {
     Other,
 }
 
+#[cfg(target_os = "linux")]
 impl From<Scheduling> for libc::c_int {
     fn from(value: Scheduling) -> Self {
         match value {
@@ -113,6 +131,7 @@ impl From<Scheduling> for libc::c_int {
     }
 }
 
+#[cfg(target_os = "linux")]
 impl From<libc::c_int> for Scheduling {
     fn from(value: libc::c_int) -> Self {
         match value {
@@ -488,27 +507,36 @@ impl RTParams {
     }
 }
 
+#[allow(unused_variables)]
 fn thread_init_internal(
     tx_tid: oneshot::Sender<(libc::c_int, oneshot::Sender<bool>)>,
     park_on_errors: bool,
 ) {
-    let tid = unsafe { i32::try_from(libc::syscall(libc::SYS_gettid)).unwrap_or(-200) };
-    let (tx_ok, rx_ok) = oneshot::channel::<bool>();
-    tx_tid.send((tid, tx_ok)).unwrap();
-    if !rx_ok.recv().unwrap() {
-        if park_on_errors {
-            loop {
-                thread::park();
+    #[cfg(target_os = "linux")]
+    {
+        let tid = unsafe { i32::try_from(libc::syscall(libc::SYS_gettid)).unwrap_or(-200) };
+        let (tx_ok, rx_ok) = oneshot::channel::<bool>();
+        tx_tid.send((tid, tx_ok)).unwrap();
+        if !rx_ok.recv().unwrap() {
+            if park_on_errors {
+                loop {
+                    thread::park();
+                }
+            } else {
+                panic!(
+                    "THREAD SETUP FAILED FOR `{}`",
+                    thread::current().name().unwrap_or_default()
+                );
             }
-        } else {
-            panic!(
-                "THREAD SETUP FAILED FOR `{}`",
-                thread::current().name().unwrap_or_default()
-            );
         }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        panic_os!();
     }
 }
 
+#[allow(unused_variables)]
 fn thread_init_external(
     rx_tid: oneshot::Receiver<(libc::c_int, oneshot::Sender<bool>)>,
     params: &RTParams,
@@ -527,49 +555,58 @@ fn thread_init_external(
     Ok(tid)
 }
 
+#[allow(unused_variables)]
 fn apply_thread_params(tid: libc::c_int, params: &RTParams, quiet: bool) -> Result<()> {
     if !is_realtime() {
         return Ok(());
     }
-    if !params.cpu_ids.is_empty() {
-        unsafe {
-            let mut cpuset: cpu_set_t = mem::zeroed();
-            for cpu in &params.cpu_ids {
-                libc::CPU_SET(*cpu, &mut cpuset);
+    #[cfg(target_os = "linux")]
+    {
+        if !params.cpu_ids.is_empty() {
+            unsafe {
+                let mut cpuset: cpu_set_t = std::mem::zeroed();
+                for cpu in &params.cpu_ids {
+                    libc::CPU_SET(*cpu, &mut cpuset);
+                }
+                let res =
+                    libc::sched_setaffinity(tid, std::mem::size_of::<libc::cpu_set_t>(), &cpuset);
+                if res != 0 {
+                    if !quiet {
+                        eprintln!(
+                            "Error setting CPU affinity: {}",
+                            std::io::Error::last_os_error()
+                        );
+                    }
+                    return Err(Error::RTSchedSetAffinity(res));
+                }
             }
-            let res = libc::sched_setaffinity(tid, std::mem::size_of::<libc::cpu_set_t>(), &cpuset);
+        }
+        if let Some(priority) = params.priority {
+            let res = unsafe {
+                libc::sched_setscheduler(
+                    tid,
+                    params.scheduling.into(),
+                    &libc::sched_param {
+                        sched_priority: priority,
+                    },
+                )
+            };
             if res != 0 {
                 if !quiet {
                     eprintln!(
-                        "Error setting CPU affinity: {}",
+                        "Error setting scheduler: {}",
                         std::io::Error::last_os_error()
                     );
                 }
-                return Err(Error::RTSchedSetAffinity(res));
+                return Err(Error::RTSchedSetSchduler(res));
             }
         }
+        Ok(())
     }
-    if let Some(priority) = params.priority {
-        let res = unsafe {
-            libc::sched_setscheduler(
-                tid,
-                params.scheduling.into(),
-                &libc::sched_param {
-                    sched_priority: priority,
-                },
-            )
-        };
-        if res != 0 {
-            if !quiet {
-                eprintln!(
-                    "Error setting scheduler: {}",
-                    std::io::Error::last_os_error()
-                );
-            }
-            return Err(Error::RTSchedSetSchduler(res));
-        }
+    #[cfg(not(target_os = "linux"))]
+    {
+        panic_os!();
     }
-    Ok(())
 }
 
 macro_rules! impl_serialize_join_handle {
@@ -597,19 +634,36 @@ pub(crate) fn suicide_myself(delay: Duration, warn: bool) {
         eprintln!("{}", "KILLING THE PROCESS".red().bold());
     }
     kill_pstree(pid as i32, false, None);
+    #[cfg(target_os = "linux")]
     let _ = signal::kill(unistd::Pid::from_raw(pid as i32), signal::Signal::SIGKILL);
+    #[cfg(not(target_os = "linux"))]
+    {
+        panic_os!();
+    }
 }
 
 /// Terminates a process tree with SIGTERM, waits "term_kill_interval" and repeats the opeation
 /// with SIGKILL
 ///
 /// If "term_kill_interval" is not set, SIGKILL is used immediately.
-#[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
+#[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss, unused_variables)]
 pub fn kill_pstree(pid: i32, kill_parent: bool, term_kill_interval: Option<Duration>) {
-    let mut sys = System::new();
-    sys.refresh_processes();
-    let mut pids = BTreeSet::new();
-    if let Some(delay) = term_kill_interval {
+    #[cfg(target_os = "linux")]
+    {
+        let mut sys = System::new();
+        sys.refresh_processes();
+        let mut pids = BTreeSet::new();
+        if let Some(delay) = term_kill_interval {
+            kill_process_tree(
+                Pid::from_u32(pid as u32),
+                &mut sys,
+                &mut pids,
+                signal::Signal::SIGTERM,
+                kill_parent,
+            );
+            thread::sleep(delay);
+            sys.refresh_processes();
+        }
         kill_process_tree(
             Pid::from_u32(pid as u32),
             &mut sys,
@@ -617,18 +671,14 @@ pub fn kill_pstree(pid: i32, kill_parent: bool, term_kill_interval: Option<Durat
             signal::Signal::SIGTERM,
             kill_parent,
         );
-        thread::sleep(delay);
-        sys.refresh_processes();
     }
-    kill_process_tree(
-        Pid::from_u32(pid as u32),
-        &mut sys,
-        &mut pids,
-        signal::Signal::SIGTERM,
-        kill_parent,
-    );
+    #[cfg(not(target_os = "linux"))]
+    {
+        panic_os!();
+    }
 }
 
+#[cfg(target_os = "linux")]
 fn kill_process_tree(
     pid: Pid,
     sys: &mut sysinfo::System,
@@ -647,6 +697,7 @@ fn kill_process_tree(
     }
 }
 
+#[allow(dead_code)]
 fn get_child_pids_recursive(pid: Pid, sys: &System, to: &mut BTreeSet<Pid>) {
     for (i, p) in sys.processes() {
         if let Some(parent) = p.parent() {
