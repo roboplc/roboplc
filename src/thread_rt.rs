@@ -32,6 +32,7 @@ fn is_realtime() -> bool {
     REALTIME_MODE.load(Ordering::Relaxed)
 }
 
+#[cfg(not(target_os = "linux"))]
 macro_rules! panic_os {
     () => {
         panic!("The function is not supported on this OS");
