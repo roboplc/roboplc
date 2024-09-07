@@ -74,6 +74,7 @@ default = ["locking-default"]
 insta = "1.36.1"
 log = "0.4.21"
 tokio = { version = "=1.36.0", features = ["rt", "macros", "time"] }
+tokio-util = "=0.7.11"
 tracing = { version = "0.1.40", features = ["log"] }
 
 [[example]]
