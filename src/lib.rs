@@ -17,7 +17,9 @@ pub use parking_lot as locking;
 #[cfg(feature = "locking-rt")]
 pub use parking_lot_rt as locking;
 
-#[cfg(feature = "locking-rt-safe")]
+#[cfg(all(feature = "locking-rt-safe", not(target_os = "linux")))]
+pub use parking_lot_rt as locking;
+#[cfg(all(feature = "locking-rt-safe", target_os = "linux"))]
 pub use rtsc::pi as locking;
 
 #[cfg(feature = "metrics")]
