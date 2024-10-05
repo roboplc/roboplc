@@ -364,6 +364,21 @@ pub fn configure_logger(filter: LevelFilter) {
     builder.init();
 }
 
+/// Reload the current executable (performs execvp syscall, Linux only)
+#[cfg(target_os = "linux")]
+pub fn reload_executable() -> Result<()> {
+    std::os::unix::process::CommandExt::exec(&mut std::process::Command::new(
+        std::env::current_exe()?,
+    ));
+    Ok(())
+}
+
+/// Reload the current executable (performs execvp syscall, Linux only)
+#[cfg(not(target_os = "linux"))]
+pub fn reload_executable() -> Result {
+    Err(Error::Unimplemented)
+}
+
 /// Prelude module
 pub mod prelude {
     pub use super::suicide;
