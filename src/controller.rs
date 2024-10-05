@@ -23,7 +23,7 @@ use signal_hook::{
     consts::{SIGINT, SIGTERM, SIGUSR2},
     iterator::Signals,
 };
-use tracing::{error, warn};
+use tracing::error;
 
 /// Controller prelude
 pub mod prelude {
@@ -207,8 +207,8 @@ where
     /// executable is reloaded (see [`crate::reload_executable()`]).
     pub fn register_signals_with_handlers<SH, RH>(
         &mut self,
-        shutdown_handler_fn: SH,
-        reload_handler_fn: RH,
+        #[allow(unused_variables)] shutdown_handler_fn: SH,
+        #[allow(unused_variables)] reload_handler_fn: RH,
         #[allow(unused_variables)] shutdown_timeout: Duration,
     ) -> Result<()>
     where
@@ -239,7 +239,7 @@ where
                                     context.terminate();
                                 }
                                 SIGUSR2 => {
-                                    warn!("Performing live reload");
+                                    tracing::warn!("Performing live reload");
                                     if let Err(e) = $reload_handler(&context) {
                                         error!(error=%e, "reload handler");
                                     } else if let Err(e) = crate::reload_executable() {
