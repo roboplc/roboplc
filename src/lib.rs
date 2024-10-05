@@ -375,7 +375,7 @@ pub fn reload_executable() -> Result<()> {
 
 /// Reload the current executable (performs execvp syscall, Linux only)
 #[cfg(not(target_os = "linux"))]
-pub fn reload_executable() -> Result {
+pub fn reload_executable() -> Result<()> {
     Err(Error::Unimplemented)
 }
 
