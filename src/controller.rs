@@ -259,6 +259,7 @@ where
         }
         #[allow(unused_variables)]
         let sh = shutdown_handler.clone();
+        #[allow(unused_variables)]
         let rh = reload_handler.clone();
         if let Err(e) = self.supervisor.spawn(builder.clone(), sig_handler!(sh, rh)) {
             if !matches!(e, Error::RTSchedSetSchduler(_)) {
