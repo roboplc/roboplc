@@ -367,9 +367,16 @@ pub fn configure_logger(filter: LevelFilter) {
 /// Reload the current executable (performs execvp syscall, Linux only)
 #[cfg(target_os = "linux")]
 pub fn reload_executable() -> Result<()> {
-    std::os::unix::process::CommandExt::exec(&mut std::process::Command::new(
-        std::env::current_exe()?,
-    ));
+    let mut current_exe = std::env::current_exe()?;
+    // handle a case if the executable is deleted
+    let fname = current_exe
+        .file_name()
+        .ok_or_else(|| Error::Failed("No file name".to_owned()))?
+        .to_string_lossy()
+        .trim_end_matches(" (deleted)")
+        .to_owned();
+    current_exe = current_exe.with_file_name(fname);
+    std::os::unix::process::CommandExt::exec(&mut std::process::Command::new(current_exe));
     Ok(())
 }
 
