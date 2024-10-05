@@ -77,9 +77,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     controller.spawn_worker(DataGenerator {})?;
     controller.spawn_worker(DataParser {})?;
     controller.spawn_worker(VeryBlocking {})?;
-    controller.register_signals_with_shutdown_handler(
+    controller.register_signals_with_handlers(
         move |context| {
             context.hub().send(Message::Terminate);
+        },
+        |_| {
+            info!("Allowing reload");
+            Ok(())
         },
         SHUTDOWN_TIMEOUT,
     )?;

@@ -20,10 +20,10 @@ pub use roboplc_derive::WorkerOpts;
 use rtsc::data_policy::DataDeliveryPolicy;
 #[cfg(target_os = "linux")]
 use signal_hook::{
-    consts::{SIGINT, SIGTERM},
+    consts::{SIGINT, SIGTERM, SIGUSR2},
     iterator::Signals,
 };
-use tracing::error;
+use tracing::{error, warn};
 
 /// Controller prelude
 pub mod prelude {
@@ -184,10 +184,10 @@ where
         self.supervisor.spawn(Builder::new().name(name), f)?;
         Ok(())
     }
-    /// Registers SIGINT and SIGTERM signals to a thread which terminates the controller with a
-    /// dummy handler (see [`Controller::register_signals_with_shutdown_handler()`]).
+    /// Registers SIGINT, SIGTERM and SIGUSR2 signals to a thread which terminates the controller
+    /// with dummy handlers (see [`Controller::register_signals_with_handlers()`]).
     pub fn register_signals(&mut self, shutdown_timeout: Duration) -> Result<()> {
-        self.register_signals_with_shutdown_handler(|_| {}, shutdown_timeout)
+        self.register_signals_with_handlers(|_| {}, |_| Ok(()), shutdown_timeout)
     }
     /// Registers SIGINT and SIGTERM signals to a thread which terminates the controller.
     ///     
@@ -202,15 +202,21 @@ where
     ///
     /// The thread is automatically spawned with FIFO scheduling and the highest priority on CPU 0
     /// or falled back to non-realtime.
-    pub fn register_signals_with_shutdown_handler<H>(
+    ///
+    /// If the reload handler function returns error, the reload process is aborted. Otherwise, the
+    /// executable is reloaded (see [`crate::reload_executable()`]).
+    pub fn register_signals_with_handlers<SH, RH>(
         &mut self,
-        handle_fn: H,
+        shutdown_handler_fn: SH,
+        reload_handler_fn: RH,
         #[allow(unused_variables)] shutdown_timeout: Duration,
     ) -> Result<()>
     where
-        H: Fn(&Context<D, V>) + Send + Sync + 'static,
+        SH: Fn(&Context<D, V>) + Send + Sync + 'static,
+        RH: Fn(&Context<D, V>) -> Result<()> + Send + Sync + 'static,
     {
-        let handler = Arc::new(handle_fn);
+        let shutdown_handler = Arc::new(shutdown_handler_fn);
+        let reload_handler = Arc::new(reload_handler_fn);
         let mut builder = Builder::new().name("RoboPLCSigRT").rt_params(
             RTParams::new()
                 .set_priority(99)
@@ -219,18 +225,26 @@ where
         );
         builder.park_on_errors = true;
         macro_rules! sig_handler {
-            ($handler: expr) => {{
+            ($shutdown_handler: expr, $reload_handler: expr) => {{
                 #[cfg(target_os = "linux")]
                 {
                     let context = self.context();
-                    let mut signals = Signals::new([SIGTERM, SIGINT])?;
+                    let mut signals = Signals::new([SIGTERM, SIGINT, SIGUSR2])?;
                     move || {
                         if let Some(sig) = signals.forever().next() {
                             match sig {
                                 SIGTERM | SIGINT => {
                                     suicide(shutdown_timeout, true);
-                                    $handler(&context);
+                                    $shutdown_handler(&context);
                                     context.terminate();
+                                }
+                                SIGUSR2 => {
+                                    warn!("Performing live reload");
+                                    if let Err(e) = $reload_handler(&context) {
+                                        error!(error=%e, "reload handler");
+                                    } else if let Err(e) = crate::reload_executable() {
+                                        panic!("Live reload failed: {}", e);
+                                    }
                                 }
                                 _ => unreachable!(),
                             }
@@ -244,8 +258,9 @@ where
             }};
         }
         #[allow(unused_variables)]
-        let h = handler.clone();
-        if let Err(e) = self.supervisor.spawn(builder.clone(), sig_handler!(h)) {
+        let sh = shutdown_handler.clone();
+        let rh = reload_handler.clone();
+        if let Err(e) = self.supervisor.spawn(builder.clone(), sig_handler!(sh, rh)) {
             if !matches!(e, Error::RTSchedSetSchduler(_)) {
                 return Err(e);
             }
@@ -254,7 +269,8 @@ where
         }
         // fall-back to non-rt handler
         let builder = builder.name("RoboPLCSig").rt_params(RTParams::new());
-        self.supervisor.spawn(builder, sig_handler!(handler))?;
+        self.supervisor
+            .spawn(builder, sig_handler!(shutdown_handler, reload_handler))?;
         Ok(())
     }
     fn context(&self) -> Context<D, V> {
