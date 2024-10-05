@@ -5,7 +5,7 @@ use std::{
 };
 
 use colored::Colorize as _;
-use serde_json::json;
+use serde::Serialize;
 use ureq::Agent;
 use ureq_multipart::MultipartBuilder;
 use which::which;
@@ -18,7 +18,7 @@ use crate::{
     API_PREFIX,
 };
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
 fn flash_file(
     url: &str,
     key: &str,
@@ -26,6 +26,7 @@ fn flash_file(
     file: &Path,
     force: bool,
     run: bool,
+    live: bool,
     exec_only: bool,
     program_args: Vec<String>,
     program_env: BTreeMap<String, String>,
@@ -37,6 +38,9 @@ fn flash_file(
         return crate::exec::exec(url, key, file, force, program_args, program_env);
     }
     if let Some(docker_img) = url.strip_prefix("docker://") {
+        if run {
+            return Err("Live update for Docker images is not supported".into());
+        }
         let tag = std::env::var("ROBOPLC_DOCKER_TAG").unwrap_or_else(|_| {
             crate::TARGET_PACKAGE_VERSION
                 .get()
@@ -81,17 +85,20 @@ fn flash_file(
             }
         }
     } else {
+        #[derive(Serialize)]
+        struct Payload {
+            #[serde(skip_serializing_if = "std::ops::Not::not")]
+            force: bool,
+            #[serde(skip_serializing_if = "std::ops::Not::not")]
+            run: bool,
+            #[serde(skip_serializing_if = "std::ops::Not::not")]
+            live: bool,
+        }
         let (content_type, data) = MultipartBuilder::new()
             .add_file("file", file)?
             .add_text(
                 "params",
-                &serde_json::to_string(&json! {
-                    {
-                        "force": force,
-                        "run": run,
-                    }
-
-                })?,
+                &serde_json::to_string(&Payload { force, run, live })?,
             )?
             .finish()?;
         agent
@@ -104,13 +111,14 @@ fn flash_file(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
 fn run_build_custom(
     url: &str,
     key: &str,
     agent: Agent,
     force: bool,
     run: bool,
+    live: bool,
     cmd: &str,
     file: &Path,
     exec_only: bool,
@@ -138,6 +146,7 @@ fn run_build_custom(
         file,
         force,
         run,
+        live,
         exec_only,
         program_args,
         program_env,
@@ -163,6 +172,7 @@ pub fn flash(
             &file,
             opts.force,
             opts.run,
+            opts.live,
             exec_only,
             opts.program_args,
             opts.program_env,
@@ -174,6 +184,7 @@ pub fn flash(
             agent,
             opts.force,
             opts.run,
+            opts.live,
             &custom_cmd,
             &build_custom
                 .file
@@ -253,6 +264,7 @@ pub fn flash(
             &binary_name,
             opts.force,
             opts.run,
+            opts.live,
             exec_only,
             opts.program_args,
             opts.program_env,

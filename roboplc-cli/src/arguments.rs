@@ -140,6 +140,8 @@ pub struct FlashCommand {
         help = "Put remote in RUN mode after flashing, for Docker: run the container"
     )]
     pub run: bool,
+    #[clap(long, help = "Perform live update (requires RoboPLC Pro)")]
+    pub live: bool,
 }
 
 #[derive(Parser)]
@@ -179,6 +181,7 @@ pub struct FlashExec {
     pub file: Option<PathBuf>,
     pub force: bool,
     pub run: bool,
+    pub live: bool,
     pub program_args: Vec<String>,
     pub program_env: BTreeMap<String, String>,
 }
@@ -192,6 +195,7 @@ impl From<FlashCommand> for FlashExec {
             file: cmd.file,
             force: cmd.force,
             run: cmd.run,
+            live: cmd.live,
             program_args: Vec::new(),
             program_env: BTreeMap::new(),
         }
@@ -220,6 +224,7 @@ impl From<ExecCommand> for FlashExec {
             file: cmd.file,
             force: cmd.force,
             run: false,
+            live: false,
             program_args: cmd.args,
             program_env,
         }
