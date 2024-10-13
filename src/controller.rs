@@ -364,7 +364,7 @@ where
     pub fn hub(&self) -> &Hub<D> {
         &self.hub
     }
-    /// Controller's shared variables (locked)
+    /// Controller's shared variables
     pub fn variables(&self) -> &Arc<V> {
         &self.variables
     }
