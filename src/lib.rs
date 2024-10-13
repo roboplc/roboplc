@@ -171,6 +171,9 @@ pub enum Error {
     /// This error never happens and is used as a compiler hint only
     #[error("never happens")]
     Infallible(#[from] std::convert::Infallible),
+    /// Syscall / internal API access denied
+    #[error("access denied")]
+    AccessDenied,
     /// All other errors
     #[error("operation failed: {0}")]
     Failed(String),
@@ -187,6 +190,7 @@ impl From<rtsc::Error> for Error {
             rtsc::Error::Timeout => Error::Timeout,
             rtsc::Error::InvalidData(msg) => Error::InvalidData(msg),
             rtsc::Error::Failed(msg) => Error::Failed(msg),
+            rtsc::Error::AccessDenied => Error::AccessDenied,
         }
     }
 }
@@ -201,6 +205,7 @@ impl From<Error> for rtsc::Error {
             Error::Unimplemented => rtsc::Error::Unimplemented,
             Error::Timeout => rtsc::Error::Timeout,
             Error::InvalidData(msg) => rtsc::Error::InvalidData(msg),
+            Error::AccessDenied => rtsc::Error::AccessDenied,
             _ => rtsc::Error::Failed(err.to_string()),
         }
     }
