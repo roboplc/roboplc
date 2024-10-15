@@ -3,6 +3,7 @@
 use core::{fmt, num};
 use std::io::Write;
 use std::panic::PanicInfo;
+use std::sync::atomic;
 use std::{env, sync::Arc, time::Duration};
 
 use colored::Colorize as _;
@@ -335,6 +336,8 @@ pub fn metrics_exporter_install(
     Ok(())
 }
 
+static PANIC_PREVENT: atomic::AtomicI32 = atomic::AtomicI32::new(0);
+
 /// Sets panic handler to immediately kill the process and its childs with SIGKILL. The process is
 /// killed when panic happens in ANY thread
 pub fn setup_panic() {
@@ -343,12 +346,36 @@ pub fn setup_panic() {
     }));
 }
 
+/// Prevent other threads to kill the process on panic (the setter still has the ability)
+pub fn prevent_panic_suicide() {
+    #[cfg(target_os = "linux")]
+    {
+        let tid = unsafe { i32::try_from(libc::syscall(libc::SYS_gettid)).unwrap_or(-200) };
+        PANIC_PREVENT.store(tid, atomic::Ordering::SeqCst);
+    }
+}
+
+/// Allow any thread to kill the process on panic (on by default)
+pub fn allow_panic_suicide() {
+    PANIC_PREVENT.store(0, atomic::Ordering::SeqCst);
+}
+
 fn panic(info: &PanicInfo) -> ! {
     eprintln!("{}", info.to_string().red().bold());
-    thread_rt::suicide_myself(Duration::from_secs(0), false);
-    // never happens
+    #[cfg(target_os = "linux")]
+    {
+        let mut can_suicide = true;
+        let pp = PANIC_PREVENT.load(atomic::Ordering::SeqCst);
+        if pp != 0 {
+            let tid = unsafe { i32::try_from(libc::syscall(libc::SYS_gettid)).unwrap_or(-200) };
+            can_suicide = tid == pp;
+        }
+        if can_suicide {
+            thread_rt::suicide_myself(Duration::from_secs(0), false);
+        }
+    }
     loop {
-        std::thread::sleep(Duration::from_secs(1));
+        std::thread::park();
     }
 }
 
