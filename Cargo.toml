@@ -17,6 +17,7 @@ features = ["full", "eva-common/openssl-no-fips"]
 features = ["full", "eva-common/openssl-no-fips"]
 
 [dependencies]
+atomic-timer = "0.1"
 binrw = "0.14.0"
 bytemuck = "1.17.1"
 bytes = "1.7.1"

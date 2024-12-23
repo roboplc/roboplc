@@ -9,6 +9,8 @@ use std::{env, sync::Arc, time::Duration};
 use colored::Colorize as _;
 use thread_rt::{RTParams, Scheduling};
 
+pub use atomic_timer::AtomicTimer;
+
 pub use log::LevelFilter;
 pub use rtsc::{DataChannel, DataPolicy};
 
