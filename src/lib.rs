@@ -315,6 +315,10 @@ pub fn metrics_exporter() -> metrics_exporter_prometheus::PrometheusBuilder {
 
 /// Installs Prometheus metrics exporter together with [Scope
 /// exporter](https://docs.rs/metrics-exporter-scope)
+///
+/// # Panics
+///
+/// Panics if the exporter fails to init
 #[cfg(feature = "metrics")]
 pub fn metrics_exporter_install(
     builder: metrics_exporter_prometheus::PrometheusBuilder,
