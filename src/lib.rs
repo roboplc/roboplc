@@ -108,6 +108,7 @@ pub mod supervisor;
 pub mod thread_rt;
 
 /// State helper functions
+#[cfg(any(feature = "json", feature = "msgpack"))]
 pub mod state;
 
 /// The crate result type
