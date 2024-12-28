@@ -36,7 +36,7 @@ pub fn load<S: DeserializeOwned, P: AsRef<Path>>(path: P) -> Result<S> {
 
 /// Save the state to a file. If "json" extension is specified, the state is saved in JSON
 /// format. Otherwise it is saved in MessagePack format.
-pub fn save<S: Serialize, P: AsRef<Path>>(state: &S, path: P) -> Result<()> {
+pub fn save<S: Serialize, P: AsRef<Path>>(path: P, state: &S) -> Result<()> {
     let format = Format::from_path(&path);
     let mut file = File::create(&path)?;
     let data = match format {
