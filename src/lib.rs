@@ -107,6 +107,9 @@ pub mod supervisor;
 /// Real-time thread functions to work with [`supervisor::Supervisor`] and standalone, Linux only
 pub mod thread_rt;
 
+/// State helper functions
+pub mod state;
+
 /// The crate result type
 pub type Result<T> = std::result::Result<T, Error>;
 
