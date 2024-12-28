@@ -189,7 +189,10 @@ where
     pub fn register_signals(&mut self, shutdown_timeout: Duration) -> Result<()> {
         self.register_signals_with_handlers(|_| {}, |_| Ok(()), shutdown_timeout)
     }
-    /// Registers SIGINT and SIGTERM signals to a thread which terminates the controller.
+    /// Registers SIGINT, SIGUSR2 and SIGTERM signals to a thread which terminates the controller.
+    ///
+    /// The signals SIGINT and SIGTERM are used to gracefully terminate the controller. The SIGUSR2
+    /// signal is used to perform a live reload of the executable.
     ///     
     /// Note: to properly terminate all workers must either periodically check the controller state
     /// with [`Context::is_online()`] or be marked as blocking by overriding
