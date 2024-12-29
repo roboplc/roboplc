@@ -50,8 +50,9 @@ struct Relay {
 impl Worker<Message, Variables> for Relay {
     fn run(&mut self, _context: &Context<Message, Variables>) -> WResult {
         let mut first_run = true;
-        let mut sess = snmp::SyncSession::new(RELAY_ADDR, RELAY_COMMUNITY, Some(SNMP_TIMEOUT), 0)?;
-        let relay_oid = &[1, 3, 6, 1, 4, 1, 42505, 6, 2, 3, 1, 3];
+        let mut sess =
+            snmp2::SyncSession::new_v2c(RELAY_ADDR, RELAY_COMMUNITY, Some(SNMP_TIMEOUT), 0)?;
+        let relay_oid = snmp2::Oid::from(&[1, 3, 6, 1, 4, 1, 42505, 6, 2, 3, 1, 3]).unwrap();
         let mut prev_relay_state = Relays16::default();
         let mut relay_down = false;
         for int_state in interval(Duration::from_millis(500)) {
@@ -73,7 +74,7 @@ impl Worker<Message, Variables> for Relay {
                     .enumerate()
                 {
                     if prev != current {
-                        let port_oid = &[
+                        let port_oid = snmp2::Oid::from(&[
                             1,
                             3,
                             6,
@@ -86,12 +87,13 @@ impl Worker<Message, Variables> for Relay {
                             3,
                             1,
                             3,
-                            u32::try_from(i).unwrap(),
-                        ];
-                        let value = snmp::Value::Integer((*current).into());
-                        match sess.set(&[(port_oid, value)]) {
+                            u64::try_from(i).unwrap(),
+                        ])
+                        .unwrap();
+                        let value = snmp2::Value::Integer((*current).into());
+                        match sess.set(&[(&port_oid, value)]) {
                             Ok(res) => {
-                                if res.error_status != snmp::snmp::ERRSTATUS_NOERROR {
+                                if res.error_status != snmp2::snmp::ERRSTATUS_NOERROR {
                                     error!(status = res.error_status, "Relay SNMP set error");
                                 }
                             }
@@ -103,22 +105,25 @@ impl Worker<Message, Variables> for Relay {
                 }
             }
             // read the current relay board state
-            match sess.getbulk(&[relay_oid], 0, 16) {
+            match sess.getbulk(&[&relay_oid], 0, 16) {
                 Ok(response) => {
-                    for (name, val) in response.varbinds {
-                        let snmp::Value::Integer(value) = val else {
+                    for (oid, val) in response.varbinds {
+                        let snmp2::Value::Integer(value) = val else {
                             continue;
                         };
                         let Ok(value) = u8::try_from(value) else {
                             continue;
                         };
-                        let Some(port) = name.raw().last() else {
+                        let Some(port) = oid.iter().and_then(|v| v.last()) else {
                             continue;
                         };
-                        if usize::from(*port) >= relays.ports.len() {
+                        let Ok(port) = usize::try_from(port) else {
+                            continue;
+                        };
+                        if port >= relays.ports.len() {
                             continue;
                         }
-                        relays.ports[usize::from(*port)] = value;
+                        relays.ports[port] = value;
                     }
                     // save the current relay board state
                     prev_relay_state = relays.clone();
