@@ -126,6 +126,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 false,
             )?;
         }
+        SubCommand::Rollback(opts) => {
+            flashing::rollback(&url, &key, agent, opts)?;
+        }
         SubCommand::Exec(opts) => {
             flashing::flash(
                 &url,

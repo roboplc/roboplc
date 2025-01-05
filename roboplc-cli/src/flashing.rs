@@ -11,7 +11,7 @@ use ureq_multipart::MultipartBuilder;
 use which::which;
 
 use crate::{
-    arguments::FlashExec,
+    arguments::{FlashExec, RollbackCommand},
     common::{report_ok, KernelInfo},
     config,
     ureq_err::PrintErr,
@@ -27,6 +27,7 @@ fn flash_file(
     force: bool,
     run: bool,
     live: bool,
+    skip_backup: bool,
     exec_only: bool,
     program_args: Vec<String>,
     program_env: BTreeMap<String, String>,
@@ -93,12 +94,19 @@ fn flash_file(
             run: bool,
             #[serde(skip_serializing_if = "std::ops::Not::not")]
             live: bool,
+            #[serde(skip_serializing_if = "std::ops::Not::not")]
+            skip_backup: bool,
         }
         let (content_type, data) = MultipartBuilder::new()
             .add_file("file", file)?
             .add_text(
                 "params",
-                &serde_json::to_string(&Payload { force, run, live })?,
+                &serde_json::to_string(&Payload {
+                    force,
+                    run,
+                    live,
+                    skip_backup,
+                })?,
             )?
             .finish()?;
         agent
@@ -111,6 +119,34 @@ fn flash_file(
     Ok(())
 }
 
+pub fn rollback(
+    url: &str,
+    key: &str,
+    agent: Agent,
+    opts: RollbackCommand,
+) -> Result<(), Box<dyn std::error::Error>> {
+    #[derive(Serialize)]
+    struct Payload {
+        #[serde(skip_serializing_if = "std::ops::Not::not")]
+        force: bool,
+        #[serde(skip_serializing_if = "std::ops::Not::not")]
+        run: bool,
+        #[serde(skip_serializing_if = "std::ops::Not::not")]
+        live: bool,
+    }
+    agent
+        .post(&format!("{}{}/rollback", url, API_PREFIX))
+        .set("x-auth-key", key)
+        .send_json(&Payload {
+            force: opts.force,
+            run: opts.run,
+            live: opts.live,
+        })
+        .process_error()?;
+    report_ok()?;
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
 fn run_build_custom(
     url: &str,
@@ -119,6 +155,7 @@ fn run_build_custom(
     force: bool,
     run: bool,
     live: bool,
+    skip_backup: bool,
     cmd: &str,
     file: &Path,
     exec_only: bool,
@@ -147,6 +184,7 @@ fn run_build_custom(
         force,
         run,
         live,
+        skip_backup,
         exec_only,
         program_args,
         program_env,
@@ -173,6 +211,7 @@ pub fn flash(
             opts.force,
             opts.run,
             opts.live,
+            opts.skip_backup,
             exec_only,
             opts.program_args,
             opts.program_env,
@@ -185,6 +224,7 @@ pub fn flash(
             opts.force,
             opts.run,
             opts.live,
+            opts.skip_backup,
             &custom_cmd,
             &build_custom
                 .file
@@ -265,6 +305,7 @@ pub fn flash(
             opts.force,
             opts.run,
             opts.live,
+            opts.skip_backup,
             exec_only,
             opts.program_args,
             opts.program_env,

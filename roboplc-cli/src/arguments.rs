@@ -50,6 +50,11 @@ pub enum SubCommand {
     )]
     Exec(ExecCommand),
     #[clap(name = "purge", about = "Purge program data directory")]
+    #[clap(
+        name = "rollback",
+        about = "Rollback to the previous program version (requires RoboPLC Pro)"
+    )]
+    Rollback(RollbackCommand),
     Purge,
 }
 
@@ -148,6 +153,8 @@ pub struct FlashCommand {
     pub run: bool,
     #[clap(long, help = "Perform live update (requires RoboPLC Pro)")]
     pub live: bool,
+    #[clap(long, help = "Skip current program backup (RoboPLC Pro)")]
+    pub skip_backup: bool,
 }
 
 #[derive(Parser)]
@@ -180,6 +187,24 @@ pub struct ExecCommand {
     pub args: Vec<String>,
 }
 
+#[derive(Parser)]
+pub struct RollbackCommand {
+    #[clap(
+        short = 'f',
+        long,
+        help = "Force flash (automatically put remote in CONFIG mode), for Docker: run privileged"
+    )]
+    pub force: bool,
+    #[clap(
+        short = 'r',
+        long,
+        help = "Put remote in RUN mode after flashing, for Docker: run the container"
+    )]
+    pub run: bool,
+    #[clap(long, help = "Perform live update (requires RoboPLC Pro)")]
+    pub live: bool,
+}
+
 pub struct FlashExec {
     pub cargo: Option<PathBuf>,
     pub cargo_target: Option<String>,
@@ -188,6 +213,7 @@ pub struct FlashExec {
     pub force: bool,
     pub run: bool,
     pub live: bool,
+    pub skip_backup: bool,
     pub program_args: Vec<String>,
     pub program_env: BTreeMap<String, String>,
 }
@@ -202,6 +228,7 @@ impl From<FlashCommand> for FlashExec {
             force: cmd.force,
             run: cmd.run,
             live: cmd.live,
+            skip_backup: cmd.skip_backup,
             program_args: Vec::new(),
             program_env: BTreeMap::new(),
         }
@@ -231,6 +258,7 @@ impl From<ExecCommand> for FlashExec {
             force: cmd.force,
             run: false,
             live: false,
+            skip_backup: false,
             program_args: cmd.args,
             program_env,
         }
