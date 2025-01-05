@@ -124,8 +124,8 @@ async fn exec_remote(
     macro_rules! handle_out {
         ($out: expr) => {
             let Some(Ok(Message::Binary(b))) = receiver.next().await else {
-                                                return Err("Expected binary message".into());
-                                                                                    };
+                return Err("Expected binary message".into());
+            };
             $out.write_all(&b)?;
             $out.flush()?;
         };
