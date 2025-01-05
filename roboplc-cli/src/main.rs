@@ -102,8 +102,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         SubCommand::New(_) => {
             panic!("BUG");
         }
-        SubCommand::Stat => {
-            remote::stat(&url, &key, agent)?;
+        SubCommand::Stat(opts) => {
+            remote::stat(&url, &key, agent, opts.show_versions)?;
         }
         SubCommand::Config => {
             remote::set_mode(&url, &key, &agent, Mode::Config, true)?;

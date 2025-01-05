@@ -32,7 +32,7 @@ pub enum SubCommand {
     #[clap(name = "new", about = "Generate a new project")]
     New(NewCommand),
     #[clap(name = "stat", about = "Get program status")]
-    Stat,
+    Stat(StatCommand),
     #[clap(name = "config", about = "Switch remote into CONFIG mode")]
     Config,
     #[clap(name = "run", about = "Switch remote into RUN mode")]
@@ -116,6 +116,12 @@ impl LockingPolicy {
             LockingPolicy::RtSafe => "locking-rt-safe",
         }
     }
+}
+
+#[derive(Parser)]
+pub struct StatCommand {
+    #[clap(long, help = "Show remote versions (requires RoboPLC Pro)")]
+    pub show_versions: bool,
 }
 
 #[derive(Parser)]
