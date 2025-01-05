@@ -129,6 +129,7 @@ pub struct StatCommand {
     pub show_versions: bool,
 }
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Parser)]
 pub struct FlashCommand {
     #[clap(long, env = "CARGO", help = "cargo/cross binary path")]
@@ -205,6 +206,7 @@ pub struct RollbackCommand {
     pub live: bool,
 }
 
+#[allow(clippy::struct_excessive_bools)]
 pub struct FlashExec {
     pub cargo: Option<PathBuf>,
     pub cargo_target: Option<String>,

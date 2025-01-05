@@ -87,6 +87,7 @@ fn flash_file(
         }
     } else {
         #[derive(Serialize)]
+        #[allow(clippy::struct_excessive_bools)]
         struct Payload {
             #[serde(skip_serializing_if = "std::ops::Not::not")]
             force: bool,

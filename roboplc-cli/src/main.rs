@@ -18,6 +18,9 @@ static TARGET_PACKAGE_VERSION: OnceCell<String> = OnceCell::new();
 
 static CARGO_TARGET_DIR: OnceCell<String> = OnceCell::new();
 
+/// # Panics
+///
+/// Panics if `CARGO_TARGET_DIR` is not set
 pub fn cargo_target_dir() -> &'static str {
     CARGO_TARGET_DIR.get().expect("CARGO_TARGET_DIR not set")
 }
