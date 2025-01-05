@@ -64,7 +64,7 @@ struct ProgramFileMetdata {
 
 impl ProgramFileMetdata {
     fn exists_as_cell(&self) -> prettytable::Cell {
-        if !self.exists {
+        if self.exists {
             cell!("YES")
         } else {
             cell!(Fr->"NO")
