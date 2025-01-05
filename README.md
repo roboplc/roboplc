@@ -188,3 +188,7 @@ Linux machines only.
   modules with the chosen locking policy.
 
 * [`hub_async`] now requires `async` feature to be enabled.
+
+## MSRV
+
+1.81.0
