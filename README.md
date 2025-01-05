@@ -191,4 +191,9 @@ Linux machines only.
 
 ## MSRV
 
-1.81.0
+Minimum supported mainstream Rust version of RoboPLC is synchronized with the
+[Ferrocene](https://ferrocene.dev/) Rust compiler. This allows to create
+mission-critical software, compliant with ISO 26262 (TCL 3/ASIL D), IEC 61508
+(T3) and IEC 62304.
+
+Current MSRV: mainstream 1.81.0, Ferrocene 24.11.0.
