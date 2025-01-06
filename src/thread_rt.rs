@@ -1,4 +1,4 @@
-use crate::{time::Interval, Error, Result};
+use crate::{is_realtime, time::Interval, Error, Result};
 use bma_ts::{Monotonic, Timestamp};
 use colored::Colorize;
 use core::fmt;
@@ -7,25 +7,12 @@ use nix::{sys::signal, unistd};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     collections::BTreeSet,
-    sync::atomic::{AtomicBool, Ordering},
     thread::{self, JoinHandle, Scope, ScopedJoinHandle},
     time::Duration,
 };
 #[cfg(target_os = "linux")]
 use sysinfo::PidExt;
 use sysinfo::{Pid, ProcessExt, System, SystemExt};
-
-static REALTIME_MODE: AtomicBool = AtomicBool::new(true);
-
-/// The function can be used in test environments to disable real-time functions but keep all
-/// methods running with no errors
-pub fn set_simulated() {
-    REALTIME_MODE.store(false, Ordering::Relaxed);
-}
-
-fn is_realtime() -> bool {
-    REALTIME_MODE.load(Ordering::Relaxed)
-}
 
 #[cfg(not(target_os = "linux"))]
 macro_rules! panic_os {
@@ -98,34 +85,6 @@ impl From<Scheduling> for rtsc::thread_rt::Scheduling {
         }
     }
 }
-
-//#[cfg(target_os = "linux")]
-//impl From<Scheduling> for libc::c_int {
-//fn from(value: Scheduling) -> Self {
-//match value {
-//Scheduling::RoundRobin => libc::SCHED_RR,
-//Scheduling::FIFO => libc::SCHED_FIFO,
-//Scheduling::Idle => libc::SCHED_IDLE,
-//Scheduling::Batch => libc::SCHED_BATCH,
-//Scheduling::DeadLine => libc::SCHED_DEADLINE,
-//Scheduling::Other => libc::SCHED_NORMAL,
-//}
-//}
-//}
-
-//#[cfg(target_os = "linux")]
-//impl From<libc::c_int> for Scheduling {
-//fn from(value: libc::c_int) -> Self {
-//match value {
-//libc::SCHED_RR => Scheduling::RoundRobin,
-//libc::SCHED_FIFO => Scheduling::FIFO,
-//libc::SCHED_IDLE => Scheduling::Idle,
-//libc::SCHED_BATCH => Scheduling::Batch,
-//libc::SCHED_DEADLINE => Scheduling::DeadLine,
-//_ => Scheduling::Other,
-//}
-//}
-//}
 
 macro_rules! impl_builder_from {
     ($t: ty) => {
@@ -648,67 +607,5 @@ fn get_child_pids_recursive(pid: Pid, sys: &System, to: &mut BTreeSet<Pid>) {
                 get_child_pids_recursive(*i, sys, to);
             }
         };
-    }
-}
-
-/// Configure system parameters (global) while the process is running. Does nothing in simulated
-/// mode. A wrapper around [`rtsc::system::linux::SystemConfig`] which respects simulated/real-time
-/// mode.
-///
-/// Example:
-///
-/// ```rust,no_run
-/// use roboplc::thread_rt::SystemConfig;
-///
-/// let _sys = SystemConfig::new().set("kernel/sched_rt_runtime_us", -1)
-///     .apply()
-///     .expect("Unable to set system config");
-/// // some code
-/// // system config is restored at the end of the scope
-/// ```
-#[derive(Default)]
-pub struct SystemConfig(rtsc::system::linux::SystemConfig);
-
-impl SystemConfig {
-    /// Creates a new system config object
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-    /// Set a parameter to configure
-    pub fn set<V: fmt::Display>(mut self, key: &'static str, value: V) -> Self {
-        if is_realtime() {
-            self.0 = self.0.set(key, value);
-        }
-        self
-    }
-    /// Apply values to /proc/sys keys
-    pub fn apply(self) -> Result<rtsc::system::linux::SystemConfigGuard> {
-        if is_realtime() {
-            return self.0.apply().map_err(Into::into);
-        }
-        Ok(rtsc::system::linux::SystemConfigGuard::default())
-    }
-}
-
-/// Configure CPU governors for the given CPUs. A wrapper around
-/// [`rtsc::system::linux::CpuGovernor`] which respects simulated/real-time mode.
-pub struct CpuGovernor(#[allow(dead_code)] rtsc::system::linux::CpuGovernor);
-
-impl CpuGovernor {
-    /// Set performance governor for the given CPUs. This sets the maximum frequency for the CPUs,
-    /// increasing the power consumption but lowering their latency. It is enough to specify a
-    /// single logical core number per physical core. The governor is restored when the returned
-    /// guard object is dropped.
-    pub fn performance<I>(performance_cpus: I) -> Result<CpuGovernor>
-    where
-        I: IntoIterator<Item = usize>,
-    {
-        if is_realtime() {
-            let inner = rtsc::system::linux::CpuGovernor::performance(performance_cpus)?;
-            Ok(Self(inner))
-        } else {
-            Ok(Self(rtsc::system::linux::CpuGovernor::default()))
-        }
     }
 }

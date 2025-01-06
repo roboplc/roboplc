@@ -376,6 +376,7 @@ mod test {
     use super::Hub;
 
     #[derive(Clone, Debug)]
+    #[allow(dead_code)]
     enum Message {
         Temperature(f64),
         Humidity(f64),

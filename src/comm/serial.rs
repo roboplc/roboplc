@@ -187,9 +187,8 @@ impl Communicator for Serial {
             .as_mut()
             .unwrap()
             .write_all(buf)
-            .map_err(|e| {
+            .inspect_err(|_| {
                 self.reconnect();
-                e
             });
         if result.is_ok() {
             port.last_frame.replace(Instant::now());
@@ -204,9 +203,8 @@ impl Communicator for Serial {
             .as_mut()
             .unwrap()
             .read_exact(buf)
-            .map_err(|e| {
+            .inspect_err(|_| {
                 self.reconnect();
-                e
             })
             .map_err(Into::into)
     }

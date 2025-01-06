@@ -3,7 +3,7 @@
 use core::{fmt, num};
 use std::io::Write;
 use std::panic::PanicInfo;
-use std::sync::atomic;
+use std::sync::atomic::{self, AtomicBool, Ordering};
 use std::{env, sync::Arc, time::Duration};
 
 use colored::Colorize as _;
@@ -104,9 +104,10 @@ pub mod hub_async;
 pub mod io;
 /// Task supervisor to manage real-time threads
 pub mod supervisor;
+/// Linux systme tools
+pub mod system;
 /// Real-time thread functions to work with [`supervisor::Supervisor`] and standalone, Linux only
 pub mod thread_rt;
-pub use rtsc::system;
 
 /// State helper functions
 #[cfg(any(feature = "json", feature = "msgpack"))]
@@ -114,6 +115,18 @@ pub mod state;
 
 /// The crate result type
 pub type Result<T> = std::result::Result<T, Error>;
+
+static REALTIME_MODE: AtomicBool = AtomicBool::new(true);
+
+/// The function can be used in test environments to disable real-time functions but keep all
+/// methods running with no errors
+pub fn set_simulated() {
+    REALTIME_MODE.store(false, Ordering::Relaxed);
+}
+
+fn is_realtime() -> bool {
+    REALTIME_MODE.load(Ordering::Relaxed)
+}
 
 /// The crate error type
 #[derive(thiserror::Error, Debug)]
