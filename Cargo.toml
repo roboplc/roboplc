@@ -47,7 +47,7 @@ metrics-exporter-prometheus = { version = "0.16.0", optional = true, default-fea
 metrics-exporter-scope = { version = "0.2.0", optional = true }
 metrics = { version = "0.24", optional = true }
 snmp2 = { version = "0.3", optional = true }
-rtsc = "0.3"
+rtsc = "^0.3.12"
 rvideo = { version = "0.5", optional = true, default-features = false }
 rflow = { version = "0.1", optional = true, default-features = false }
 once_cell = { version = "1.19.0", optional = true }

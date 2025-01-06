@@ -106,6 +106,7 @@ pub mod io;
 pub mod supervisor;
 /// Real-time thread functions to work with [`supervisor::Supervisor`] and standalone, Linux only
 pub mod thread_rt;
+pub use rtsc::system;
 
 /// State helper functions
 #[cfg(any(feature = "json", feature = "msgpack"))]
@@ -153,10 +154,10 @@ pub enum Error {
     RTGetTId(libc::c_int),
     /// Real-time engine error: unable to set the thread scheduler affinity
     #[error("RT sched_setaffinity {0}")]
-    RTSchedSetAffinity(libc::c_int),
+    RTSchedSetAffinity(String),
     /// Real-time engine error: unable to set the thread scheduler policy
     #[error("RT sched_setscheduler {0}")]
-    RTSchedSetSchduler(libc::c_int),
+    RTSchedSetSchduler(String),
     /// Supervisor error: task name is not specified in the thread builder
     #[error("Task name must be specified when spawning by a supervisor")]
     SupervisorNameNotSpecified,
@@ -198,6 +199,9 @@ impl From<rtsc::Error> for Error {
             rtsc::Error::InvalidData(msg) => Error::InvalidData(msg),
             rtsc::Error::Failed(msg) => Error::Failed(msg),
             rtsc::Error::AccessDenied => Error::AccessDenied,
+            rtsc::Error::RTSchedSetAffinity(msg) => Error::RTSchedSetAffinity(msg),
+            rtsc::Error::RTSchedSetScheduler(msg) => Error::RTSchedSetSchduler(msg),
+            rtsc::Error::IO(err) => Error::IO(err),
         }
     }
 }
@@ -213,6 +217,9 @@ impl From<Error> for rtsc::Error {
             Error::Timeout => rtsc::Error::Timeout,
             Error::InvalidData(msg) => rtsc::Error::InvalidData(msg),
             Error::AccessDenied => rtsc::Error::AccessDenied,
+            Error::RTSchedSetAffinity(msg) => rtsc::Error::RTSchedSetAffinity(msg),
+            Error::RTSchedSetSchduler(msg) => rtsc::Error::RTSchedSetScheduler(msg),
+            Error::IO(err) => rtsc::Error::IO(err),
             _ => rtsc::Error::Failed(err.to_string()),
         }
     }
