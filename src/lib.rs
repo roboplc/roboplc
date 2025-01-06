@@ -192,6 +192,7 @@ impl From<rtsc::Error> for Error {
             rtsc::Error::InvalidData(msg) => Error::InvalidData(msg),
             rtsc::Error::Failed(msg) => Error::Failed(msg),
             rtsc::Error::AccessDenied => Error::AccessDenied,
+            _ => Error::Failed(err.to_string()),
         }
     }
 }
