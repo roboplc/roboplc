@@ -12,6 +12,7 @@ enum Format {
 }
 
 impl Format {
+    #[allow(clippy::unnecessary_wraps)]
     fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         match path
             .as_ref()

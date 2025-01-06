@@ -176,7 +176,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     if !roboplc::is_production() {
-        roboplc::thread_rt::set_simulated();
+        roboplc::set_simulated();
     }
     roboplc::thread_rt::prealloc_heap(10_000_000)?;
     let mut server = ModbusServer::bind(

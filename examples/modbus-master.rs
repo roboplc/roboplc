@@ -155,7 +155,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     roboplc::setup_panic();
     roboplc::configure_logger(roboplc::LevelFilter::Info);
     // sets the simulated mode for the real-time module, do not set any thread real-time parameters
-    roboplc::thread_rt::set_simulated();
+    roboplc::set_simulated();
     // creates a controller instance
     let mut controller: Controller<Message, Variables> = Controller::new();
     // creates a reliable auto-reconnecting shared TCP port connection

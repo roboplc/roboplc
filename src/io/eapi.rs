@@ -200,6 +200,7 @@ pub type ActionResult = std::result::Result<(), Box<dyn std::error::Error>>;
 type ActionHandlers<D, V> = Arc<BTreeMap<OID, ActionHandlerFn<D, V>>>;
 type BulkActionHandlers<D, V> = Arc<Vec<(OIDMask, ActionHandlerFn<D, V>)>>;
 
+#[allow(clippy::struct_field_names)]
 struct Handlers<D, V>
 where
     D: DataDeliveryPolicy + Clone + Send + Sync + 'static,

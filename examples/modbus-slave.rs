@@ -47,6 +47,7 @@ struct VariableData {
 }
 
 #[derive(WorkerOpts)]
+#[allow(clippy::struct_field_names)]
 struct Worker1 {
     // Modbus server context and controller variables/data hub are not synchronized automatically,
     // workers must write to the Modbus server context and read from the controller variables/data
