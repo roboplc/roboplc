@@ -87,7 +87,7 @@ where
     }
 
     /// Sends a value to the target address
-    pub fn send(&mut self, value: T) -> Result<()> {
+    pub fn send(&mut self, value: &T) -> Result<()> {
         let mut buf = Cursor::new(&mut self.data_buf);
         value.write_le(&mut buf)?;
         self.socket.send_to(&self.data_buf, self.target)?;

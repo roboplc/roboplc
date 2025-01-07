@@ -65,7 +65,7 @@ impl Worker<Message, ()> for UdpOut {
                 pressure: 1000.0,
                 set_at: u64::try_from(Monotonic::now().as_nanos()).unwrap(),
             };
-            if let Err(e) = tx.send(data) {
+            if let Err(e) = tx.send(&data) {
                 error!(worker=self.worker_name(), error=%e, "udp send error");
             }
             if !context.is_online() {
