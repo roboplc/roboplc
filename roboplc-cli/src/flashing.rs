@@ -290,10 +290,20 @@ pub fn flash(
             cargo.display().to_string().yellow(),
             args.join(" ").yellow()
         );
+        if !build_config.env.is_empty() {
+            print!("Environment variables: ");
+            for (k, v) in &build_config.env {
+                print!(r#"{}="{}" "#, k, v);
+            }
+            println!();
+        }
         println!("Cargo target: {}", cargo_target.yellow());
         println!("Binary: {}", binary_name.display().to_string().yellow());
         println!("Compiling...");
-        let result = std::process::Command::new(cargo).args(args).status()?;
+        let result = std::process::Command::new(cargo)
+            .args(args)
+            .envs(build_config.env)
+            .status()?;
         if !result.success() {
             return Err("Compilation failed".into());
         }

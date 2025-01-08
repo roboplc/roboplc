@@ -26,6 +26,8 @@ pub struct Remote {
 
 #[derive(Deserialize, Serialize, Default, Debug)]
 pub struct Build {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub env: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cargo: Option<PathBuf>,
     #[serde(skip_serializing_if = "Option::is_none")]
