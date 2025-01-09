@@ -171,6 +171,10 @@ robo new --locking rt-safe # the default for CLI-created projects is rt-safe
 The components [`thread_rt`], [`supervisor`] and [`controller`] can work on
 Linux machines only.
 
+Despite of that, "cargo check" should work on Windows and OSX to let developers
+code RoboPLC-based programs on these platforms. In case if this fails with any
+crate feature, please report an issue.
+
 ## Migration from 0.3.x
 
 * `pchannel` and `pchannel_async` have been renamed to [`policy_channel`] and
