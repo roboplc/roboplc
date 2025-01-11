@@ -8,7 +8,7 @@ use core::fmt;
 /// Example:
 ///
 /// ```rust,no_run
-/// use roboplc::thread_rt::SystemConfig;
+/// use roboplc::system::SystemConfig;
 ///
 /// let _sys = SystemConfig::new().set("kernel/sched_rt_runtime_us", -1)
 ///     .apply()

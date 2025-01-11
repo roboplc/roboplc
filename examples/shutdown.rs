@@ -60,12 +60,9 @@ struct DataGenerator {}
 
 impl Worker<Message, ()> for DataGenerator {
     fn run(&mut self, context: &Context<Message, ()>) -> WResult {
-        for _ in interval(Duration::from_secs(1)) {
+        for _ in interval(Duration::from_secs(1)).take_while(|_| context.is_online()) {
             context.hub().send(Message::Data(42));
             // This worker terminates itself when the controller goes to the stopping state
-            if !context.is_online() {
-                break;
-            }
         }
         Ok(())
     }

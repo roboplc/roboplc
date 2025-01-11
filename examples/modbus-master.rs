@@ -66,7 +66,7 @@ impl Worker<Message, Variables> for ModbusPuller1 {
     fn run(&mut self, context: &Context<Message, Variables>) -> WResult {
         // this worker does not need to be subscribed to any events
         let hub = context.hub();
-        for _ in interval(Duration::from_millis(500)) {
+        for _ in interval(Duration::from_millis(500)).take_while(|_| context.is_online()) {
             match self.sensor_mapping.read::<EnvironmentSensors>() {
                 Ok(v) => {
                     context.variables().lock().temperature = v.temperature;
@@ -78,9 +78,6 @@ impl Worker<Message, Variables> for ModbusPuller1 {
                 Err(e) => {
                     error!(worker=self.worker_name(), err=%e, "Modbus pull error");
                 }
-            }
-            if !context.is_online() {
-                break;
             }
         }
         Ok(())

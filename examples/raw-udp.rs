@@ -58,7 +58,7 @@ struct UdpOut {}
 impl Worker<Message, ()> for UdpOut {
     fn run(&mut self, context: &Context<Message, ()>) -> WResult {
         let mut tx = UdpSender::connect("localhost:25000")?;
-        for _ in interval(Duration::from_secs(1)) {
+        for _ in interval(Duration::from_secs(1)).take_while(|_| context.is_online()) {
             let data = EnvData {
                 temp: 25.0,
                 hum: 50.0,
@@ -67,9 +67,6 @@ impl Worker<Message, ()> for UdpOut {
             };
             if let Err(e) = tx.send(&data) {
                 error!(worker=self.worker_name(), error=%e, "udp send error");
-            }
-            if !context.is_online() {
-                break;
             }
         }
         Ok(())

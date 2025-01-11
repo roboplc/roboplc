@@ -39,7 +39,7 @@ impl Worker<Message, Variables> for Worker1 {
         let mut temp = 25;
         let oid: Arc<OID> = "unit:tests/fan".parse::<OID>().unwrap().into();
         let dobj_name: Arc<String> = "Env".to_owned().into();
-        for _ in interval(Duration::from_millis(200)) {
+        for _ in interval(Duration::from_millis(200)).take_while(|_| context.is_online()) {
             if temp == 25 {
                 temp = 10;
             } else {
@@ -59,9 +59,6 @@ impl Worker<Message, Variables> for Worker1 {
                 u8::from(context.variables().fan.load(Ordering::Acquire)),
             )?;
             //self.eapi.dobj_error(dobj_name.clone())?;
-            if !context.is_online() {
-                break;
-            }
         }
         Ok(())
     }

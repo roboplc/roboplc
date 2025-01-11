@@ -60,7 +60,7 @@ struct Worker1 {
 #[allow(clippy::cast_lossless)]
 impl Worker<Message, Variables> for Worker1 {
     fn run(&mut self, context: &Context<Message, Variables>) -> WResult {
-        for _ in interval(Duration::from_secs(2)) {
+        for _ in interval(Duration::from_secs(2)).take_while(|_| context.is_online()) {
             let mut vars = context.variables().lock();
             vars.data.counter += 1;
             vars.relays.relay1 = u8::from(vars.data.counter % 2 == 0);
@@ -72,9 +72,6 @@ impl Worker<Message, Variables> for Worker1 {
             info!(%vars.relays.relay1, "c0(1)");
             info!(%vars.relays.relay2, "c1(1)");
             info!(%vars.input.value, "h0(2)");
-            if !context.is_online() {
-                break;
-            }
         }
         Ok(())
     }
