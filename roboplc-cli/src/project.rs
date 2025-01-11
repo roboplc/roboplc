@@ -37,7 +37,7 @@ pub fn create(
     }
     add_dependency(
         "roboplc",
-        "0.4",
+        "0.5",
         &robo_features,
         env::var("ROBOPLC_PATH").ok(),
         true,
