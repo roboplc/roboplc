@@ -175,6 +175,21 @@ Despite of that, "cargo check" should work on Windows and OSX to let developers
 code RoboPLC-based programs on these platforms. In case if this fails with any
 crate feature, please report an issue.
 
+## Migration from 0.4.x
+
+* Certain `thread-rt` module components have been moved to
+  [`rtsc`](https://crates.io/crates/rtsc) crate. RoboPLC re-exports them,
+  adding compatibility with simulated mode.
+
+* `thread_rt::set_simulated` has been moved to [`set_simulated`].
+
+* `thread_rt` components `CpuGovernor` and `SystemConfig` have been moved to
+  [`system`] crate module.
+
+* `openssl-vendored` feature has been removed, as [EVA
+  ICS](https://www.eva-ics.com/) EAPI has got now `openssl` as an optional
+  dependency except for certain specific features.
+
 ## Migration from 0.3.x
 
 * `pchannel` and `pchannel_async` have been renamed to [`policy_channel`] and
