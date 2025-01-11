@@ -2,6 +2,21 @@
 
 ## RoboPLC
 
+### 0.5.0 (2025-01-11)
+
+* State load/save
+
+* Atomic timers
+
+* Removed unnecessary dependencies, lightweight build
+
+* System tools and thread scheduler moved to
+  [`rtsc`](https://crates.io/crates/rtsc) crate, musl support (experimental).
+
+* MSRV set to 1.81.0
+
+* Live update
+
 ### 0.4.4 (2024-08-27)
 
 * Added metrics-exporter-scope
@@ -43,6 +58,16 @@
 
 ## RoboPLC manager
 
+### 0.5 (2025-01-11)
+
+* Professional version
+
+* Live update (requires RoboPLC Pro)
+
+* Program rollback (requires RoboPLC Pro)
+
+* Minor UI improvements
+
 ### 0.4 (2024-07-29)
 
 * Added [RFlow](https://crates.io/crates/rflow) support
@@ -64,6 +89,10 @@
 * First public release
 
 ## RoboPLC CLI
+
+### 0.5.0 (2025-01-11)
+
+* New features from RoboPLC 0.5
 
 ### 0.4 (2024-07-29)
 
