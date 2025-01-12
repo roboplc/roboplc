@@ -21,6 +21,16 @@ Real-time-safe data synchronization components are re-exported from the
 [RTSC](https://docs.rs/rtsc) crate which is a part of RoboPLC project and can
 be used directly, with no requirement to use RoboPLC.
 
+RoboPLC eco-system provides:
+
+* [roboplc-cli (robo)](https://crates.io/crates/roboplc-cli) - a CLI tool to
+  create new RoboPLC projects and manage them
+
+* [RoboPLC manager](https://info.bma.ai/en/actual/roboplc/config.html) - a web
+  interface to monitor and manage RoboPLC-based systems
+
+<img src="https://info.bma.ai/en/actual/_images/manager-program.png" width="550" />
+
 ## Technical documentation
 
 Available at <https://info.bma.ai/en/actual/roboplc/index.html>
