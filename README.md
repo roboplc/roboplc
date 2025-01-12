@@ -23,8 +23,8 @@ be used directly, with no requirement to use RoboPLC.
 
 RoboPLC eco-system provides:
 
-* [roboplc-cli (robo)](https://crates.io/crates/roboplc-cli) - a CLI tool to
-  create new RoboPLC projects and manage them
+* [roboplc-cli (robo)](https://info.bma.ai/en/actual/roboplc/flashing.html) - a
+  CLI tool to create and manage RoboPLC projects
 
 * [RoboPLC manager](https://info.bma.ai/en/actual/roboplc/config.html) - a web
   interface to monitor and manage RoboPLC-based systems
