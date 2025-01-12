@@ -15,7 +15,9 @@
 
 * MSRV set to 1.81.0
 
-* Live update
+* Program live updates (Pro version)
+
+* Program rollback (Pro version)
 
 ### 0.4.4 (2024-08-27)
 
