@@ -27,7 +27,7 @@ RoboPLC eco-system provides:
   CLI tool to create and manage RoboPLC projects
 
 * [RoboPLC manager](https://info.bma.ai/en/actual/roboplc/config.html) - a web
-  interface to monitor and manage RoboPLC-based systems
+  interface and HTTP API to monitor and manage RoboPLC-based systems
 
 <img src="https://info.bma.ai/en/actual/_images/manager-program.png" width="550" />
 
