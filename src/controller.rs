@@ -34,6 +34,10 @@ pub mod prelude {
 /// Result type, which must be returned by workers' `run` method
 pub type WResult = std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>;
 
+/// Handler result type
+pub type HandlerResult =
+    std::result::Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>;
+
 /// Sleep step (used in blocking)
 pub const SLEEP_STEP: Duration = Duration::from_millis(100);
 
@@ -216,7 +220,7 @@ where
     ) -> Result<()>
     where
         SH: Fn(&Context<D, V>) + Send + Sync + 'static,
-        RH: Fn(&Context<D, V>) -> Result<()> + Send + Sync + 'static,
+        RH: Fn(&Context<D, V>) -> HandlerResult + Send + Sync + 'static,
     {
         let shutdown_handler = Arc::new(shutdown_handler_fn);
         let reload_handler = Arc::new(reload_handler_fn);
