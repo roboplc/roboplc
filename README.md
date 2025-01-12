@@ -198,7 +198,7 @@ crate feature, please report an issue.
 
 * `openssl-vendored` feature has been removed, as [EVA
   ICS](https://www.eva-ics.com/) EAPI has got now `openssl` as an optional
-  dependency except for certain specific features.
+  dependency for certain specific features only.
 
 ## Migration from 0.3.x
 
