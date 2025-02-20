@@ -288,7 +288,10 @@ where
             variables: self.variables.clone(),
         }
     }
-    /// Blocks until all tasks/workers are finished
+    /// Blocks until all non-blocking tasks/workers are finished. In case if signals are
+    /// registered, the controller is blocked until a signal is received, despite all worker tasks
+    /// are finished. Use [`Controller::block_while_online()`] instead to let controller workers
+    /// shut down the controller.
     pub fn block(&mut self) {
         self.supervisor.join_all();
         self.state.set(ControllerStateKind::Stopped);
