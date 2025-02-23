@@ -1,6 +1,6 @@
-use std::{fs, time::Duration};
+use std::{collections::btree_map, fs, time::Duration};
 
-use arguments::{Args, SubCommand};
+use arguments::{Args, FlashExec, SubCommand};
 use clap::Parser;
 use common::{find_robo_toml, Mode};
 use once_cell::sync::OnceCell;
@@ -59,6 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let mut maybe_timeout = args.timeout;
     let mut build_config = None;
+    let mut x_config = None;
     let mut build_custom = None;
     if let SubCommand::New(_) = args.subcmd {
         // do not parse robo.toml for `new` command
@@ -76,6 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         build_config = Some(robo_toml.build);
         build_custom = Some(robo_toml.build_custom);
+        x_config = Some(robo_toml.x);
     }
     maybe_url = maybe_url.map(|v| {
         let mut u = v.trim_end_matches('/').to_owned();
@@ -133,11 +135,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             flashing::rollback(&url, &key, agent, opts)?;
         }
         SubCommand::Exec(opts) => {
+            let mut opts: FlashExec = opts.into();
+            if let Some(x_conf) = x_config {
+                for (k, v) in x_conf.env {
+                    if let btree_map::Entry::Vacant(e) = opts.program_env.entry(k) {
+                        e.insert(v);
+                    }
+                }
+            }
             flashing::flash(
                 &url,
                 &key,
                 agent,
-                opts.into(),
+                opts,
                 build_config.unwrap_or_default(),
                 build_custom.unwrap_or_default(),
                 true,

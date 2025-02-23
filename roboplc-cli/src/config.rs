@@ -10,6 +10,8 @@ pub struct Config {
     pub remote: Remote,
     #[serde(default)]
     pub build: Build,
+    #[serde(default)]
+    pub x: X,
     #[serde(default, rename = "build-custom")]
     pub build_custom: BuildCustom,
 }
@@ -34,6 +36,12 @@ pub struct Build {
     pub target: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cargo_args: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Default, Debug)]
+pub struct X {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub env: BTreeMap<String, String>,
 }
 
 #[derive(Deserialize, Serialize, Default, Debug)]

@@ -52,6 +52,7 @@ pub fn create(
         },
         build: <_>::default(),
         build_custom: <_>::default(),
+        x: <_>::default(),
     };
     if let Some(docker_arch) = opts.docker {
         robo_toml.build.target = Some(docker_arch.target().to_owned());
