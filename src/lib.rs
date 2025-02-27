@@ -95,6 +95,9 @@ pub use rtsc::data_policy::{DataDeliveryPolicy, DeliveryPolicy};
 pub mod comm;
 /// Controller and workers
 pub mod controller;
+/// HMI (Human-Machine Interface) API
+#[cfg(feature = "hmi")]
+pub mod hmi;
 /// In-process data communication pub/sub hub, synchronous edition
 pub mod hub;
 /// In-process data communication pub/sub hub, asynchronous edition
