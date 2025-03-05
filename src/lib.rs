@@ -421,7 +421,7 @@ pub fn is_production() -> bool {
 /// timestamps
 pub fn configure_logger(filter: LevelFilter) {
     let mut builder = env_logger::Builder::new();
-    builder.target(env_logger::Target::Stdout);
+    builder.target(env_logger::Target::Stderr);
     builder.filter_level(filter);
     if is_production()
         && !env::var("ROBOPLC_LOG_STDOUT").map_or(false, |v| v == "1")
