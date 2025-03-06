@@ -9,6 +9,9 @@ use crate::Result;
 #[cfg(feature = "eapi")]
 /// EVA ICS local bus API
 pub mod eapi;
+#[cfg(all(feature = "input-events", target_os = "linux"))]
+/// Keyboard input events
+pub mod keyboard;
 #[cfg(feature = "modbus")]
 /// Modbus communication
 pub mod modbus;
