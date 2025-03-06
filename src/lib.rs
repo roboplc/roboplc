@@ -107,7 +107,7 @@ pub mod hub_async;
 pub mod io;
 /// Task supervisor to manage real-time threads
 pub mod supervisor;
-/// Linux systme tools
+/// Linux system tools
 pub mod system;
 /// Real-time thread functions to work with [`supervisor::Supervisor`] and standalone, Linux only
 pub mod thread_rt;

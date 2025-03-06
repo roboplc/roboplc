@@ -71,7 +71,6 @@ rflow = ["dep:rflow"]
 modbus = ["dep:rmodbus"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus", "dep:metrics-exporter-scope", "dep:tokio"]
 async = ["dep:parking_lot_rt"]
-full = ["eapi", "modbus", "metrics", "pipe", "rvideo", "rflow", "async", "json", "msgpack", "hmi", "input-events"]
 hmi = ["dep:egui", "dep:eframe", "dep:winit", "dep:once_cell"]
 input-events = ["dep:evdev"]
 
@@ -83,6 +82,9 @@ json = ["dep:serde_json"]
 msgpack = ["dep:rmp-serde"]
 
 default = ["locking-default"]
+
+full = ["eapi", "modbus", "metrics", "pipe", "rvideo", "rflow", "async", "json", "msgpack",
+    "hmi", "input-events"]
 
 [dev-dependencies]
 insta = "1.36.1"
