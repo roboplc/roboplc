@@ -2,7 +2,7 @@ use std::sync::atomic;
 use std::thread;
 
 use roboplc::controller::prelude::*;
-use roboplc::hmi;
+use roboplc::hmi::{self, eframe, egui};
 use roboplc::prelude::*;
 use rtsc::time::interval;
 use tracing::{error, info};
@@ -65,6 +65,8 @@ struct HmiWorker {}
 
 impl Worker<Message, Variables> for HmiWorker {
     fn run(&mut self, context: &Context<Message, Variables>) -> WResult {
+        // ensure the system is in running state to avoid slowdowns during Weston/Xorg startup
+        roboplc::system::wait_running_state()?;
         loop {
             let mut opts = hmi::AppOptions::default();
             if roboplc::is_production() {
