@@ -194,11 +194,15 @@ pub fn start_server(server_options: ServerOptions) {
     #[cfg(target_os = "linux")]
     {
         let uid = unsafe { libc::getuid() };
-        if let Err(error) = std::fs::create_dir_all(Path::new("/run/user").join(uid.to_string())) {
-            error!(?error, "Failed to create /run/user/<uid> directory");
+        let dir_path = Path::new("/run/user").join(uid.to_string());
+        while !dir_path.exists() {
+            thread::sleep(Duration::from_millis(100));
         }
     }
     std::env::set_var("XDG_RUNTIME_DIR", "/run/user/0");
+    for key in server_options.env.keys() {
+        std::env::remove_var(key);
+    }
     let child = match std::process::Command::new("sh")
         .args([OsString::from("-c"), server_options.command.clone()])
         .spawn()
