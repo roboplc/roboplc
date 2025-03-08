@@ -65,8 +65,6 @@ struct HmiWorker {}
 
 impl Worker<Message, Variables> for HmiWorker {
     fn run(&mut self, context: &Context<Message, Variables>) -> WResult {
-        // ensure the system is in running state to avoid slowdowns during Weston/Xorg startup
-        // not mandatory, as the server startup waits until /run/user/<uid> dir is available
         roboplc::system::wait_running_state()?;
         loop {
             let mut opts = hmi::AppOptions::default();
