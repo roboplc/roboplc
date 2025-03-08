@@ -1,7 +1,7 @@
 use std::{
     collections::BTreeMap,
     ffi::{OsStr, OsString},
-    path::Path,
+    path::{Path, PathBuf},
     process::Child,
     thread,
     time::Duration,
@@ -28,6 +28,7 @@ pub struct ServerOptions {
     wait_for: Option<OsString>,
     kill_delay: Duration,
     spawn_delay: Duration,
+    xdg_runtime_dir: PathBuf,
 }
 
 impl ServerOptions {
@@ -38,8 +39,9 @@ impl ServerOptions {
             kill_command: None,
             env: <_>::default(),
             wait_for: None,
-            spawn_delay: Duration::from_secs(5),
             kill_delay: Duration::from_secs(5),
+            spawn_delay: Duration::from_secs(5),
+            xdg_runtime_dir: Path::new("/run/roboplc").to_owned(),
         }
     }
     /// The command is executed to terminate the previous server instance if there is a conflict
@@ -53,7 +55,8 @@ impl ServerOptions {
         self.env.insert(key.to_string(), value.to_string());
         self
     }
-    /// Wait for a file (server socket) before starting the application
+    /// Wait for a file (server socket) before starting the application. Relative to
+    /// XDG_RUNTIME_DIR or absolute path.
     pub fn with_wait_for<C: AsRef<OsStr>>(mut self, wait_for: C) -> Self {
         self.wait_for = Some(wait_for.as_ref().to_owned());
         self
@@ -66,6 +69,11 @@ impl ServerOptions {
     /// Delay after the server is killed to ensure that TTY is released
     pub fn with_kill_delay(mut self, delay: Duration) -> Self {
         self.kill_delay = delay;
+        self
+    }
+    /// Custom XDG_RUNTIME_DIR (default: /run/roboplc)
+    pub fn with_xdg_runtime_dir<P: AsRef<Path>>(mut self, path: P) -> Self {
+        self.xdg_runtime_dir = path.as_ref().to_owned();
         self
     }
 }
@@ -93,7 +101,7 @@ impl ServerKind {
                 };
                 opts = opts
                     .with_env("WAYLAND_DISPLAY", "wayland-1")
-                    .with_wait_for("/run/user/0/wayland-1")
+                    .with_wait_for("wayland-1")
                     .with_terminate_previous_command("pkill -KILL weston");
                 opts
             }
@@ -191,15 +199,10 @@ pub fn start_server(server_options: ServerOptions) {
             }
         }
     }
-    #[cfg(target_os = "linux")]
-    {
-        let uid = unsafe { libc::getuid() };
-        let dir_path = Path::new("/run/user").join(uid.to_string());
-        while !dir_path.exists() {
-            thread::sleep(Duration::from_millis(100));
-        }
+    while !server_options.xdg_runtime_dir.exists() {
+        thread::sleep(Duration::from_millis(100));
     }
-    std::env::set_var("XDG_RUNTIME_DIR", "/run/user/0");
+    std::env::set_var("XDG_RUNTIME_DIR", &server_options.xdg_runtime_dir);
     for key in server_options.env.keys() {
         std::env::remove_var(key);
     }
@@ -220,11 +223,17 @@ pub fn start_server(server_options: ServerOptions) {
         std::env::set_var(key, value);
     }
     if let Some(wait_for) = server_options.wait_for {
-        let wait_for = Path::new(&wait_for);
-        loop {
-            if wait_for.exists() {
-                break;
+        let wait_path = {
+            let p = Path::new(&wait_for);
+            if p.is_absolute() {
+                p.to_owned()
+            } else {
+                Path::new(&server_options.xdg_runtime_dir)
+                    .join(&wait_for)
+                    .to_owned()
             }
+        };
+        while !wait_path.exists() {
             thread::sleep(Duration::from_millis(100));
         }
     }
