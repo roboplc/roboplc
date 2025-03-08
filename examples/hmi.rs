@@ -74,7 +74,7 @@ impl Worker<Message, Variables> for HmiWorker {
                     hmi::ServerKind::Weston
                         .options()
                         .with_kill_delay(Duration::from_secs(2))
-                        .with_spawn_delay(Duration::from_secs(5)),
+                        .with_spawn_delay(Duration::from_secs(2)),
                 );
             } else {
                 // For development - run windowed app with no server spawned
