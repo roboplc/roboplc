@@ -89,7 +89,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             let params = action.take_unit_params()?;
             let val = u8::deserialize(params.value)?;
             context.variables().fan.store(val != 0, Ordering::Release);
-            Ok(())
+            Ok(None)
         });
     // this creates a connector instance with the name `fieldbus.HOSTNAME.plc`. To use a custom
     // name, use `EAPI::new` instead.

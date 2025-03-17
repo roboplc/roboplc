@@ -8,7 +8,8 @@ pub use eva_common::acl::OIDMask;
 use eva_common::common_payloads::ParamsId;
 use eva_common::events::{RawStateEventOwned, RAW_STATE_TOPIC};
 use eva_common::payload::{pack, unpack};
-use eva_common::value::{to_value, Value};
+use eva_common::value::to_value;
+pub use eva_common::value::Value;
 pub use eva_common::OID;
 use eva_sdk::controller::format_action_topic;
 pub use eva_sdk::controller::Action;
@@ -195,7 +196,7 @@ where
 /// Action handler functions type
 pub type ActionHandlerFn<D, V> = fn(&mut Action, context: &Context<D, V>) -> ActionResult;
 /// The result type of action handler functions
-pub type ActionResult = std::result::Result<(), Box<dyn std::error::Error>>;
+pub type ActionResult = std::result::Result<Option<Value>, Box<dyn std::error::Error>>;
 
 type ActionHandlers<D, V> = Arc<BTreeMap<OID, ActionHandlerFn<D, V>>>;
 type BulkActionHandlers<D, V> = Arc<Vec<(OIDMask, ActionHandlerFn<D, V>)>>;
@@ -290,7 +291,7 @@ where
                 let context = self.context.clone();
                 tokio::task::spawn_blocking(move || {
                     let topic = Arc::new(format_action_topic(action.oid()));
-                    let payload = if let Err(e) = handle_action(
+                    let payload = match handle_action(
                         &mut action,
                         topic.clone(),
                         tx.clone(),
@@ -298,9 +299,8 @@ where
                         bulk_action_handlers,
                         &context,
                     ) {
-                        action.event_failed(1, None, Some(Value::String(e.to_string())))
-                    } else {
-                        action.event_completed(None)
+                        Ok(v) => action.event_completed(v),
+                        Err(e) => action.event_failed(1, None, Some(Value::String(e.to_string()))),
                     };
                     match pack(&payload) {
                         Ok(packed) => {
