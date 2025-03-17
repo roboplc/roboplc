@@ -2,7 +2,7 @@
 #![deny(missing_docs)]
 use core::{fmt, num};
 use std::io::Write;
-use std::panic::PanicInfo;
+use std::panic::PanicHookInfo;
 use std::sync::atomic::{self, AtomicBool, Ordering};
 use std::{env, sync::Arc, time::Duration};
 
@@ -374,7 +374,7 @@ static PANIC_PREVENT: atomic::AtomicI32 = atomic::AtomicI32::new(0);
 /// Sets panic handler to immediately kill the process and its childs with SIGKILL. The process is
 /// killed when panic happens in ANY thread
 pub fn setup_panic() {
-    std::panic::set_hook(Box::new(move |info: &PanicInfo| {
+    std::panic::set_hook(Box::new(move |info| {
         panic(info);
     }));
 }
@@ -393,7 +393,7 @@ pub fn allow_panic_suicide() {
     PANIC_PREVENT.store(0, atomic::Ordering::SeqCst);
 }
 
-fn panic(info: &PanicInfo) -> ! {
+fn panic(info: &PanicHookInfo) -> ! {
     eprintln!("{}", info.to_string().red().bold());
     #[cfg(target_os = "linux")]
     {
@@ -444,7 +444,7 @@ pub fn reload_executable() -> Result<()> {
         .trim_end_matches(" (deleted)")
         .to_owned();
     current_exe = current_exe.with_file_name(fname);
-    std::os::unix::process::CommandExt::exec(&mut std::process::Command::new(current_exe));
+    let _ = std::os::unix::process::CommandExt::exec(&mut std::process::Command::new(current_exe));
     Ok(())
 }
 
