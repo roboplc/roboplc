@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 use std::{collections::BTreeMap, io::Write as _};
 
 use colored::Colorize;
@@ -7,7 +8,16 @@ use tokio::io::AsyncReadExt as _;
 
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
+use tokio::signal::unix::SignalKind;
+use tokio::sync::Mutex;
 use tokio_tungstenite::tungstenite::Message;
+
+#[derive(Serialize)]
+#[serde(rename_all = "lowercase")]
+enum Input {
+    Resize((usize, usize)),
+    Terminate,
+}
 
 pub fn exec(
     url: &str,
@@ -97,30 +107,83 @@ async fn exec_remote(
     let mut stdout = std::io::stdout();
     let mut stderr = std::io::stderr();
     #[allow(unused_mut)]
-    let (mut sender, mut receiver) = socket.split();
-    #[cfg(target_os = "windows")]
-    let _ = sender;
+    let (sender, mut receiver) = socket.split();
+    let sender = Arc::new(Mutex::new(sender));
     // input on windows is currently not supported
     #[cfg(not(target_os = "windows"))]
-    let input_fut = tokio::spawn(async move {
-        let stdin = std::os::fd::AsRawFd::as_raw_fd(&std::io::stdin().lock());
-        let mut termios =
-            termios::Termios::from_fd(stdin).expect("Failed to get termios for stdin");
-        termios.c_lflag &= !(termios::ICANON | termios::ECHO);
-        termios::tcsetattr(stdin, termios::TCSANOW, &termios)
-            .expect("Failed to set termios for stdin");
-        let mut f = unsafe { <tokio::fs::File as std::os::fd::FromRawFd>::from_raw_fd(stdin) };
-        let buf = &mut [0u8; 4096];
-        while let Ok(b) = f.read(buf).await {
-            if b == 0 {
-                break;
+    let input_fut = {
+        let sender_c = sender.clone();
+        tokio::spawn(async move {
+            let stdin = std::os::fd::AsRawFd::as_raw_fd(&std::io::stdin().lock());
+            let mut termios =
+                termios::Termios::from_fd(stdin).expect("Failed to get termios for stdin");
+            termios.c_lflag &= !(termios::ICANON | termios::ECHO);
+            termios::tcsetattr(stdin, termios::TCSANOW, &termios)
+                .expect("Failed to set termios for stdin");
+            let mut f = unsafe { <tokio::fs::File as std::os::fd::FromRawFd>::from_raw_fd(stdin) };
+            let buf = &mut [0u8; 4096];
+            while let Ok(b) = f.read(buf).await {
+                if b == 0 {
+                    break;
+                }
+                if let Err(e) = sender_c
+                    .lock()
+                    .await
+                    .send(Message::Binary(buf[..b].to_vec()))
+                    .await
+                {
+                    eprintln!("Error sending input: {}", e);
+                    break;
+                }
             }
-            if let Err(e) = sender.send(Message::Binary(buf[..b].to_vec())).await {
-                eprintln!("Error sending input: {}", e);
-                break;
-            }
+        })
+    };
+    // signal handler
+    #[cfg(not(target_os = "windows"))]
+    {
+        macro_rules! handle_term_signal {
+            ($sig: expr, $sender: expr) => {
+                tokio::spawn(async move {
+                    $sig.recv().await;
+                    $sender
+                        .lock()
+                        .await
+                        .send(Message::Text(
+                            serde_json::to_string(&Input::Terminate).unwrap(),
+                        ))
+                        .await
+                        .ok();
+                });
+            };
         }
-    });
+        let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
+        let sender_c = sender.clone();
+        handle_term_signal!(sigint, sender_c);
+        let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
+        let sender_c = sender.clone();
+        handle_term_signal!(sigterm, sender_c);
+        let mut sighup = tokio::signal::unix::signal(SignalKind::hangup())?;
+        let sender_c = sender.clone();
+        handle_term_signal!(sighup, sender_c);
+        let mut sigwinch = tokio::signal::unix::signal(SignalKind::window_change())?;
+        let sender_c = sender.clone();
+        tokio::spawn(async move {
+            loop {
+                sigwinch.recv().await;
+                let Some(dimensions) = term_size::dimensions() else {
+                    continue;
+                };
+                sender_c
+                    .lock()
+                    .await
+                    .send(Message::Text(
+                        serde_json::to_string(&Input::Resize(dimensions)).unwrap(),
+                    ))
+                    .await
+                    .ok();
+            }
+        });
+    }
     macro_rules! handle_out {
         ($out: expr) => {
             let Some(Ok(Message::Binary(b))) = receiver.next().await else {
