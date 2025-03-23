@@ -160,7 +160,8 @@ RoboPLC project provides additional crates, which can be used both with RoboPLC
 and separately:
 
 * [RTSC](https://crates.io/crates/rtsc) - Real-Time Safe Components, a set of
-  real-time safe data synchronization components
+  real-time safe data synchronization components, the core components of
+  RoboPLC
 
 * [atomic-timer](https://crates.io/crates/atomic-timer) - an atomic timer
   component for typical automation tasks
