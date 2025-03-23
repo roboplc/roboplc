@@ -154,6 +154,32 @@ Currently supported:
 * [IEC 60870-5](https://crates.io/crates/roboplc-io-iec60870-5) client,
   requires a license for commercial use
 
+## Related crates
+
+RoboPLC project provides additional crates, which can be used both with RoboPLC
+and separately:
+
+* [RTSC](https://crates.io/crates/rtsc) - Real-Time Safe Components, a set of
+  real-time safe data synchronization components
+
+* [atomic-timer](https://crates.io/crates/atomic-timer) - an atomic timer
+  component for typical automation tasks
+
+* [rpdo](https://crates.io/crates/rpdo) - RoboPLC Data Objects protocol for
+  data synchronization between processes and devices
+
+* [metrics-exporter-scope](https://crates.io/crates/metrics-exporter-scope) -
+  an oscilloscope-like exporter for [metrics](https://crates.io/crates/metrics)
+  eco-system
+
+* [heartbeat-watchdog](https://crates.io/crates/heartbeat-watchdog) - heartbeat
+  and watchdog components for mission-critical systems monitoring
+
+* [rvideo](https://crates.io/crates/rvideo) - video stream debugging
+
+* [rflow](https://crates.io/crates/rflow) - allows quickly create chat-like
+  diagnostic interfaces for headless programs
+
 ## Locking safety
 
 Note: the asynchronous components use `parking_lot_rt` locking only.
