@@ -9,7 +9,7 @@ use ureq::Agent;
 #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
 pub fn display(url: &str, port: u16, agent: Agent) -> Result<(), Box<dyn std::error::Error>> {
     let mut url = url::Url::parse(url)?;
-    url.set_port(Some(port)).map_err(|_| "invalid port")?;
+    url.set_port(Some(port)).map_err(|()| "invalid port")?;
     let r = agent.get(url.as_str()).call()?;
     if r.status() != 200 {
         return Err(format!("Error: {}", r.status()).into());

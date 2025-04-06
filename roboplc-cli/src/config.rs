@@ -87,6 +87,7 @@ pub fn get_global_remote(url: &str) -> Option<Remote> {
 }
 
 #[derive(Deserialize)]
+#[allow(clippy::module_name_repetitions)]
 pub struct ServerConfig {
     pub http: ServerHttpConfig,
     pub aaa: ServerAaaConfig,
@@ -101,11 +102,13 @@ impl ServerConfig {
 }
 
 #[derive(Deserialize)]
+#[allow(clippy::module_name_repetitions)]
 pub struct ServerHttpConfig {
     pub bind: String,
 }
 
 #[derive(Deserialize)]
+#[allow(clippy::module_name_repetitions)]
 pub struct ServerAaaConfig {
     pub management_key: Option<String>,
 }
