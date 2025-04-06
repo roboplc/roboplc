@@ -55,7 +55,16 @@ pub enum SubCommand {
         about = "Rollback to the previous program version (requires RoboPLC Pro)"
     )]
     Rollback(RollbackCommand),
+    #[clap(name = "purge", about = "Purge program data directory")]
     Purge,
+    #[clap(name = "metrics", about = "Get running program metrics")]
+    Metrics(MetricsCommand),
+}
+
+#[derive(Parser)]
+pub struct MetricsCommand {
+    #[clap(short = 'p', long, help = "Metrics port", default_value = "9000")]
+    pub port: u16,
 }
 
 #[derive(Parser)]

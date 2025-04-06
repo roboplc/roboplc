@@ -30,6 +30,7 @@ mod common;
 mod config;
 mod exec;
 mod flashing;
+mod metrics;
 mod project;
 mod remote;
 mod ureq_err;
@@ -155,6 +156,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         SubCommand::Purge => {
             remote::purge(&url, &key, agent)?;
+        }
+        SubCommand::Metrics(m) => {
+            metrics::display(&url, m.port, agent)?;
         }
     }
     Ok(())
