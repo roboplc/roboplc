@@ -91,6 +91,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         project::create(maybe_url, maybe_key, maybe_timeout, &opts)?;
         return Ok(());
     }
+    if maybe_url.is_none() {
+        // we may be on a server, try parsing local manager.toml
+        let server_config = match config::ServerConfig::load() {
+            Ok(config) => config,
+            Err(e) => {
+                return Err(format!(r"URL not specified in options or robo.toml, also tried to load the server /etc/roboplc/manager.toml but failed with {}", e).into());
+            }
+        };
+        if maybe_key.is_none() {
+            maybe_key = server_config.aaa.management_key;
+        }
+        let mut sp = server_config.http.bind.splitn(2, ':');
+        let mut host = sp.next().unwrap();
+        let port = sp.next().unwrap_or("7700");
+        if host == "0.0.0.0" {
+            host = "127.0.0.1";
+        }
+        maybe_url = Some(format!("http://{}:{}", host, port));
+    }
     let url = maybe_url.ok_or("URL not specified")?;
     let key = if let Some(k) = maybe_key {
         k

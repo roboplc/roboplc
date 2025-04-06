@@ -85,3 +85,27 @@ pub fn get_global_remote(url: &str) -> Option<Remote> {
         }
     }
 }
+
+#[derive(Deserialize)]
+pub struct ServerConfig {
+    pub http: ServerHttpConfig,
+    pub aaa: ServerAaaConfig,
+}
+
+impl ServerConfig {
+    pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
+        let s = fs::read_to_string("/etc/roboplc/manager.toml")?;
+        let config: ServerConfig = toml::from_str(&s)?;
+        Ok(config)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ServerHttpConfig {
+    pub bind: String,
+}
+
+#[derive(Deserialize)]
+pub struct ServerAaaConfig {
+    pub management_key: Option<String>,
+}

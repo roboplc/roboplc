@@ -33,6 +33,7 @@ bma-ts = { version = "0.1.14", features = ["serde", "chrono"] }
 prettytable-rs = "0.10.0"
 chrono = "0.4.39"
 url = "2.5.4"
+openssl = "0.10.72"
 
 [target.'cfg(windows)'.dependencies]
 ansi_term = "0.12.1"
@@ -42,3 +43,6 @@ termios = "0.3.3"
 
 [profile.release]
 strip = true
+
+[features]
+openssl-vendored = ["openssl/vendored"]
