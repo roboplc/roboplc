@@ -1,0 +1,22 @@
+VERSION := `grep ^version Cargo.toml|awk -F\" '{ print $2 }'`
+REPO := "pub.bma.ai/roboplc/cli/robo."
+
+LINUX_C_URL := REPO + "current"
+LINUX_V_URL := REPO + VERSION
+
+all:
+  @echo "Select target"
+
+pub: pub-linux update-index
+
+pub-linux:
+  if `gsutil ls gs://{{LINUX_V_URL}}.linux-x86_64 > /dev/null 2>&1`; then echo "Version {{VERSION}} already exists" && exit 1; fi
+  cross build --target x86_64-unknown-linux-musl -F openssl-vendored --release
+  cross build --target aarch64-unknown-linux-musl -F openssl-vendored --release
+  gsutil cp -a public-read ./target/x86_64-unknown-linux-musl/release/robo gs://{{LINUX_V_URL}}.linux-x86_64
+  gsutil cp -a public-read ./target/x86_64-unknown-linux-musl/release/robo gs://{{LINUX_C_URL}}.linux-x86_64
+  gsutil cp -a public-read ./target/aarch64-unknown-linux-musl/release/robo gs://{{LINUX_V_URL}}.linux-aarch64
+  gsutil cp -a public-read ./target/aarch64-unknown-linux-musl/release/robo gs://{{LINUX_C_URL}}.linux-aarch64
+
+update-index:
+  rci job run pub.bma.ai
