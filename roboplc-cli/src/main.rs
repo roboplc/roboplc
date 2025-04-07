@@ -177,7 +177,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             remote::purge(&url, &key, agent)?;
         }
         SubCommand::Metrics(m) => {
-            metrics::display(&url, m.port, agent)?;
+            metrics::display(&url, m.port, agent, m.json)?;
         }
     }
     Ok(())

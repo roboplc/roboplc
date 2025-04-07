@@ -7,7 +7,12 @@ use prettytable::{format, row, Table};
 use ureq::Agent;
 
 #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
-pub fn display(url: &str, port: u16, agent: Agent) -> Result<(), Box<dyn std::error::Error>> {
+pub fn display(
+    url: &str,
+    port: u16,
+    agent: Agent,
+    json: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut url = url::Url::parse(url)?;
     url.set_port(Some(port)).map_err(|()| "invalid port")?;
     let r = agent.get(url.as_str()).call()?;
@@ -28,15 +33,19 @@ pub fn display(url: &str, port: u16, agent: Agent) -> Result<(), Box<dyn std::er
         let value = sp.next().unwrap_or("");
         values.insert(name.to_string(), value.to_string());
     }
-    let mut table = Table::new();
-    let format = format::FormatBuilder::new()
-        .column_separator(' ')
-        .padding(1, 1)
-        .build();
-    table.set_format(format);
-    for (key, value) in values {
-        table.add_row(row![key, value]);
+    if json {
+        println!("{}", serde_json::to_string_pretty(&values)?);
+    } else {
+        let mut table = Table::new();
+        let format = format::FormatBuilder::new()
+            .column_separator(' ')
+            .padding(1, 1)
+            .build();
+        table.set_format(format);
+        for (key, value) in values {
+            table.add_row(row![key, value]);
+        }
+        table.printstd();
     }
-    table.printstd();
     Ok(())
 }

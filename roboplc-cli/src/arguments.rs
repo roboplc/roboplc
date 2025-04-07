@@ -65,6 +65,12 @@ pub enum SubCommand {
 pub struct MetricsCommand {
     #[clap(short = 'p', long, help = "Metrics port", default_value = "9000")]
     pub port: u16,
+    #[clap(
+        short = 'j',
+        long,
+        help = "Output in JSON format (default: pretty table)"
+    )]
+    pub json: bool,
 }
 
 #[derive(Parser)]
