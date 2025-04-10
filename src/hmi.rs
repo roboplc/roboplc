@@ -95,9 +95,9 @@ impl ServerKind {
         match self {
             ServerKind::Weston | ServerKind::WestonLegacy => {
                 let mut opts = if self == ServerKind::Weston {
-                    ServerOptions::new("weston")
+                    ServerOptions::new("weston --socket=wayland-1")
                 } else {
-                    ServerOptions::new("weston --tty=1")
+                    ServerOptions::new("weston --tty=1 --socket=wayland-1")
                 };
                 opts = opts
                     .with_env("WAYLAND_DISPLAY", "wayland-1")
