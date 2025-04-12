@@ -214,6 +214,21 @@ Despite of that, "cargo check" should work on Windows and OSX to let developers
 code RoboPLC-based programs on these platforms. In case if this fails with any
 crate feature, please report an issue.
 
+## Migration from 0.5.x
+
+* In case if `io::eapi` is used, action handlers must now return a serializable
+  value.
+
+* For proper `hmi` support, ensure that `RuntimeDirectory` is configured in
+  `roboplc.program` service (`/lib/systemd/system/roboplc.program.service`):
+
+```ini
+[Service]
+# ...
+RuntimeDirectory=roboplc
+RuntimeDirectoryMode=700
+```
+
 ## Migration from 0.4.x
 
 * Certain `thread-rt` module components have been moved to
