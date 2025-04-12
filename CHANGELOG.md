@@ -2,6 +2,15 @@
 
 ## RoboPLC
 
+### 0.6.0 (2025-04-12)
+
+* EAPI actions must now return a serializable value. The value is used for
+  `lmacro` and `unit` action outputs
+
+* HMI support out-of-the-box
+
+* Minor improvements and bug fixes
+
 ### 0.5.0 (2025-01-11)
 
 * State load/save
@@ -60,6 +69,10 @@
 
 ## RoboPLC manager
 
+### 0.6 (2025-04-12)
+
+* New advanced terminal for remote program execution.
+
 ### 0.5 (2025-01-11)
 
 * Professional version
@@ -91,6 +104,14 @@
 * First public release
 
 ## RoboPLC CLI
+
+### 0.6.0 (2025-04-12)
+
+* `metrics` command to display exported metrics in CLI.
+
+* Ability to work directly on the host where RoboPLC manager is running.
+
+* New advanced terminal support for remote program execution.
 
 ### 0.5.0 (2025-01-11)
 
