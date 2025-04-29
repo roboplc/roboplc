@@ -39,9 +39,6 @@ fn flash_file(
         return crate::exec::exec(url, key, file, force, program_args, program_env);
     }
     if let Some(docker_img) = url.strip_prefix("docker://") {
-        if run {
-            return Err("Live update for Docker images is not supported".into());
-        }
         let tag = std::env::var("ROBOPLC_DOCKER_TAG").unwrap_or_else(|_| {
             crate::TARGET_PACKAGE_VERSION
                 .get()
