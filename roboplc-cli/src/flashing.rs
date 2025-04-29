@@ -57,7 +57,7 @@ fn flash_file(
         println!("Docker image ready: {}", img_name.green());
         if run {
             println!("Running docker image...");
-            let mut args = vec!["run", "--rm", "-it"];
+            let mut args: Vec<String> = vec!["run".into(), "--rm".into(), "-it".into()];
             let port = std::env::var("ROBOPLC_DOCKER_PORT")
                 .unwrap_or_else(|_| "127.0.0.1:7700".to_owned());
             let port_mapping = if port.is_empty() {
@@ -66,17 +66,23 @@ fn flash_file(
                 Some(format!("{}:7700", port))
             };
             if let Some(ref port_mapping) = port_mapping {
-                args.push("-p");
-                args.push(port_mapping);
+                args.push("-p".into());
+                args.push(port_mapping.into());
                 println!(
                     "RoboPLC manager is available at {}",
                     format!("http://{}", port).yellow()
                 );
             }
-            if force {
-                args.push("--privileged");
+            if let Ok(opts) = std::env::var("ROBOPLC_DOCKER_OPTS") {
+                let lexer = shlex::Shlex::new(&opts);
+                for arg in lexer {
+                    args.push(arg);
+                }
             }
-            args.push(&img_name);
+            if force {
+                args.push("--privileged".into());
+            }
+            args.push(img_name);
             let result = std::process::Command::new("docker").args(args).status()?;
             if !result.success() {
                 return Err("Execution failed".into());
