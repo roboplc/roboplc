@@ -28,6 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     roboplc::thread_rt::prealloc_heap(10_000_000)?;
     // METRICS
+    // LOGICLINE
     let mut controller = Controller::<Message, Variables>::new();
     // RVIDEO-SPAWN
     // RFLOW-SPAWN

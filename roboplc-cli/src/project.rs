@@ -37,7 +37,7 @@ pub fn create(
     }
     add_dependency(
         "roboplc",
-        "0.5",
+        "^0.6.1",
         &robo_features,
         env::var("ROBOPLC_PATH").ok(),
         true,
@@ -116,6 +116,15 @@ fn prepare_main(tpl: &str, features: &[&str]) -> String {
         )
     } else {
         tpl.replace("    // METRICS\n", "")
+    };
+    // LOGICLINE
+    out = if features.contains(&"logicline") {
+        out.replace(
+            "    // LOGICLINE",
+            r"    roboplc::logicline::global::install_exporter()?;",
+        )
+    } else {
+        out.replace("    // LOGICLINE\n", "")
     };
     // RVIDEO
     out = if features.contains(&"rvideo") {
