@@ -10,6 +10,8 @@ use colored::Colorize as _;
 use thread_rt::{RTParams, Scheduling};
 
 pub use atomic_timer::AtomicTimer;
+#[cfg(feature = "logicline")]
+pub use logicline;
 
 pub use log::LevelFilter;
 pub use rtsc::{DataChannel, DataPolicy};

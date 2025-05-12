@@ -171,6 +171,8 @@ and separately:
 
 * [ehmi](https://crates.io/crates/ehmi) - HMI components for `egui` interfaces.
 
+* [logicline](https://crates.io/crates/logicline) - Logic processing engine
+
 * [metrics-exporter-scope](https://crates.io/crates/metrics-exporter-scope) -
   an oscilloscope-like exporter for [metrics](https://crates.io/crates/metrics)
   eco-system
