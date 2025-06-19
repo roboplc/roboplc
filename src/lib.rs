@@ -372,6 +372,7 @@ pub fn metrics_exporter_install(
 }
 
 static PANIC_PREVENT: atomic::AtomicI32 = atomic::AtomicI32::new(0);
+static PANIC_DELAY_NS: atomic::AtomicU64 = atomic::AtomicU64::new(0);
 
 /// Sets panic handler to immediately kill the process and its childs with SIGKILL. The process is
 /// killed when panic happens in ANY thread
@@ -379,6 +380,19 @@ pub fn setup_panic() {
     std::panic::set_hook(Box::new(move |info| {
         panic(info);
     }));
+}
+
+/// Sets the delay before killing the process on panic. The default is 0, which means the process
+/// is killed immediately.
+///
+/// # Panics
+///
+/// Panics if the delay is longer than `u64::MAX` nanoseconds (about 584 years).
+pub fn set_panic_delay(delay: Duration) {
+    PANIC_DELAY_NS.store(
+        delay.as_nanos().try_into().unwrap(),
+        atomic::Ordering::Relaxed,
+    );
 }
 
 /// Prevent other threads to kill the process on panic (the setter still has the ability)
@@ -406,7 +420,8 @@ fn panic(info: &PanicHookInfo) -> ! {
             can_suicide = tid == pp;
         }
         if can_suicide {
-            thread_rt::suicide_myself(Duration::from_secs(0), false);
+            let panic_delay = Duration::from_nanos(PANIC_DELAY_NS.load(atomic::Ordering::Relaxed));
+            thread_rt::suicide_myself(panic_delay, false);
         }
     }
     loop {
