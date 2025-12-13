@@ -69,6 +69,12 @@
 
 ## RoboPLC manager
 
+### 0.7 (2025-12-14)
+
+Note: this version requires Debian 12/Ubuntu 22.04 or newer
+
+* OIDC token authentication support
+
 ### 0.6 (2025-04-12)
 
 * New advanced terminal for remote program execution.
