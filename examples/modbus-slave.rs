@@ -63,8 +63,8 @@ impl Worker<Message, Variables> for Worker1 {
         for _ in interval(Duration::from_secs(2)).take_while(|_| context.is_online()) {
             let mut vars = context.variables().lock();
             vars.data.counter += 1;
-            vars.relays.relay1 = u8::from(vars.data.counter % 2 == 0);
-            vars.relays.relay2 = u8::from(vars.data.counter % 2 != 0);
+            vars.relays.relay1 = u8::from(vars.data.counter.is_multiple_of(2));
+            vars.relays.relay2 = u8::from(!vars.data.counter.is_multiple_of(2));
             self.env_mapping.write(&vars.data)?;
             self.relay_mapping.write(&vars.relays)?;
             vars.input = self.input_mapping.read()?;
