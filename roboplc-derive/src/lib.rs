@@ -24,24 +24,25 @@ fn lowercase_first_letter(s: &str) -> String {
 /// Atrribute arguments:
 ///
 /// * `name` - Specifies the name of the worker. The value must be a quoted string. The name must
-/// be unique and must be 15 characters or less. If not specified, the default is the the structure
-/// name with the first letter in lowercase
+///   be unique and must be 15 characters or less. If not specified, the default is the
+///   the structure name with the first letter in lowercase
 ///
 /// * `stack_size` - Specifies the stack size for the worker
 ///
 /// * `blocking` - Specifies if the worker is blocking. The value can be `true` or `false`. A hint
-/// for task supervisors that the worker blocks the thread (e.g. listens to a socket or has got a
-/// big interval in the main loop, does not return any useful result and should not be joined)
+///   for task supervisors that the worker blocks the thread (e.g. listens to a socket
+///   or has got a big interval in the main loop, does not return any useful result
+///   and should not be joined)
 ///
 /// * `scheduling` - Specifies the scheduling policy for the worker. The value can be one of the:
-/// `roundrobin`, `fifo`, `idle`, `batch`, `deadline`, `other`. If not specified, the default is
-/// `other`
+///   `roundrobin`, `fifo`, `idle`, `batch`, `deadline`, `other`. If not specified,
+///   the default is `other`
 ///
 /// * `priority` - Specifies the real-time priority for the worker, higher is better. If specified,
-/// the scheduling policy must be `fifo`, `roundrobin` or `deadline`
+///   the scheduling policy must be `fifo`, `roundrobin` or `deadline`
 ///
 /// * `cpu` - Specifies the CPU affinity for the worker. The value can be a single CPU number or a
-/// range of CPUs separated by a dash. The value can be a quoted string or an integer
+///   range of CPUs separated by a dash. The value can be a quoted string or an integer
 ///
 /// Example:
 ///
