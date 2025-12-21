@@ -20,7 +20,7 @@ pub struct Client(Arc<dyn Communicator + Send + Sync>);
 
 impl Client {
     /// Lock the client for exclusive access
-    pub fn lock(&self) -> MutexGuard<()> {
+    pub fn lock(&self) -> MutexGuard<'_, ()> {
         self.0.lock()
     }
     /// Connect the client. Does not need to be called for request/response protocols as the client
@@ -34,7 +34,7 @@ impl Client {
     }
     /// Write data to the client
     pub fn write(&self, buf: &[u8]) -> Result<()> {
-        self.0.write(buf).map_err(Into::into)
+        self.0.write(buf)
     }
     /// Read data from the client
     pub fn read_exact(&self, buf: &mut [u8]) -> Result<()> {
@@ -67,7 +67,7 @@ impl Read for Client {
         match self.0.read_exact(buf) {
             Ok(()) => Ok(buf.len()),
             Err(Error::IO(e)) => Err(e),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            Err(e) => Err(std::io::Error::other(e)),
         }
     }
 }
@@ -77,7 +77,7 @@ impl Write for Client {
         match self.0.write(buf) {
             Ok(()) => Ok(buf.len()),
             Err(Error::IO(e)) => Err(e),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            Err(e) => Err(std::io::Error::other(e)),
         }
     }
     fn flush(&mut self) -> std::io::Result<()> {
@@ -116,7 +116,7 @@ pub enum Protocol {
 pub trait Stream: Read + Write + Send {}
 
 trait Communicator {
-    fn lock(&self) -> MutexGuard<()>;
+    fn lock(&self) -> MutexGuard<'_, ()>;
     fn connect(&self) -> Result<()>;
     fn reconnect(&self);
     fn write(&self, buf: &[u8]) -> Result<()>;

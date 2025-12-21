@@ -256,7 +256,7 @@ impl<const C: usize, const D: usize, const I: usize, const H: usize> IoMapping
                 .lock()
                 .get_holdings_as_u8(self.register.offset, self.count, &mut self.data_buf)
                 .map_err(Error::io)?,
-        };
+        }
         let mut reader = Cursor::new(&self.data_buf);
         T::read_be(&mut reader).map_err(Into::into)
     }
@@ -310,7 +310,7 @@ impl<const C: usize, const D: usize, const I: usize, const H: usize> IoMapping
                     .set_holdings_from_u8(self.register.offset, &self.data_buf)
                     .map_err(Error::io)?;
             }
-        };
+        }
         Ok(())
     }
 }

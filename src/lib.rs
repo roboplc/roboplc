@@ -306,7 +306,7 @@ pub fn suicide(delay: Duration, warn: bool) {
         std::thread::spawn(move || {
             thread_rt::suicide_myself(delay, warn);
         });
-    };
+    }
 }
 
 #[cfg(feature = "rvideo")]
@@ -318,13 +318,13 @@ pub use rflow;
 #[cfg(feature = "rvideo")]
 /// Serves the default [`rvideo`] server at TCP port `0.0.0.0:3001`
 pub fn serve_rvideo() -> std::result::Result<(), rvideo::Error> {
-    rvideo::serve("0.0.0.0:3001").map_err(Into::into)
+    rvideo::serve("0.0.0.0:3001")
 }
 
 #[cfg(feature = "rflow")]
 /// Serves the default [`rflow`] server at TCP port `0.0.0.0:4001`
 pub fn serve_rflow() -> std::result::Result<(), rflow::Error> {
-    rflow::serve("0.0.0.0:4001").map_err(Into::into)
+    rflow::serve("0.0.0.0:4001")
 }
 
 /// Returns [Prometheus metrics exporter
@@ -431,7 +431,7 @@ fn panic(info: &PanicHookInfo) -> ! {
 
 /// Returns true if started in production mode (as a systemd unit)
 pub fn is_production() -> bool {
-    env::var("INVOCATION_ID").map_or(false, |v| !v.is_empty())
+    env::var("INVOCATION_ID").is_ok_and(|v| !v.is_empty())
 }
 
 /// Configures stdout logger with the given filter. If started in production mode, does not logs
@@ -441,8 +441,8 @@ pub fn configure_logger(filter: LevelFilter) {
     builder.target(env_logger::Target::Stderr);
     builder.filter_level(filter);
     if is_production()
-        && !env::var("ROBOPLC_LOG_STDOUT").map_or(false, |v| v == "1")
-        && !env::var("ROBOPLC_MODE").map_or(false, |m| m == "exec")
+        && !env::var("ROBOPLC_LOG_STDOUT").is_ok_and(|v| v == "1")
+        && !env::var("ROBOPLC_MODE").is_ok_and(|m| m == "exec")
     {
         builder.format(|buf, record| writeln!(buf, "{} {}", record.level(), record.args()));
     }

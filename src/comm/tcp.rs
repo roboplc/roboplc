@@ -65,7 +65,7 @@ macro_rules! handle_tcp_stream_error {
 }
 
 impl Communicator for Tcp {
-    fn lock(&self) -> MutexGuard<()> {
+    fn lock(&self) -> MutexGuard<'_, ()> {
         self.busy.lock()
     }
     fn session_id(&self) -> usize {
@@ -146,7 +146,7 @@ impl Tcp {
         };
         Ok((client.into(), rx))
     }
-    fn get_stream(&self) -> Result<MutexGuard<Option<TcpStream>>> {
+    fn get_stream(&self) -> Result<MutexGuard<'_, Option<TcpStream>>> {
         let mut lock = self.stream.lock();
         if lock.as_mut().is_none() {
             if !self.allow_reconnect.load(Ordering::Acquire) {

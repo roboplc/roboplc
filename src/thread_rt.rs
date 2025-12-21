@@ -355,7 +355,7 @@ impl<'scope, T> ScopedTask<'scope, T> {
         &self.name
     }
     /// Returns the task handle
-    pub fn handle(&self) -> &ScopedJoinHandle<T> {
+    pub fn handle(&self) -> &ScopedJoinHandle<'_, T> {
         &self.handle
     }
     /// Returns current real-time params
@@ -606,6 +606,6 @@ fn get_child_pids_recursive(pid: Pid, sys: &System, to: &mut BTreeSet<Pid>) {
                 to.insert(*i);
                 get_child_pids_recursive(*i, sys, to);
             }
-        };
+        }
     }
 }

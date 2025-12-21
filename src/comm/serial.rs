@@ -158,7 +158,7 @@ struct SPort {
 pub type SerialClient = Arc<Serial>;
 
 impl Communicator for Serial {
-    fn lock(&self) -> MutexGuard<()> {
+    fn lock(&self) -> MutexGuard<'_, ()> {
         self.busy.lock()
     }
     fn session_id(&self) -> usize {
@@ -239,7 +239,7 @@ impl Serial {
         }
         .into())
     }
-    fn get_port(&self) -> Result<MutexGuard<SPort>> {
+    fn get_port(&self) -> Result<MutexGuard<'_, SPort>> {
         let mut lock = self.port.lock();
         if lock.system_port.as_mut().is_none() {
             if !self.allow_reconnect.load(Ordering::Acquire) {

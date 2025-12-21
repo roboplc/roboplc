@@ -126,7 +126,7 @@ impl<'a, 'env, T> ScopedSupervisor<'a, 'env, T> {
     }
     /// Spawns a new task using a [`Builder`] object and registers it. The task name MUST be unique
     /// and SHOULD be 15 characters or less to set a proper thread name
-    pub fn spawn<F, B>(&mut self, builder: B, f: F) -> Result<&ScopedTask<T>>
+    pub fn spawn<F, B>(&mut self, builder: B, f: F) -> Result<&ScopedTask<'_, T>>
     where
         B: Into<Builder>,
         F: FnOnce() -> T + Send + 'a,
@@ -144,7 +144,7 @@ impl<'a, 'env, T> ScopedSupervisor<'a, 'env, T> {
         builder: B,
         f: F,
         interval: Interval,
-    ) -> Result<&ScopedTask<T>>
+    ) -> Result<&ScopedTask<'_, T>>
     where
         F: Fn() -> T + Send + 'a,
         T: Send + 'a,
@@ -156,7 +156,7 @@ impl<'a, 'env, T> ScopedSupervisor<'a, 'env, T> {
         Ok(entry.insert(task))
     }
     /// Gets a task by its name
-    pub fn get_task(&self, name: &str) -> Option<&ScopedTask<T>> {
+    pub fn get_task(&self, name: &str) -> Option<&ScopedTask<'_, T>> {
         self.tasks.get(name)
     }
     /// Gets a task by its name as a mutable object
@@ -164,7 +164,7 @@ impl<'a, 'env, T> ScopedSupervisor<'a, 'env, T> {
         self.tasks.get_mut(name)
     }
     /// Takes a task by its name and removes it from the internal registry
-    pub fn take_task(&mut self, name: &str) -> Option<ScopedTask<T>> {
+    pub fn take_task(&mut self, name: &str) -> Option<ScopedTask<'_, T>> {
         self.tasks.remove(name)
     }
     /// Removes a task from the internal registry

@@ -73,7 +73,7 @@ impl ServerOptions {
     }
     /// Custom XDG_RUNTIME_DIR (default: /run/roboplc)
     pub fn with_xdg_runtime_dir<P: AsRef<Path>>(mut self, path: P) -> Self {
-        self.xdg_runtime_dir = path.as_ref().to_owned();
+        path.as_ref().clone_into(&mut self.xdg_runtime_dir);
         self
     }
 }
@@ -230,7 +230,7 @@ pub fn start_server(server_options: ServerOptions) {
             } else {
                 Path::new(&server_options.xdg_runtime_dir)
                     .join(&wait_for)
-                    .to_owned()
+                    .clone()
             }
         };
         while !wait_path.exists() {
@@ -252,13 +252,16 @@ where
     stop();
     if let Some(opts) = options.server_options {
         start_server(opts);
-    };
+    }
+    #[cfg(target_os = "linux")]
     let event_loop_builder: Option<EventLoopBuilderHook> = Some(Box::new(|event_loop_builder| {
         winit::platform::wayland::EventLoopBuilderExtWayland::with_any_thread(
             event_loop_builder,
             true,
         );
     }));
+    #[cfg(not(target_os = "linux"))]
+    let event_loop_builder: Option<EventLoopBuilderHook> = None;
     let mut viewport = egui::ViewportBuilder::default().with_fullscreen(options.fullscreen);
     if let Some((width, height)) = options.dimensions {
         viewport = viewport.with_inner_size((f32::from(width), f32::from(height)));

@@ -176,7 +176,7 @@ impl IoMapping for ModbusMapping {
             ModbusRegisterKind::Holding => {
                 mreq.generate_get_holdings(self.register.offset, self.count, &mut self.buf)?;
             }
-        };
+        }
         communicate!(self);
         match self.register.kind {
             ModbusRegisterKind::Coil | ModbusRegisterKind::Discrete => {

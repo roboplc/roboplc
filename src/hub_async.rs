@@ -299,7 +299,6 @@ impl<T: DataDeliveryPolicy + Clone> ClientOptions<T> {
 ///
 /// let condition_fn = event_matches!(Message::Temperature(_) | (Message::Flush));
 /// ```
-
 struct Subscription<T: DataDeliveryPolicy + Clone> {
     name: Arc<str>,
     tx: Sender<T>,

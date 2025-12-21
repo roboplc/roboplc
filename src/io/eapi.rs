@@ -66,6 +66,7 @@ use busrt::{
 };
 use tracing::{error, info, warn};
 
+#[allow(clippy::large_enum_variant)]
 enum PushPayload {
     State {
         oid: Arc<OID>,
@@ -106,7 +107,7 @@ async fn safe_rpc_call(
     qos: QoS,
     timeout: Duration,
 ) -> Result<RpcEvent> {
-    tokio::time::timeout(timeout, rpc.call(target, method, payload.into(), qos))
+    tokio::time::timeout(timeout, rpc.call(target, method, payload, qos))
         .await
         .map_err(|_| Error::Timeout)?
         .map_err(Error::io)
@@ -428,6 +429,7 @@ where
             tokio::time::sleep(reconnect_delay).await;
         }
     }
+    #[allow(clippy::too_many_lines)]
     async fn bus(&self, context: &Context<D, V>) -> Result<()> {
         let bus_config = self.inner.config.to_busrt_config(&self.inner.name);
         let client = Client::connect(&bus_config).await.map_err(Error::io)?;
