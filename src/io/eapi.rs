@@ -13,6 +13,7 @@ pub use eva_common::value::Value;
 pub use eva_common::OID;
 use eva_sdk::controller::format_action_topic;
 pub use eva_sdk::controller::Action;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::io::Cursor;
@@ -80,6 +81,13 @@ enum PushPayload {
     ActionState {
         topic: Arc<String>,
         payload: Vec<u8>,
+    },
+    RpcCall {
+        target: Arc<String>,
+        method: Arc<String>,
+        payload: Vec<u8>,
+        qos: QoS,
+        response_tx: Option<oneshot::Sender<Result<RpcEvent>>>,
     },
 }
 
@@ -451,6 +459,29 @@ where
         let push_worker = tokio::spawn(async move {
             while let Ok(payload) = rx.recv().await {
                 match payload {
+                    PushPayload::RpcCall {
+                        target,
+                        method,
+                        payload,
+                        qos,
+                        response_tx,
+                    } => {
+                        let rpc_c = rpc_c.clone();
+                        let payload =
+                            if payload.is_empty() || (payload.len() == 1 && payload[0] == 0xc0) {
+                                busrt::empty_payload!()
+                            } else {
+                                busrt::borrow::Cow::Owned(payload)
+                            };
+                        tokio::spawn(async move {
+                            let result =
+                                safe_rpc_call(&rpc_c, &target, &method, payload, qos, timeout)
+                                    .await;
+                            response_tx.map(|tx| {
+                                tx.send(result).ok();
+                            });
+                        });
+                    }
                     PushPayload::State { oid, event } => {
                         let topic = format!("{}{}", RAW_STATE_TOPIC, oid.as_path());
                         match pack(&event) {
@@ -594,5 +625,43 @@ where
                 event: RawStateEventOwned::new0(eva_common::ITEM_STATUS_ERROR),
             })
             .map_err(Into::into)
+    }
+    /// Calls an RPC method over EAPI BUS
+    pub fn call<P: Serialize, R: DeserializeOwned>(
+        &self,
+        target: &str,
+        method: &str,
+        payload: P,
+    ) -> Result<R> {
+        let packed = pack(&payload).map_err(|e| Error::InvalidData(e.to_string()))?;
+        let (response_tx, response_rx) = oneshot::channel();
+        self.inner
+            .tx
+            .try_send(PushPayload::RpcCall {
+                target: Arc::new(target.to_owned()),
+                method: Arc::new(method.to_owned()),
+                payload: packed,
+                qos: QoS::No,
+                response_tx: Some(response_tx),
+            })
+            .map_err(Error::io)?;
+        let res = response_rx.recv().map_err(|e| Error::io(e))??;
+        let response: R = unpack(res.payload()).map_err(Error::invalid_data)?;
+        Ok(response)
+    }
+    /// Calls an RPC method over EAPI BUS without waiting for response
+    pub fn call0<P: Serialize>(&self, target: &str, method: &str, payload: P) -> Result<()> {
+        let packed = pack(&payload).map_err(|e| Error::InvalidData(e.to_string()))?;
+        self.inner
+            .tx
+            .try_send(PushPayload::RpcCall {
+                target: Arc::new(target.to_owned()),
+                method: Arc::new(method.to_owned()),
+                payload: packed,
+                qos: QoS::No,
+                response_tx: None,
+            })
+            .map_err(Error::io)?;
+        Ok(())
     }
 }
