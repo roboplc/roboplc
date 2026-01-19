@@ -1,6 +1,6 @@
 [package]
 name = "roboplc"
-version = "0.6.2"
+version = "0.6.3"
 edition = "2021"
 authors = ["Serhij S. <div@altertech.com>"]
 license = "Apache-2.0"
@@ -36,9 +36,9 @@ sysinfo = "0.29"
 thiserror = "1.0.57"
 tracing = "0.1.40"
 signal-hook = "0.3.17"
-eva-common = { version = "0.3.120", default-features = false, features = ["events", "payload", "common-payloads", "acl"], optional = true }
-eva-sdk = { version = "0.3.77", features = ["controller"], optional = true }
-busrt = { version = "0.4.9", features = ["rpc", "ipc"], optional = true }
+eva-common = { version = "0.4", default-features = false, features = ["events", "payload", "common-payloads", "acl"], optional = true }
+eva-sdk = { version = "0.4", features = ["controller"], optional = true }
+busrt = { version = "0.5.2", features = ["rpc", "ipc"], optional = true }
 tokio = { version = "1.36.0", optional = true }
 hostname = { version = "0.3.1", optional = true }
 env_logger = "0.10"
@@ -47,11 +47,10 @@ metrics-exporter-prometheus = { version = "0.16.0", optional = true, default-fea
 metrics-exporter-scope = { version = "0.2.0", optional = true }
 metrics = { version = "0.24", optional = true }
 snmp2 = { version = "0.3", optional = true }
-logicline = { version = "^0.1.1", optional = true, default-features = false, features = ["recording", "exporter"] }
-rtsc = "0.3.15"
+logicline = { path = "../logicline", optional = true, default-features = false, features = ["recording", "exporter"] }
+rtsc = "0.4.3"
 rvideo = { version = "0.5", optional = true, default-features = false }
 rflow = { version = "^0.1.1", optional = true, default-features = false }
-once_cell = { version = "1.19.0", optional = true }
 parking_lot = { version = "0.12.3", optional = true }
 parking_lot_rt = { version = "0.12.1", optional = true }
 serde_json = { version = "1.0.134", optional = true }
@@ -65,7 +64,7 @@ winit = { version = "0.30.9", optional = true }
 parking_lot_rt = { version = "0.12.1" }
 
 [features]
-eapi = ["dep:eva-common", "dep:eva-sdk", "dep:busrt", "dep:tokio", "dep:hostname", "dep:once_cell"]
+eapi = ["dep:eva-common", "dep:eva-sdk", "dep:busrt", "dep:tokio", "dep:hostname"]
 pipe = ["tokio/process", "tokio/io-util", "tokio/macros", "tokio/rt", "tokio/time"]
 rvideo = ["dep:rvideo"]
 rflow = ["dep:rflow"]
@@ -73,7 +72,7 @@ logicline = ["dep:logicline"]
 modbus = ["dep:rmodbus"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus", "dep:metrics-exporter-scope", "dep:tokio"]
 async = ["dep:parking_lot_rt"]
-hmi = ["dep:egui", "dep:eframe", "dep:winit", "dep:once_cell"]
+hmi = ["dep:egui", "dep:eframe", "dep:winit"]
 input-events = ["dep:evdev"]
 
 locking-default = ["dep:parking_lot", "rtsc/parking_lot", "rvideo?/locking-default", "rflow?/locking-default",
@@ -94,8 +93,8 @@ full = ["eapi", "modbus", "metrics", "pipe", "rvideo", "rflow", "logicline", "as
 [dev-dependencies]
 insta = "1.36.1"
 log = "0.4.21"
-tokio = { version = "=1.36.0", features = ["rt", "macros", "time"] }
-tokio-util = "=0.7.11"
+tokio = { version = "1.36.0", features = ["rt", "macros", "time"] }
+tokio-util = "0.7.11"
 tracing = { version = "0.1.40", features = ["log"] }
 
 [[example]]

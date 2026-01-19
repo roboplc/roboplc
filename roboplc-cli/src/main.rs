@@ -1,9 +1,9 @@
+use std::sync::OnceLock;
 use std::{collections::btree_map, fs, time::Duration};
 
 use arguments::{Args, FlashExec, SubCommand};
 use clap::Parser;
-use common::{find_robo_toml, Mode};
-use once_cell::sync::OnceCell;
+use common::{Mode, find_robo_toml};
 use ureq::Agent;
 
 use crate::config::Config;
@@ -13,10 +13,10 @@ const DEFAULT_TIMEOUT: u64 = 60;
 const TPL_DEFAULT_RS: &str = include_str!("../tpl/default.rs");
 
 // filled by find_robo_toml if Cargo.toml is found
-static TARGET_PACKAGE_NAME: OnceCell<String> = OnceCell::new();
-static TARGET_PACKAGE_VERSION: OnceCell<String> = OnceCell::new();
+static TARGET_PACKAGE_NAME: OnceLock<String> = OnceLock::new();
+static TARGET_PACKAGE_VERSION: OnceLock<String> = OnceLock::new();
 
-static CARGO_TARGET_DIR: OnceCell<String> = OnceCell::new();
+static CARGO_TARGET_DIR: OnceLock<String> = OnceLock::new();
 
 /// # Panics
 ///

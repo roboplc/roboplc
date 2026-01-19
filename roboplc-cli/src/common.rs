@@ -46,6 +46,9 @@ pub struct KernelInfo {
 
 impl KernelInfo {
     pub fn to_machine_cargo_target(&self) -> String {
+        if self.machine == "armv7l" {
+            return "armv7-unknown-linux-gnueabihf".to_string();
+        }
         format!("{}-unknown-linux-gnu", self.machine)
     }
 }

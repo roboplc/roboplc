@@ -2,31 +2,30 @@
 //! [EAPI communication example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)
 use binrw::BinWrite;
 use busrt::rpc::{RpcError, RpcEvent, RpcHandlers, RpcResult};
-use busrt::{async_trait, QoS};
+use busrt::{QoS, async_trait};
 use core::fmt;
+pub use eva_common::OID;
 pub use eva_common::acl::OIDMask;
 use eva_common::common_payloads::ParamsId;
-use eva_common::events::{RawStateEventOwned, RAW_STATE_TOPIC};
+use eva_common::events::{RAW_STATE_TOPIC, RawStateEventOwned};
 use eva_common::payload::{pack, unpack};
-use eva_common::value::to_value;
 pub use eva_common::value::Value;
-pub use eva_common::OID;
-use eva_sdk::controller::format_action_topic;
+use eva_common::value::to_value;
 pub use eva_sdk::controller::Action;
+use eva_sdk::controller::format_action_topic;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::io::Cursor;
 use std::mem;
 use std::sync::Arc;
+use std::sync::OnceLock;
 use std::time::Duration;
 
-use once_cell::sync::OnceCell;
-
 // Filled from the main program values
-static CARGO_PKG_AUTHORS: OnceCell<String> = OnceCell::new();
-static CARGO_PKG_DESCRIPTION: OnceCell<String> = OnceCell::new();
-static CARGO_PKG_VERSION: OnceCell<String> = OnceCell::new();
+static CARGO_PKG_AUTHORS: OnceLock<String> = OnceLock::new();
+static CARGO_PKG_DESCRIPTION: OnceLock<String> = OnceLock::new();
+static CARGO_PKG_VERSION: OnceLock<String> = OnceLock::new();
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -56,10 +55,10 @@ macro_rules! init_eapi {
 }
 
 use crate::controller::{Context, SLEEP_STEP};
-use crate::{policy_channel_async as pchannel_async, DataDeliveryPolicy, DeliveryPolicy};
+use crate::{DataDeliveryPolicy, DeliveryPolicy, policy_channel_async as pchannel_async};
 use crate::{
-    policy_channel_async::{Receiver as ReceiverAsync, Sender as SenderAsync},
     Error, Result,
+    policy_channel_async::{Receiver as ReceiverAsync, Sender as SenderAsync},
 };
 use busrt::{
     ipc::Client,

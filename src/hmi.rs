@@ -8,16 +8,16 @@ use std::{
 };
 
 use crate::locking::Mutex;
-use crate::{prelude::Context, DataDeliveryPolicy};
+use crate::{DataDeliveryPolicy, prelude::Context};
 use crate::{Error, Result};
 use eframe::EventLoopBuilderHook;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use tracing::{error, warn};
 
 pub use eframe;
 pub use egui;
 
-static SERVER_INSTANCE: Lazy<Mutex<Option<Child>>> = Lazy::new(|| Mutex::new(None));
+static SERVER_INSTANCE: LazyLock<Mutex<Option<Child>>> = LazyLock::new(|| Mutex::new(None));
 
 /// Graphics server options
 #[derive(Clone, Debug, Eq, PartialEq)]
