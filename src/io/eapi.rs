@@ -2,17 +2,17 @@
 //! [EAPI communication example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)
 use binrw::BinWrite;
 use busrt::rpc::{RpcError, RpcEvent, RpcHandlers, RpcResult};
-use busrt::{QoS, async_trait};
+use busrt::{async_trait, QoS};
 use core::fmt;
-pub use eva_common::OID;
 pub use eva_common::acl::OIDMask;
 use eva_common::common_payloads::ParamsId;
-use eva_common::events::{RAW_STATE_TOPIC, RawStateEventOwned};
+use eva_common::events::{RawStateEventOwned, RAW_STATE_TOPIC};
 use eva_common::payload::{pack, unpack};
-pub use eva_common::value::Value;
 use eva_common::value::to_value;
-pub use eva_sdk::controller::Action;
+pub use eva_common::value::Value;
+pub use eva_common::OID;
 use eva_sdk::controller::format_action_topic;
+pub use eva_sdk::controller::Action;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -55,10 +55,10 @@ macro_rules! init_eapi {
 }
 
 use crate::controller::{Context, SLEEP_STEP};
-use crate::{DataDeliveryPolicy, DeliveryPolicy, policy_channel_async as pchannel_async};
+use crate::{policy_channel_async as pchannel_async, DataDeliveryPolicy, DeliveryPolicy};
 use crate::{
-    Error, Result,
     policy_channel_async::{Receiver as ReceiverAsync, Sender as SenderAsync},
+    Error, Result,
 };
 use busrt::{
     ipc::Client,

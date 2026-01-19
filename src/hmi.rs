@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::locking::Mutex;
-use crate::{DataDeliveryPolicy, prelude::Context};
+use crate::{prelude::Context, DataDeliveryPolicy};
 use crate::{Error, Result};
 use eframe::EventLoopBuilderHook;
 use std::sync::LazyLock;
