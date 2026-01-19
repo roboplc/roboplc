@@ -3,7 +3,7 @@ use std::{collections::btree_map, fs, time::Duration};
 
 use arguments::{Args, FlashExec, SubCommand};
 use clap::Parser;
-use common::{Mode, find_robo_toml};
+use common::{find_robo_toml, Mode};
 use ureq::Agent;
 
 use crate::config::Config;

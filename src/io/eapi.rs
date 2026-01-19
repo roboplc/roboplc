@@ -2,17 +2,17 @@
 //! [EAPI communication example](https://github.com/roboplc/roboplc/blob/main/examples/eapi.rs)
 use binrw::BinWrite;
 use busrt::rpc::{RpcError, RpcEvent, RpcHandlers, RpcResult};
-use busrt::{QoS, async_trait};
+use busrt::{async_trait, QoS};
 use core::fmt;
-pub use eva_common::OID;
 pub use eva_common::acl::OIDMask;
 use eva_common::common_payloads::ParamsId;
-use eva_common::events::{RAW_STATE_TOPIC, RawStateEventOwned};
+use eva_common::events::{RawStateEventOwned, RAW_STATE_TOPIC};
 use eva_common::payload::{pack, unpack};
-pub use eva_common::value::Value;
 use eva_common::value::to_value;
-pub use eva_sdk::controller::Action;
+pub use eva_common::value::Value;
+pub use eva_common::OID;
 use eva_sdk::controller::format_action_topic;
+pub use eva_sdk::controller::Action;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -55,10 +55,10 @@ macro_rules! init_eapi {
 }
 
 use crate::controller::{Context, SLEEP_STEP};
-use crate::{DataDeliveryPolicy, DeliveryPolicy, policy_channel_async as pchannel_async};
+use crate::{policy_channel_async as pchannel_async, DataDeliveryPolicy, DeliveryPolicy};
 use crate::{
-    Error, Result,
     policy_channel_async::{Receiver as ReceiverAsync, Sender as SenderAsync},
+    Error, Result,
 };
 use busrt::{
     ipc::Client,
@@ -138,6 +138,7 @@ where
     #[serde(skip)]
     bulk_action_handlers: Vec<(OIDMask, ActionHandlerFn<D, V>)>,
     name: Option<String>,
+    token: Option<String>,
 }
 
 impl<D, V> EAPIConfig<D, V>
@@ -156,6 +157,9 @@ where
         if let Some(buf_ttl) = self.buf_ttl {
             config = config.buf_ttl(Duration::from_micros(buf_ttl));
         }
+        if let Some(token) = &self.token {
+            config = config.token(token);
+        }
         config
     }
     /// Creates a new EAPI connection configuration with the given path
@@ -170,6 +174,7 @@ where
             action_handlers: <_>::default(),
             bulk_action_handlers: <_>::default(),
             name: None,
+            token: None,
         }
     }
     /// Override the client host name
@@ -180,6 +185,11 @@ where
     /// Set timeout
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
+        self
+    }
+    /// Set bus access token
+    pub fn token(mut self, token: impl AsRef<str>) -> Self {
+        self.token = Some(token.as_ref().to_owned());
         self
     }
     /// Set buffer size
@@ -476,9 +486,9 @@ where
                             let result =
                                 safe_rpc_call(&rpc_c, &target, &method, payload, qos, timeout)
                                     .await;
-                            response_tx.map(|tx| {
+                            if let Some(tx) = response_tx {
                                 tx.send(result).ok();
-                            });
+                            }
                         });
                     }
                     PushPayload::State { oid, event } => {
@@ -644,7 +654,7 @@ where
                 response_tx: Some(response_tx),
             })
             .map_err(Error::io)?;
-        let res = response_rx.recv().map_err(|e| Error::io(e))??;
+        let res = response_rx.recv().map_err(Error::io)??;
         let response: R = unpack(res.payload()).map_err(Error::invalid_data)?;
         Ok(response)
     }
