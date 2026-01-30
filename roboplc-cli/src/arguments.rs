@@ -112,8 +112,8 @@ impl Docker {
     }
     pub fn docker_image_name(self) -> &'static str {
         match self {
-            Docker::X86_64 => "bmauto/roboplc-x86_64:latest",
-            Docker::Aarch64 => "bmauto/roboplc-aarch64:latest",
+            Docker::X86_64 => "bmauto/roboplc:latest",
+            Docker::Aarch64 => "bmauto/roboplc:latest",
         }
     }
 }
