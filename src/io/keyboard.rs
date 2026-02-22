@@ -65,7 +65,8 @@ pub struct GlobalKeyListener {
 }
 
 impl GlobalKeyListener {
-    /// Create a new global key listener from a list of key codes and devices in `/dev/input`
+    /// Create a new global key listener from a list of key codes and devices in `/dev/input` Note:
+    /// in case if any device is reset/removed, the iterator ends and the listener needs to be re-created
     pub fn create(keys: &[KeyCode]) -> Result<Self> {
         let keys: BTreeSet<_> = keys.iter().copied().collect();
         let dir = std::fs::read_dir("/dev/input")?;
@@ -120,18 +121,25 @@ impl Iterator for GlobalKeyListener {
         }
         loop {
             for dev in &mut self.devices {
-                if let Ok(event_list) = dev.fetch_events() {
-                    for ev in event_list {
-                        if let evdev::EventSummary::Key(_kev, code, pressed) = ev.destructure() {
-                            if self.keys.contains(&code) {
-                                let state = KeyState::from(pressed);
-                                let key_event = KeyEvent {
-                                    code,
-                                    state,
-                                    time: Monotonic::now(),
-                                };
-                                self.events_pending.push_back(key_event);
-                            }
+                let event_list = match dev.fetch_events() {
+                    Ok(el) => el,
+                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                        continue;
+                    }
+                    Err(_) => {
+                        return None;
+                    }
+                };
+                for ev in event_list {
+                    if let evdev::EventSummary::Key(_kev, code, pressed) = ev.destructure() {
+                        if self.keys.contains(&code) {
+                            let state = KeyState::from(pressed);
+                            let key_event = KeyEvent {
+                                code,
+                                state,
+                                time: Monotonic::now(),
+                            };
+                            self.events_pending.push_back(key_event);
                         }
                     }
                 }
