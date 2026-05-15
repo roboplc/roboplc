@@ -46,7 +46,8 @@ pub struct KernelInfo {
 
 impl KernelInfo {
     pub fn to_machine_cargo_target(&self) -> String {
-        if self.machine == "armv7l" {
+        // Debian armhf / 32-bit ARM hard-float (AArch32); `armv8l` appears on some armhf userspaces.
+        if self.machine == "armv7l" || self.machine == "armv8l" {
             return "armv7-unknown-linux-gnueabihf".to_string();
         }
         format!("{}-unknown-linux-gnu", self.machine)
