@@ -46,11 +46,21 @@ pub struct KernelInfo {
 
 impl KernelInfo {
     pub fn to_machine_cargo_target(&self) -> String {
-        // Debian armhf / 32-bit ARM hard-float (AArch32); `armv8l` appears on some armhf userspaces.
-        if self.machine == "armv7l" || self.machine == "armv8l" {
-            return "armv7-unknown-linux-gnueabihf".to_string();
+        match (
+            Self::arm_uname_version(&self.machine),
+            self.machine.ends_with('l'),
+        ) {
+            (Some(7..), true) => "armv7-unknown-linux-gnueabihf".to_string(),
+            (Some(6), true) => "arm-unknown-linux-gnueabihf".to_string(),
+            (Some(4..=5), true) => "arm-unknown-linux-gnueabi".to_string(),
+            _ => format!("{}-unknown-linux-gnu", self.machine),
         }
-        format!("{}-unknown-linux-gnu", self.machine)
+    }
+
+    fn arm_uname_version(machine: &str) -> Option<u32> {
+        let rest = machine.strip_prefix("armv")?;
+        let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+        digits.parse().ok()
     }
 }
 
